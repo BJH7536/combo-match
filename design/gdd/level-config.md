@@ -1,5 +1,9 @@
 # level-config (레벨 정의/난이도 파라미터)
 
+> ⚠️ **2026-07-26 마스터 정렬**: 레벨 스키마가 `combo-match/level@2`로 전면 대체됨 (C13)
+> — 목표 유형 3종·16노브 config·evaluation 블록 포함. 전문은
+> `production/adr/ADR-001-master-alignment.md`. 충돌 시 마스터 우선, 본문 개정은 구현과 병행.
+
 > **Status**: Revised (2026-07-25 design-review 지적 21건 반영 — 재리뷰 보류)
 > **Author**: 사용자 + Claude (design-system)
 > **Last Updated**: 2026-07-25

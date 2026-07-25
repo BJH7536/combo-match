@@ -6,7 +6,13 @@ verified-by: 사용자 (2026-07-24 문답)
 reference-game: Disney Solitaire (SuperPlay, 2025)
 ---
 
-# Game Concept: 우드 콘솔 — 같은 그림 찾기 (가제)
+# Game Concept: 콤보 매칭 (우드 콘솔 — 같은 그림 찾기에서 개칭)
+
+> ⚠️ **2026-07-26 마스터 정렬**: 기획 GDD `design/combo-match-core.md`(v1.0)가 규칙·밸런스의
+> 단일 진실로 채택됨. 본 문서의 코어 규칙 중 대체된 항목: 매칭(1개 공유 고정 → k·r 노브),
+> 승리(목표 점수제 단일 → clear/score/collect 3종), 하이라이트(표시 → 무표시+유료 힌트),
+> 점수 공식(10×콤보 + cgoal 보너스), 🌟=와일드 아이템 확정, 골드 경제 채택, 규칙 장치 7종
+> 포함. 전문: `production/adr/ADR-001-master-alignment.md`.
 
 *Created: 2026-07-24*
 *Status: Draft*

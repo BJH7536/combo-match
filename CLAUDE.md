@@ -19,9 +19,12 @@ NHN 해커톤 참가용 웹 게임. 트라이픽스 솔리테어 변형(심볼 �
 
 ## Key Documents
 
-- `design/gdd/game-concept.md` — 게임 컨셉 (reverse-documented, 코어 규칙 확정본)
+- `design/combo-match-core.md` — **기획 마스터 GDD v1.0 (규칙·밸런스의 단일 진실 — 충돌 시 우선)**
+- `tools/level-designer.html` — 레벨 디자인 툴 (동작 프로토타입). `runOneSim()` = 게임 규칙의 레퍼런스 구현
+- `production/adr/ADR-001-master-alignment.md` — 마스터 채택·충돌 해소 13건 전문
+- `design/gdd/game-concept.md` + `design/gdd/*` — 구현 계약 계층 (타입·이벤트·AC)
 - `.claude/docs/technical-preferences.md` — 코딩 표준·네이밍·성능 기준
-- `ui_draft.html` — UI 시안 (W2 스포트라이트, 확정 규칙 반영됨)
+- `ui_draft.html` — UI 시안 (W2 스포트라이트 — 하이라이트 의미는 ADR-001 O-3 참조)
 
 ## 해커톤 우선순위
 

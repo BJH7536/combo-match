@@ -1,9 +1,11 @@
 # Systems Index: 우드 콘솔 — 같은 그림 찾기 (가제)
 
-> **Status**: Approved (2026-07-25 사용자 승인)
+> **Status**: Approved (2026-07-25 사용자 승인) — **2026-07-26 마스터 정렬 반영**
 > **Created**: 2026-07-25
-> **Last Updated**: 2026-07-25
+> **Last Updated**: 2026-07-26
 > **Source Concept**: design/gdd/game-concept.md
+> **Master Rules**: `design/combo-match-core.md` (기획 GDD v1.0 — 충돌 시 우선,
+> ADR-001 참조). 규칙 장치 7종 전부 해커톤 스코프 포함 (컷 순서: 종이→구역→열쇠).
 
 ---
 
@@ -28,8 +30,8 @@
 | 5 | combo | Gameplay | MVP | Not Started | — | matching (matchSucceeded=+1, spotlightChanged(draw)=리셋 — deck-draw 직접 결합 제거, 2026-07-26) |
 | 6 | scoring-winlose | Gameplay | MVP | Not Started | — | matching, combo, deck-draw, level-config, card-model (soft) |
 | 7 | level-config (inferred) | Gameplay | MVP | Designed (리뷰 반영, 재리뷰 보류) | design/gdd/level-config.md | 없음 |
-| 8 | wildcard | Economy | Vertical Slice | Not Started | — | matching, deck-draw |
-| 9 | coin-economy | Economy | Vertical Slice | Not Started | — | combo, scoring-winlose, wildcard |
+| 8 | items (구 wildcard — 🌟와일드·🔍힌트·🧲집게) | Economy | **MVP**(와일드는 코어 자원) ~ VS(힌트·집게) | Not Started | — | matching, deck-draw, coin-economy(가격) — 마스터 §4.3 |
+| 9 | coin-economy | Economy | Vertical Slice | Not Started | — | combo, scoring-winlose, items — **마스터 §7 공식 채택** (ADR-001 C10) |
 | 10 | persistence (inferred) | Persistence | Alpha | Not Started | — | coin-economy, scoring-winlose |
 | 11 | app-shell (inferred) | Core | MVP | Not Started | — | level-config (soft: 프리로드) |
 | 12 | hud-ui (inferred) | UI | MVP | Not Started | — | card-model (hard), app-shell, matching, combo, deck-draw, scoring-winlose |

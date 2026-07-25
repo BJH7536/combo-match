@@ -4,14 +4,14 @@
 
 ## Current Task
 
-- **Task**: deck-draw GDD 완료 (`/design-system deck-draw`)
-- **Status**: 전 섹션 작성 완료 — 리뷰 여부 결정 대기
-- **File**: design/gdd/deck-draw.md
-- **확정된 계약**: draw() Result 스타일(deck-empty 거부 + hud 사전 비활성) ·
-  setSpotlightFromDraw 동기 호출 후 리턴 · deckExhausted 1회 보장(scoring 정산 트리거) ·
-  initialSpotlight는 덱 큐 밖(부트스트랩→createMatching 직접 전달) ·
-  level-config 의존은 간접(board-generator 경유)으로 격하
-- **다음**: 설계 순서 6위 combo (MVP 게임플레이 계열 마지막 이벤트 소비자 설계)
+- **Task**: 기획 마스터 GDD 채택 및 정렬 (ADR-001) — 완료
+- **Status**: combo-match-core.md를 규칙의 단일 진실로 채택 (사용자 결정 4건: 마스터 채택 /
+  무표시+유료 힌트 / 목표 3종 / **장치 7종 전부 포함**). 충돌 13건 해소 기록, GDD 6종 배너,
+  인덱스·일정 갱신. combo·scoring 등 미설계 시스템은 별도 GDD 없이 마스터 §4 + runOneSim을
+  명세로 직접 구현.
+- **다음**: 규칙 엔진 코어 TS 포팅 착수 (7/27~29) — runOneSim 동작 동치 + level@2 로더 +
+  Vitest. 이후 Phaser 이식(7/30~).
+- **미결**: ADR-001 O-1(🌟 게이지 의미), O-2(누락 파일 4종 기획자 요청), O-3(시안 글로우 재정의)
 - **직전 완료**: level-config 리뷰 21건 반영 (MOVES=매치+드로우 확정, sanity 공식 교정, A/B 통제 쌍, card-model 시그니처 개정)
 - **직전 완료**: card-model.md Revised (리뷰 23건 반영, 재리뷰 보류 — 인덱스 상태 Designed)
 

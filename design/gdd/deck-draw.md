@@ -1,5 +1,9 @@
 # deck-draw (덱/드로우)
 
+> ⚠️ **2026-07-26 마스터 정렬**: 덱 모델이 **리드로우 카운터 + deckStock 우선, 스톡 고갈
+> 시 풀 랜덤 k개**로 대체됨 (C8) — "고정 큐 소진=종결" 폐기. 전문은
+> `production/adr/ADR-001-master-alignment.md`. 충돌 시 마스터 우선.
+
 > **Status**: In Design
 > **Author**: 사용자 + Claude (design-system)
 > **Last Updated**: 2026-07-26

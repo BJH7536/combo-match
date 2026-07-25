@@ -1,5 +1,10 @@
 # board-generator (보드 생성기)
 
+> ⚠️ **2026-07-26 마스터 정렬**: 생성 방식이 **해답 체인 선배치(by construction)**로 대체됨
+> (C4) — rejection sampling 폐기, 레퍼런스 구현은 `tools/level-designer.html`의
+> `generate()`/`removalOrder()`/`assignSymbols()`. 전문은
+> `production/adr/ADR-001-master-alignment.md`. 충돌 시 마스터 우선.
+
 > **Status**: Revised (2026-07-25 design-review 지적 24건 반영 — 재리뷰 보류)
 > **Author**: 사용자 + Claude (design-system)
 > **Last Updated**: 2026-07-25

@@ -50,3 +50,4 @@
 
 <!-- One-line summaries. Full ADRs live in production/adr/ via /architecture-decision. -->
 - 2026-07-25: 엔진으로 Phaser 3.90.0 채택 (해커톤 속도·LLM 지식 리스크 LOW·웹 네이티브) — Godot/Unity/Phaser 4 대비 검토
+- 2026-07-26: ADR-001 — 기획 마스터 GDD(combo-match-core) 채택, 충돌 13건 마스터 우선 해소, 레벨 스키마 `combo-match/level@2`, 규칙 엔진은 `runOneSim()` 동작 동치 목표

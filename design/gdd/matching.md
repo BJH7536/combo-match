@@ -1,5 +1,10 @@
 # matching (매칭 판정 & 스포트라이트)
 
+> ⚠️ **2026-07-26 마스터 정렬**: 판정이 `공유 ≥ r`(노브)로 일반화되고(C3), 게이트 5종
+> (free·열쇠·구역·종이·콤보잠금) 선행 판정이 추가되며(C12), **상시 하이라이트 폐기**(C1 —
+> 무표시+유료 힌트, 튜토리얼 예외). 레퍼런스: `runOneSim()`의 gateOk/valid 판정. 전문은
+> `production/adr/ADR-001-master-alignment.md`. 충돌 시 마스터 우선.
+
 > **Status**: Revised (2026-07-26 design-review 지적 24건 반영 — 재리뷰 보류)
 > **Author**: 사용자 + Claude (design-system)
 > **Last Updated**: 2026-07-25

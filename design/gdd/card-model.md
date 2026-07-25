@@ -1,5 +1,9 @@
 # card-model (카드/보드 데이터 모델)
 
+> ⚠️ **2026-07-26 마스터 정렬**: 기획 GDD `design/combo-match-core.md` 채택으로 본 문서
+> 일부 계약이 대체됨 (C3: symbols 가변 1~6, C12: 장치 필드 7종 추가) — 전문은
+> `production/adr/ADR-001-master-alignment.md`. 충돌 시 마스터 우선, 본문 개정은 구현과 병행.
+
 > **Status**: Revised (2026-07-25 design-review 지적 23건 반영 — 재리뷰 대기)
 > **Author**: 사용자 + Claude (design-system)
 > **Last Updated**: 2026-07-25

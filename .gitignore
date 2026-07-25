@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.local
+.claude/settings.local.json
+.omc/
+.DS_Store
+Thumbs.db

@@ -191,7 +191,7 @@ export class PlayScene extends Phaser.Scene {
       const symbolText = this.add
         .text(0, 0, '', {
           fontFamily: FONT,
-          fontSize: `${Math.round((card.symbols.length <= 2 ? 0.34 : 0.24) * h)}px`,
+          fontSize: `${this.symbolFontSize(card.symbols.length, h)}px`,
           color: '#2b1f12',
           align: 'center',
         })
@@ -211,11 +211,18 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  // 카드가 세로로 긴 비율(64×80)이므로 심볼도 세로로 쌓는다. 5개 이상일 때만 2열.
   private symbolLines(symbols: readonly SymbolId[]): string {
-    if (symbols.length <= 3) return symbols.join(' ');
-    const lines: string[] = [];
-    for (let i = 0; i < symbols.length; i += 2) lines.push(symbols.slice(i, i + 2).join(' '));
-    return lines.join('\n');
+    if (symbols.length <= 4) return symbols.join('\n');
+    const rows: string[] = [];
+    for (let i = 0; i < symbols.length; i += 2) rows.push(symbols.slice(i, i + 2).join(' '));
+    return rows.join('\n');
+  }
+
+  /** 심볼 수가 늘수록 줄이 쌓이므로 카드 높이에 맞춰 글자를 줄인다 */
+  private symbolFontSize(count: number, h: number): number {
+    const ratio = count <= 2 ? 0.3 : count === 3 ? 0.22 : count === 4 ? 0.17 : 0.19;
+    return Math.max(10, Math.round(ratio * h));
   }
 
   private badgeOf(card: RuntimeCard): string {
@@ -414,7 +421,12 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(401);
     this.spotSymbols = this.add
-      .text(SPOT.x, SPOT.y, '', { fontFamily: FONT, fontSize: '38px', color: '#2b1f12', align: 'center' })
+      .text(SPOT.x, SPOT.y, '', {
+        fontFamily: FONT,
+        fontSize: `${this.symbolFontSize(this.level.k, SPOT_CARD_H)}px`,
+        color: '#2b1f12',
+        align: 'center',
+      })
       .setOrigin(0.5)
       .setDepth(402);
 

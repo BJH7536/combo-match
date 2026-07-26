@@ -1,0 +1,161 @@
+{
+  "levels": [
+    {
+      "id": 1,
+      "name": "첫 만남",
+      "file": "level-01.json",
+      "difficulty": 13.3,
+      "tier": "튜토리얼",
+      "devices": [],
+      "cards": 8,
+      "pStuck": 0,
+      "branch": 2.41
+    },
+    {
+      "id": 2,
+      "name": "겹친 카드",
+      "file": "level-02.json",
+      "difficulty": 15.2,
+      "tier": "튜토리얼",
+      "devices": [],
+      "cards": 11,
+      "pStuck": 0,
+      "branch": 2.47
+    },
+    {
+      "id": 3,
+      "name": "늘어난 그림",
+      "file": "level-03.json",
+      "difficulty": 17,
+      "tier": "튜토리얼",
+      "devices": [],
+      "cards": 14,
+      "pStuck": 0,
+      "branch": 2.13
+    },
+    {
+      "id": 4,
+      "name": "열쇠와 자물쇠",
+      "file": "level-04.json",
+      "difficulty": 18.7,
+      "tier": "튜토리얼",
+      "devices": [
+        "key"
+      ],
+      "cards": 15,
+      "pStuck": 0,
+      "branch": 1.94
+    },
+    {
+      "id": 5,
+      "name": "초읽기",
+      "file": "level-05.json",
+      "difficulty": 21.8,
+      "tier": "튜토리얼",
+      "devices": [
+        "bomb"
+      ],
+      "cards": 15,
+      "pStuck": 0.113,
+      "branch": 1.83
+    },
+    {
+      "id": 6,
+      "name": "구역 개방",
+      "file": "level-06.json",
+      "difficulty": 20.8,
+      "tier": "튜토리얼",
+      "devices": [
+        "zone"
+      ],
+      "cards": 17,
+      "pStuck": 0,
+      "branch": 2.1
+    },
+    {
+      "id": 7,
+      "name": "수집가",
+      "file": "level-07.json",
+      "difficulty": 17.9,
+      "tier": "튜토리얼",
+      "devices": [
+        "collect"
+      ],
+      "cards": 16,
+      "pStuck": 0,
+      "branch": 4.32
+    },
+    {
+      "id": 8,
+      "name": "찢어진 종이",
+      "file": "level-08.json",
+      "difficulty": 23.9,
+      "tier": "튜토리얼",
+      "devices": [
+        "paper"
+      ],
+      "cards": 18,
+      "pStuck": 0,
+      "branch": 2.25
+    },
+    {
+      "id": 9,
+      "name": "두 개를 맞춰",
+      "file": "level-09.json",
+      "difficulty": 26.9,
+      "tier": "쉬움",
+      "devices": [
+        "r2"
+      ],
+      "cards": 16,
+      "pStuck": 0,
+      "branch": 1.76
+    },
+    {
+      "id": 10,
+      "name": "자물쇠 창고",
+      "file": "level-10.json",
+      "difficulty": 32.4,
+      "tier": "쉬움",
+      "devices": [
+        "key",
+        "bomb",
+        "lock"
+      ],
+      "cards": 20,
+      "pStuck": 0.283,
+      "branch": 2.06
+    },
+    {
+      "id": 11,
+      "name": "가려진 구역",
+      "file": "level-11.json",
+      "difficulty": 33.2,
+      "tier": "쉬움",
+      "devices": [
+        "zone",
+        "paper",
+        "facedown"
+      ],
+      "cards": 20,
+      "pStuck": 0.02,
+      "branch": 1.48
+    },
+    {
+      "id": 12,
+      "name": "마지막 관문",
+      "file": "level-12.json",
+      "difficulty": 38.4,
+      "tier": "쉬움",
+      "devices": [
+        "key",
+        "bomb",
+        "zone",
+        "r2"
+      ],
+      "cards": 22,
+      "pStuck": 0.233,
+      "branch": 0.89
+    }
+  ]
+}

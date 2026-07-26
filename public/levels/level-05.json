@@ -1,0 +1,445 @@
+{
+  "schema": "combo-match/level@2",
+  "seed": 1,
+  "difficulty": 21.8,
+  "difficultyTier": "튜토리얼",
+  "generator": {
+    "mode": "levelpack",
+    "plan": 5,
+    "name": "초읽기"
+  },
+  "metrics": {
+    "pStuck": 0.113,
+    "branchFactor": 1.83,
+    "avgMoves": 14.7,
+    "solvable": true
+  },
+  "evaluation": null,
+  "economy": {
+    "levelIndex": 5,
+    "baseGold": 30,
+    "scoreRate": 0.0154,
+    "winMult": 1,
+    "loseMult": 0.25,
+    "itemPrices": {
+      "hint": 120,
+      "claw": 350,
+      "wild": 500
+    }
+  },
+  "rules": null,
+  "config": {
+    "sim": 0,
+    "tf": 0,
+    "topology": "stack",
+    "time": 0,
+    "obst": 0,
+    "fd": 0,
+    "shuffle": false,
+    "keylocks": 0,
+    "bombs": 2,
+    "zones": 1,
+    "paper": 0,
+    "moves": 0,
+    "objective": "clear",
+    "seed": 1,
+    "N": 10,
+    "k": 2,
+    "r": 1,
+    "cards": 15,
+    "layers": 3,
+    "deck": 6,
+    "wild": 1,
+    "cgoal": 6
+  },
+  "pool": [
+    "🍓",
+    "🍊",
+    "🍇",
+    "🥝",
+    "🐶",
+    "🚗",
+    "⭐",
+    "🔵",
+    "🍒",
+    "🥭"
+  ],
+  "active": [
+    "⭐",
+    "🍓"
+  ],
+  "deckStock": [
+    [
+      "🚗",
+      "🥝"
+    ],
+    [
+      "⭐",
+      "🍇"
+    ],
+    [
+      "🍇",
+      "🥝"
+    ],
+    [
+      "🚗",
+      "🥝"
+    ],
+    [
+      "🍇",
+      "🐶"
+    ],
+    [
+      "🍇",
+      "🍒"
+    ]
+  ],
+  "cards": [
+    {
+      "id": 0,
+      "x": 0,
+      "y": 0,
+      "layer": 0,
+      "symbols": [
+        "🥭",
+        "🚗"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 1,
+      "x": 40,
+      "y": 0,
+      "layer": 1,
+      "symbols": [
+        "🍇",
+        "🥭"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 2,
+      "x": 79,
+      "y": 0,
+      "layer": 2,
+      "symbols": [
+        "🚗",
+        "🐶"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 3,
+      "x": 119,
+      "y": 0,
+      "layer": 0,
+      "symbols": [
+        "🍊",
+        "🍇"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 4,
+      "x": 159,
+      "y": 0,
+      "layer": 1,
+      "symbols": [
+        "🍇",
+        "🔵"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 5,
+      "x": 18,
+      "y": 40,
+      "layer": 0,
+      "symbols": [
+        "🚗",
+        "🍓"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 20,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 6,
+      "x": 58,
+      "y": 40,
+      "layer": 1,
+      "symbols": [
+        "🚗",
+        "🍓"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 7,
+      "x": 97,
+      "y": 40,
+      "layer": 2,
+      "symbols": [
+        "🐶",
+        "🍇"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 8,
+      "x": 137,
+      "y": 40,
+      "layer": 0,
+      "symbols": [
+        "🍇",
+        "🥝"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 9,
+      "x": 177,
+      "y": 40,
+      "layer": 1,
+      "symbols": [
+        "🚗",
+        "⭐"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 10,
+      "x": 36,
+      "y": 80,
+      "layer": 0,
+      "symbols": [
+        "🍓",
+        "🥭"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 11,
+      "x": 76,
+      "y": 80,
+      "layer": 1,
+      "symbols": [
+        "🥝",
+        "🍊"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 14,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 12,
+      "x": 115,
+      "y": 80,
+      "layer": 2,
+      "symbols": [
+        "🍇",
+        "🍓"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 13,
+      "x": 155,
+      "y": 80,
+      "layer": 0,
+      "symbols": [
+        "🍇",
+        "⭐"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 14,
+      "x": 195,
+      "y": 80,
+      "layer": 1,
+      "symbols": [
+        "🍇",
+        "⭐"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    }
+  ],
+  "coverage": [
+    {
+      "id": 0,
+      "coveredBy": [
+        1
+      ]
+    },
+    {
+      "id": 1,
+      "coveredBy": [
+        2
+      ]
+    },
+    {
+      "id": 2,
+      "coveredBy": []
+    },
+    {
+      "id": 3,
+      "coveredBy": [
+        2,
+        4,
+        7
+      ]
+    },
+    {
+      "id": 4,
+      "coveredBy": []
+    },
+    {
+      "id": 5,
+      "coveredBy": [
+        1,
+        6
+      ]
+    },
+    {
+      "id": 6,
+      "coveredBy": [
+        2,
+        7
+      ]
+    },
+    {
+      "id": 7,
+      "coveredBy": []
+    },
+    {
+      "id": 8,
+      "coveredBy": [
+        4,
+        7,
+        9,
+        12
+      ]
+    },
+    {
+      "id": 9,
+      "coveredBy": []
+    },
+    {
+      "id": 10,
+      "coveredBy": [
+        6,
+        11
+      ]
+    },
+    {
+      "id": 11,
+      "coveredBy": [
+        7,
+        12
+      ]
+    },
+    {
+      "id": 12,
+      "coveredBy": []
+    },
+    {
+      "id": 13,
+      "coveredBy": [
+        9,
+        12,
+        14
+      ]
+    },
+    {
+      "id": 14,
+      "coveredBy": []
+    }
+  ]
+}

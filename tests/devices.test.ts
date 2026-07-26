@@ -72,6 +72,80 @@ describe('규칙 장치 (F계층)', () => {
     expect(e.tryMatch(1).ok).toBe(true);
   });
 
+  it('와일드도 zone/key/paper/covered 게이트는 우회 불가 (레퍼런스 gateOk 준거 — 감사 갭)', () => {
+    const zoned = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'] }, { symbols: ['A', 'B'], zone: 1 }],
+      config: { deck: 0, wild: 1, cgoal: 9, zones: 2 },
+    });
+    const ez = engineOf(zoned);
+    expect(ez.useWild(1)).toEqual({ ok: false, reason: 'zone-locked' });
+    expect(ez.getState().wild).toBe(1); // 거부 시 와일드 미소모
+
+    const keyed = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'] }, { symbols: ['A', 'B'], unlockedBy: [0] }],
+      config: { deck: 0, wild: 1, cgoal: 9 },
+    });
+    expect(engineOf(keyed).useWild(1)).toEqual({ ok: false, reason: 'key-locked' });
+
+    const papered = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'], piece: true }, { symbols: ['A', 'B'], paper: true }],
+      config: { deck: 0, wild: 1, cgoal: 9 },
+      rules: { paper: { piecesNeeded: 1, count: 1 } },
+    });
+    expect(engineOf(papered).useWild(1)).toEqual({ ok: false, reason: 'paper-locked' });
+
+    const stacked = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'] }, { symbols: ['A', 'B'] }],
+      coverage: [{ id: 0, coveredBy: [1] }],
+      config: { deck: 0, wild: 1, cgoal: 9 },
+    });
+    expect(engineOf(stacked).useWild(0)).toEqual({ ok: false, reason: 'covered' });
+  });
+
+  it('💣 다중 폭탄: id 오름차순으로 모두 틱, 첫 폭발 시 잔여 폭탄은 이번 행동에 틱되지 않음 (감사 갭)', () => {
+    const calm = makeLevel({
+      pool: ['A', 'B', 'C', 'D'],
+      active: ['A', 'B'],
+      cards: [
+        { symbols: ['A', 'B'] },
+        { symbols: ['B', 'C'], bombCounter: 3 },
+        { symbols: ['C', 'D'], bombCounter: 5 },
+      ],
+      config: { deck: 0, wild: 0, cgoal: 9 },
+    });
+    const e1 = engineOf(calm);
+    const ticks1: [number, number][] = [];
+    e1.events.on('bombTicked', (p) => ticks1.push([p.id, p.counter]));
+    e1.tryMatch(0);
+    expect(ticks1).toEqual([[1, 2], [2, 4]]); // 둘 다 id 순으로 틱
+
+    const fatal = makeLevel({
+      pool: ['A', 'B', 'C', 'D'],
+      active: ['A', 'B'],
+      cards: [
+        { symbols: ['A', 'B'] },
+        { symbols: ['B', 'C'], bombCounter: 1 },
+        { symbols: ['C', 'D'], bombCounter: 5 },
+      ],
+      config: { deck: 0, wild: 0, cgoal: 9 },
+    });
+    const e2 = engineOf(fatal);
+    const ticks2: [number, number][] = [];
+    e2.events.on('bombTicked', (p) => ticks2.push([p.id, p.counter]));
+    e2.tryMatch(0);
+    expect(ticks2).toEqual([[1, 0]]); // 폭탄1 폭발에서 즉시 중단 — 폭탄2 미틱 (레퍼런스 준거)
+    expect(e2.getState().status).toBe('lost');
+    expect(e2.endReason).toBe('bomb-exploded');
+  });
+
   it('💣 폭탄: 매 행동(매치·드로우·와일드) −1, 0 도달 즉시 bomb-exploded 패배', () => {
     const l = makeLevel({
       pool: ['A', 'B', 'C', 'D'],

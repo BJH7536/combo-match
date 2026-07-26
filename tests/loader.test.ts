@@ -81,4 +81,13 @@ describe('level@2 loader', () => {
     l.cards[0]!.symbols = ['A', 'A'];
     expect(() => loadLevel(l)).toThrow(/중복 심볼/);
   });
+
+  it('cgoal 음수/비정수 → LevelLoadError (엔진 배수 판정으로의 발산 입력 차단 — 감사 회귀)', () => {
+    const neg = valid();
+    neg.config.cgoal = -1;
+    expect(() => loadLevel(neg)).toThrow(/cgoal/);
+    const frac = valid();
+    frac.config.cgoal = 2.5;
+    expect(() => loadLevel(frac)).toThrow(/cgoal/);
+  });
 });

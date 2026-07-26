@@ -302,7 +302,8 @@ export class ComboMatchEngine {
       this.comboV++;
       this.events.emit('comboChanged', { combo: this.comboV });
       delta = 10 * this.comboV;
-      if (this.L.cgoal > 0 && this.comboV % this.L.cgoal === 0) delta += 100 * this.comboV; // cgoal 보너스 = 점수만 (ADR-001 O-1)
+      // cgoal 보너스 = 점수만 (ADR-001 O-1). 가드는 레퍼런스와 동일한 truthy — `> 0`이 아님 (음수 입력 동치)
+      if (this.L.cgoal && this.comboV % this.L.cgoal === 0) delta += 100 * this.comboV;
     } else {
       const prev = this.comboV;
       this.comboV = Math.max(1, this.comboV); // 와일드는 콤보 유지 (최소 1)

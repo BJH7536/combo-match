@@ -3,6 +3,7 @@ import { ComboMatchEngine } from '../src/core/engine';
 import { loadLevel } from '../src/core/level-loader';
 import type { LevelData } from '../src/core/types';
 import { makeLevel } from './fixtures/levels';
+import { mulberry32 as refMulberry32 } from './reference/reference-sim';
 
 const engineOf = (l: LevelData, drawFallback?: (pool: readonly string[], k: number) => string[]) =>
   new ComboMatchEngine(loadLevel(l), drawFallback ? { drawFallback } : {});
@@ -81,6 +82,15 @@ describe('매칭·체이닝·점수', () => {
     expect(e.useWild(2)).toEqual({ ok: false, reason: 'no-wild' });
   });
 
+  it('cgoal 배수 판정은 레퍼런스 truthy 동치 — 음수 cgoal도 보너스 지급 (감사 회귀)', () => {
+    // 로더가 음수 cgoal을 차단하지만, 엔진 자체도 레퍼런스(runOneSim: L.cgoal && combo%L.cgoal===0)와
+    // 전 입력에서 동치여야 한다. cgoal=-1이면 combo%-1===-0 → ===0 참 → 매 매치 보너스.
+    const rt = { ...loadLevel(chain3()), cgoal: -1 };
+    const e = new ComboMatchEngine(rt, {});
+    expect(e.tryMatch(0).ok).toBe(true);
+    expect(e.getState().score).toBe(110); // 10×1 + 100×1
+  });
+
   it('scoreGoal(C2 확장): 도달 즉시 score-goal 승리', () => {
     const l = chain3();
     l.rules = { scoreGoal: { score: 15 } };
@@ -90,6 +100,90 @@ describe('매칭·체이닝·점수', () => {
     expect(e.tryMatch(1).ok).toBe(true); // 230 ≥ 15
     expect(e.getState().status).toBe('won');
     expect(e.endReason).toBe('score-goal');
+  });
+
+  it('프로덕션 기본 drawFallback: 레퍼런스 drawActive와 시드 동치 (차등 테스트는 항상 오버라이드 — 감사 갭)', () => {
+    const pool = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    for (let seed = 1; seed <= 20; seed++) {
+      const l = makeLevel({
+        pool,
+        active: ['A', 'B'],
+        cards: [{ symbols: ['C', 'D'] }], // 매치 불가 — 드로우 경로만 사용
+        config: { deck: 3, cgoal: 9 },
+        seed,
+      });
+      const e = new ComboMatchEngine(loadLevel(l), {}); // drawFallback 미주입 = 프로덕션 기본 경로
+      const rng = refMulberry32(seed >>> 0); // 레퍼런스 drawActive 재현 (Fisher-Yates → k개)
+      for (let d = 0; d < 3; d++) {
+        const arr = pool.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(rng() * (i + 1));
+          const t = arr[i]!;
+          arr[i] = arr[j]!;
+          arr[j] = t;
+        }
+        const r = e.draw();
+        expect(r.ok && r.active, `seed ${seed}, draw ${d}`).toEqual(arr.slice(0, 2));
+      }
+    }
+  });
+
+  it('r=2 경계: 공유 r-1개 → no-shared-symbol, 공유 r개 → 승인', () => {
+    const l = makeLevel({
+      pool: ['A', 'B', 'C', 'D', 'E'],
+      active: ['A', 'B', 'C'],
+      cards: [{ symbols: ['A', 'D', 'E'] }, { symbols: ['A', 'B', 'D'] }],
+      config: { k: 3, r: 2, deck: 0, cgoal: 9 },
+    });
+    const e = engineOf(l);
+    expect(e.tryMatch(0)).toEqual({ ok: false, reason: 'no-shared-symbol' }); // 공유 1 < r 2
+    expect(e.tryMatch(1).ok).toBe(true); // 공유 2 (A,B)
+  });
+
+  it('거부 우선순위: covered > zone-locked > key-locked > paper-locked > combo-locked > no-shared-symbol', () => {
+    // 인접 우선순위 쌍마다 두 위반을 동시에 걸고 상위 사유가 보고되는지 고정 (rejectReasonFor 판정 순서 계약)
+    const covered_zone = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'B'], zone: 1 }, { symbols: ['A', 'C'] }],
+      coverage: [{ id: 0, coveredBy: [1] }],
+      config: { deck: 0, cgoal: 9, zones: 2 },
+    });
+    expect(engineOf(covered_zone).tryMatch(0)).toEqual({ ok: false, reason: 'covered' });
+
+    const zone_key = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'] }, { symbols: ['A', 'B'], zone: 1, unlockedBy: [0] }],
+      config: { deck: 0, cgoal: 9, zones: 2 },
+    });
+    expect(engineOf(zone_key).tryMatch(1)).toEqual({ ok: false, reason: 'zone-locked' });
+
+    const key_paper = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'], piece: true }, { symbols: ['A', 'B'], unlockedBy: [0], paper: true }],
+      config: { deck: 0, cgoal: 9 },
+      rules: { paper: { piecesNeeded: 1, count: 1 } },
+    });
+    expect(engineOf(key_paper).tryMatch(1)).toEqual({ ok: false, reason: 'key-locked' });
+
+    const paper_combo = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'], piece: true }, { symbols: ['A', 'B'], paper: true, lockReq: 2 }],
+      config: { deck: 0, cgoal: 9 },
+      rules: { paper: { piecesNeeded: 1, count: 1 } },
+    });
+    expect(engineOf(paper_combo).tryMatch(1)).toEqual({ ok: false, reason: 'paper-locked' });
+
+    const combo_noshare = makeLevel({
+      pool: ['A', 'B', 'C', 'D'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'] }, { symbols: ['C', 'D'], lockReq: 2 }],
+      config: { deck: 0, cgoal: 9 },
+    });
+    expect(engineOf(combo_noshare).tryMatch(1)).toEqual({ ok: false, reason: 'combo-locked' });
   });
 
   it('isStuck: 유효 매치 없음 ∧ 덱 0 ∧ 와일드 불가일 때만 참', () => {

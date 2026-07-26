@@ -20,6 +20,9 @@ export function loadLevel(data: LevelData): RuntimeLevel {
   if (config.deck < 0 || config.wild < 0 || config.moves < 0) {
     throw new LevelLoadError('deck/wild/moves는 음수 불가');
   }
+  if (!Number.isInteger(config.cgoal) || config.cgoal < 0) {
+    throw new LevelLoadError(`cgoal 무효: ${config.cgoal} (0=비활성, 그 외 양의 정수)`);
+  }
 
   const poolSet = new Set(pool);
   if (poolSet.size !== pool.length) throw new LevelLoadError('pool에 중복 심볼');

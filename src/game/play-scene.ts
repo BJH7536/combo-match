@@ -45,6 +45,7 @@ interface CardNode {
   image: Phaser.GameObjects.Image;
   symbolText: Phaser.GameObjects.Text;
   badgeText: Phaser.GameObjects.Text;
+  bombText: Phaser.GameObjects.Text; // 임박 시 붉게 — 색을 따로 주려고 분리했다
   w: number;
   h: number;
 }
@@ -57,6 +58,7 @@ export class PlayScene extends Phaser.Scene {
   private armed: 'none' | 'wild' | 'claw' = 'none'; // 다음 카드 클릭을 어떤 아이템이 가로챌지
   private tutorial = false; // 레벨 1~3: 매칭 가능 카드를 초록으로 표시 (ADR-001 결정 2)
   private matchable = new Set<number>();
+  private gateBlocked = new Set<number>(); // 자유롭지만 구역·열쇠·종이에 막힌 카드
   private gold = 0;
   private eco: Economy = normalizeEconomy(null);
   private settled = false; // 정산은 판당 1회
@@ -79,6 +81,7 @@ export class PlayScene extends Phaser.Scene {
   private goldText!: Phaser.GameObjects.Text;
   private itemButtons: { key: 'hint' | 'claw'; bg: Phaser.GameObjects.Image; price: Phaser.GameObjects.Text }[] = [];
   private movesText: Phaser.GameObjects.Text | null = null;
+  private objectiveText: Phaser.GameObjects.Text | null = null; // 🎯 수집 · 🧩 조각 진행
   private toastText!: Phaser.GameObjects.Text;
 
   private initData: { level?: LevelData; entry?: LevelIndexEntry } = {};
@@ -100,8 +103,10 @@ export class PlayScene extends Phaser.Scene {
     this.armed = 'none';
     this.itemButtons = [];
     this.matchable.clear();
+    this.gateBlocked.clear();
     this.gaugeFill = null;
     this.gaugeText = null;
+    this.objectiveText = null;
     this.tutorial = (this.initData.entry?.id ?? 99) <= 3;
     this.settled = false;
     this.gold = loadGold();
@@ -110,6 +115,11 @@ export class PlayScene extends Phaser.Scene {
 
     const { level, sourceLabel } = this.resolveLevel();
     this.level = level;
+    // 목표 표시가 들어갈 자리만큼 보드를 내린다 (그러지 않으면 카드에 가린다)
+    if (level.collectGoal || level.paperNeed > 0) {
+      const pad = Math.round(32 * this.L.ui);
+      this.L = { ...this.L, board: { ...this.L.board, y: this.L.board.y + pad, height: this.L.board.height - pad } };
+    }
     this.engine = new ComboMatchEngine(level, {});
     for (const c of level.cards) if (c.bombCounter > 0) this.bombCounters.set(c.id, c.bombCounter);
 
@@ -182,7 +192,7 @@ export class PlayScene extends Phaser.Scene {
     cardTexture(this, w, h, 'face');
     cardTexture(this, w, h, 'covered');
     cardTexture(this, w, h, 'back');
-    if (this.tutorial) cardTexture(this, w, h, 'hint');
+    cardTexture(this, w, h, 'hint'); // 튜토리얼 표시 + 게이트 해제 플래시에 함께 쓴다
 
     const maxCardY = Math.max(...this.level.cards.map((c) => c.y));
     this.boardBottom = t.offsetY + (maxCardY + DATA_CH) * t.scale;
@@ -204,7 +214,15 @@ export class PlayScene extends Phaser.Scene {
       const badgeText = this.add
         .text(-w / 2 + 5, -h / 2 + 4, '', { fontFamily: FONT, fontSize: `${Math.round(h * 0.13)}px`, color: '#2b1f12' })
         .setOrigin(0, 0);
-      root.add([image, symbolText, badgeText]);
+      const bombText = this.add
+        .text(w / 2 - 5, -h / 2 + 4, '', {
+          fontFamily: FONT,
+          fontSize: `${Math.round(h * 0.15)}px`,
+          color: '#2b1f12',
+          fontStyle: 'bold',
+        })
+        .setOrigin(1, 0);
+      root.add([image, symbolText, badgeText, bombText]);
 
       root.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
       root.on('pointerdown', () => this.onCardTap(card.id));
@@ -212,7 +230,7 @@ export class PlayScene extends Phaser.Scene {
         if (!this.ended && this.engine.isFree(card.id)) root.setY(cy - 4);
       });
       root.on('pointerout', () => root.setY(cy));
-      this.nodes.set(card.id, { root, image, symbolText, badgeText, w, h });
+      this.nodes.set(card.id, { root, image, symbolText, badgeText, bombText, w, h });
     }
   }
 
@@ -237,8 +255,6 @@ export class PlayScene extends Phaser.Scene {
 
   private badgeOf(card: RuntimeCard): string {
     const parts: string[] = [];
-    const bomb = this.bombCounters.get(card.id);
-    if (bomb !== undefined) parts.push(`💣${bomb}`);
     if (card.lockReq > 0) parts.push(`🔒${card.lockReq}`);
     if (card.unlockedBy.length > 0) parts.push('🔑');
     if (card.paper) parts.push('🧻');
@@ -260,7 +276,41 @@ export class PlayScene extends Phaser.Scene {
     node.symbolText.setColor(revealed ? '#2b1f12' : PALETTE.cream);
     node.symbolText.setAlpha(free ? 1 : 0.7);
     node.badgeText.setText(this.badgeOf(card));
+    const bomb = this.bombCounters.get(id);
+    if (bomb === undefined) node.bombText.setText('');
+    else {
+      node.bombText.setText(`💣${bomb}`);
+      node.bombText.setColor(bomb <= 3 ? '#c62828' : '#2b1f12');
+    }
     node.root.setAlpha(free ? 1 : 0.88);
+  }
+
+  /** 구역·열쇠·종이 게이트가 풀리는 순간을 잡아 카드를 반짝인다 (배지만 바뀌면 눈치채기 어렵다) */
+  private refreshGates(): void {
+    const open = new Set(this.engine.getWildableIds()); // 게이트를 통과한 자유 카드
+    const blocked = new Set<number>();
+    for (const c of this.level.cards) {
+      if (this.engine.isRemoved(c.id) || !this.engine.isFree(c.id)) continue;
+      if (open.has(c.id)) {
+        if (this.gateBlocked.has(c.id)) this.flashUnlock(c.id);
+      } else {
+        blocked.add(c.id);
+      }
+    }
+    this.gateBlocked = blocked;
+  }
+
+  private flashUnlock(id: number): void {
+    const node = this.nodes.get(id);
+    if (!node) return;
+    this.refreshCard(id);
+    const fx = this.add
+      .image(node.root.x, node.root.y, cardTexture(this, node.w, node.h, 'hint'))
+      .setDepth(node.root.depth + 1)
+      .setAlpha(0.9);
+    this.tweens.add({ targets: fx, alpha: 0, scale: 1.22, duration: 460, onComplete: () => fx.destroy() });
+    node.root.setScale(1.14);
+    this.tweens.add({ targets: node.root, scale: 1, duration: 280, ease: 'Back.easeOut' });
   }
 
   // 튜토리얼 표시 갱신 — 액티브가 바뀔 때마다 후보가 달라지므로 변경분만 다시 그린다
@@ -399,6 +449,18 @@ export class PlayScene extends Phaser.Scene {
       })
       .setOrigin(1, 0.5)
       .setDepth(602);
+
+    if (this.level.collectGoal || this.level.paperNeed > 0) {
+      this.objectiveText = this.add
+        .text(this.L.W / 2, this.L.headerH + Math.round(6 * this.L.ui), '', {
+          fontFamily: FONT,
+          fontSize: this.fs(19),
+          color: '#fff0cf',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5, 0)
+        .setDepth(700); // 카드보다 위 — 어떤 배치에서도 목표는 읽혀야 한다
+    }
 
     void bar;
   }
@@ -698,7 +760,15 @@ export class PlayScene extends Phaser.Scene {
       b.price.setText(armedThis ? '취소 · 환불' : `🪙${this.eco.itemPrices[b.key]}`);
     }
     if (this.movesText) this.movesText.setText(String(Math.max(0, this.level.moveLimit - s.moves)));
+    if (this.objectiveText) {
+      const parts: string[] = [];
+      const goal = this.level.collectGoal;
+      if (goal) parts.push(`🎯 ${goal.symbol} ${Math.min(s.collected, goal.count)}/${goal.count}`);
+      if (this.level.paperNeed > 0) parts.push(`🧩 ${Math.min(s.pieces, this.level.paperNeed)}/${this.level.paperNeed}`);
+      this.objectiveText.setText(parts.join('    '));
+    }
     this.refreshMatchable();
+    this.refreshGates();
 
     if (this.gaugeFill && this.gaugeText && this.level.cgoal > 0) {
       const progress = s.combo % this.level.cgoal;
@@ -856,6 +926,36 @@ export class PlayScene extends Phaser.Scene {
     this.engine.events.on('bombTicked', ({ id, counter }) => {
       this.bombCounters.set(id, counter);
       this.refreshCard(id);
+      const node = this.nodes.get(id);
+      if (!node) return;
+      node.bombText.setScale(1.5);
+      this.tweens.add({ targets: node.bombText, scale: 1, duration: 260, ease: 'Back.easeOut' });
+      if (counter <= 3) {
+        const x = node.root.x;
+        this.tweens.add({
+          targets: node.root,
+          x: x + 5,
+          yoyo: true,
+          repeat: 1,
+          duration: 55,
+          onComplete: () => node.root.setX(x),
+        });
+      }
+    });
+    const popObjective = (): void => {
+      if (!this.objectiveText) return;
+      this.objectiveText.setScale(1.28);
+      this.tweens.add({ targets: this.objectiveText, scale: 1, duration: 300, ease: 'Back.easeOut' });
+    };
+    this.engine.events.on('collectProgress', ({ collected, count }) => {
+      this.updateHud();
+      popObjective();
+      this.toast(`🎯 수집 ${collected}/${count}`);
+    });
+    this.engine.events.on('pieceCollected', ({ pieces, needed }) => {
+      this.updateHud();
+      popObjective();
+      this.toast(`🧩 조각 ${pieces}/${needed}`);
     });
     this.engine.events.on('paperFreed', () => {
       this.toast('종이가 풀렸습니다!');

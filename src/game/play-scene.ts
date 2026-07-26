@@ -3,6 +3,7 @@ import { ComboMatchEngine, type EndReason, type RejectReason } from '../core/eng
 import { LevelLoadError, loadLevel } from '../core/level-loader';
 import type { LevelData, RuntimeCard, RuntimeLevel, SymbolId } from '../core/types';
 import { computeBoardTransform } from './board-layout';
+import { computeLayout, type Layout } from './layout';
 import { hasSeenHelp, showHelpOverlay } from './help-overlay';
 import type { LevelIndexEntry } from './level-select-scene';
 import { decodeLevelHash, demoLevel } from './level-source';
@@ -13,15 +14,8 @@ import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTextu
 // 플레이 씬 — 보드 렌더·입력·HUD. 시각 기준: ui_draft.html (우드 콘솔 W2 스포트라이트).
 // 규칙 상태는 전부 엔진 소유 — 씬은 이벤트 구독 + 행동 호출만 한다.
 
-const STAGE_W = 1280;
-const STAGE_H = 760;
 const DATA_CW = 64; // 레벨 좌표 공간의 카드 규격 (디자이너 툴 CW/CH)
 const DATA_CH = 80;
-const HEADER_H = 80;
-const BOARD_VIEW = { x: 120, y: 104, width: 1040, height: 420 };
-const SPOT = { x: STAGE_W / 2, y: 654 }; // 스포트라이트(액티브 카드) 중심
-const SPOT_CARD_W = 108;
-const SPOT_CARD_H = 134;
 
 const FONT = "'Segoe UI', 'Malgun Gothic', sans-serif";
 
@@ -69,10 +63,11 @@ export class PlayScene extends Phaser.Scene {
   private ended = false;
   private cardW = 0;
   private cardH = 0;
+  private boardBottom = 0; // 카드가 실제로 차지한 하단 y
 
   private scoreText!: Phaser.GameObjects.Text;
-  private gaugeFill!: Phaser.GameObjects.Rectangle;
-  private gaugeText!: Phaser.GameObjects.Text;
+  private gaugeFill: Phaser.GameObjects.Rectangle | null = null; // 세로 화면에서는 만들지 않는다
+  private gaugeText: Phaser.GameObjects.Text | null = null;
   private comboBadge!: Phaser.GameObjects.Container;
   private comboValue!: Phaser.GameObjects.Text;
   private comboFlames!: Phaser.GameObjects.Text;
@@ -87,21 +82,26 @@ export class PlayScene extends Phaser.Scene {
   private toastText!: Phaser.GameObjects.Text;
 
   private initData: { level?: LevelData; entry?: LevelIndexEntry } = {};
+  private L!: Layout;
 
   constructor() {
     super('Play');
   }
 
   init(data?: { level?: LevelData; entry?: LevelIndexEntry }): void {
-    this.initData = data ?? {};
+    // 리사이즈로 인한 restart()는 데이터 없이 오므로 기존 레벨을 유지한다
+    if (data?.level || data?.entry) this.initData = data;
   }
 
   create(): void {
+    this.L = computeLayout(this.scale.width, this.scale.height);
     this.nodes.clear();
     this.bombCounters.clear();
     this.armed = 'none';
     this.itemButtons = [];
     this.matchable.clear();
+    this.gaugeFill = null;
+    this.gaugeText = null;
     this.tutorial = (this.initData.entry?.id ?? 99) <= 3;
     this.settled = false;
     this.gold = loadGold();
@@ -153,13 +153,14 @@ export class PlayScene extends Phaser.Scene {
 
   // ---- 배경 ----
   private buildBackdrop(): void {
-    this.add.image(STAGE_W / 2, STAGE_H / 2, feltTexture(this, 'felt', STAGE_W, STAGE_H));
+    this.add.image(this.L.W / 2, this.L.H / 2, feltTexture(this, 'felt', this.L.W, this.L.H));
+    if (this.L.portrait) return; // 세로에서는 받침 자리에 조작 버튼이 온다
     // 하단 나무 받침 (시안의 wood base ledge)
     this.add
       .image(
-        STAGE_W / 2,
-        STAGE_H - 18,
-        panelTexture(this, 'ledge', 520, 60, {
+        this.L.W / 2,
+        this.L.H - 18,
+        panelTexture(this, 'ledge', Math.round(Math.min(520, this.L.W * 0.55)), 60, {
           top: PALETTE.woodLightTop,
           bottom: PALETTE.woodLightBottom,
           radius: 30,
@@ -171,7 +172,7 @@ export class PlayScene extends Phaser.Scene {
 
   // ---- 보드 ----
   private buildBoard(): void {
-    const t = computeBoardTransform(this.level.cards, DATA_CW, DATA_CH, BOARD_VIEW, 1.4);
+    const t = computeBoardTransform(this.level.cards, DATA_CW, DATA_CH, this.L.board, 1.4);
     this.cardW = DATA_CW * t.scale;
     this.cardH = DATA_CH * t.scale;
     const w = this.cardW;
@@ -181,6 +182,9 @@ export class PlayScene extends Phaser.Scene {
     cardTexture(this, w, h, 'covered');
     cardTexture(this, w, h, 'back');
     if (this.tutorial) cardTexture(this, w, h, 'hint');
+
+    const maxCardY = Math.max(...this.level.cards.map((c) => c.y));
+    this.boardBottom = t.offsetY + (maxCardY + DATA_CH) * t.scale;
 
     for (const card of this.level.cards) {
       const cx = t.offsetX + (card.x + DATA_CW / 2) * t.scale;
@@ -272,9 +276,9 @@ export class PlayScene extends Phaser.Scene {
   private buildHeader(sourceLabel: string): void {
     const bar = this.add
       .image(
-        STAGE_W / 2,
-        HEADER_H / 2,
-        panelTexture(this, 'header-bar', STAGE_W + 40, HEADER_H, {
+        this.L.W / 2,
+        this.L.headerH / 2,
+        panelTexture(this, 'header-bar', this.L.W + 40, this.L.headerH, {
           top: PALETTE.woodBarTop,
           bottom: PALETTE.woodBarBottom,
           shadow: PALETTE.woodDeep,
@@ -288,17 +292,19 @@ export class PlayScene extends Phaser.Scene {
 
     // 좌상단: 레벨 선택에서 왔으면 목록으로, 아니면 재시작
     const backLabel = this.initData.entry ? '≡' : '⟳';
-    this.woodButton(48, HEADER_H / 2, 48, 48, backLabel, 23, () => {
+    this.woodButton(48, this.L.headerH / 2, 48, 48, backLabel, 23, () => {
       if (this.initData.entry) this.scene.start('LevelSelect');
       else this.scene.restart();
     }).setDepth(601);
 
-    // SCORE 칩
+    // SCORE 칩 (세로 화면은 폭이 좁아 위치를 비율로 잡는다)
+    const scoreX = this.L.portrait ? Math.round(this.L.W * 0.3) : 168;
+    const goldX = this.L.portrait ? Math.round(this.L.W * 0.62) : 560;
     this.add
       .image(
-        168,
-        HEADER_H / 2,
-        panelTexture(this, 'chip-score', 150, 54, {
+        scoreX,
+        this.L.headerH / 2,
+        panelTexture(this, 'chip-score', this.L.portrait ? 128 : 150, 54, {
           top: PALETTE.woodChipTop,
           bottom: PALETTE.woodChipBottom,
           shadow: PALETTE.woodChipShadow,
@@ -308,21 +314,21 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(601);
     this.add
-      .text(168, HEADER_H / 2 - 13, 'SCORE', { fontFamily: FONT, fontSize: '11px', color: '#3a2408' })
+      .text(scoreX, this.L.headerH / 2 - 13, 'SCORE', { fontFamily: FONT, fontSize: '11px', color: '#3a2408' })
       .setOrigin(0.5)
       .setDepth(602);
     this.scoreText = this.add
-      .text(168, HEADER_H / 2 + 9, '0', { fontFamily: FONT, fontSize: '20px', color: '#3a2408', fontStyle: 'bold' })
+      .text(scoreX, this.L.headerH / 2 + 9, '0', { fontFamily: FONT, fontSize: '20px', color: '#3a2408', fontStyle: 'bold' })
       .setOrigin(0.5)
       .setDepth(602);
 
     // 콤보 게이지 (cgoal 진행 — ADR-001 O-1: 게이지 도달은 점수 보너스, 아이템 지급 없음)
-    if (this.level.cgoal > 0) {
+    if (this.level.cgoal > 0 && !this.L.portrait) {
       const gx = 300;
       this.add
         .image(
           gx + 60,
-          HEADER_H / 2,
+          this.L.headerH / 2,
           panelTexture(this, 'chip-gauge', 190, 54, {
             top: PALETTE.woodChipTop,
             bottom: PALETTE.woodChipBottom,
@@ -333,20 +339,20 @@ export class PlayScene extends Phaser.Scene {
         )
         .setDepth(601);
       this.add
-        .text(gx - 20, HEADER_H / 2 - 14, `×${this.level.cgoal} 콤보 보너스`, {
+        .text(gx - 20, this.L.headerH / 2 - 14, `×${this.level.cgoal} 콤보 보너스`, {
           fontFamily: FONT,
           fontSize: '11px',
           color: '#3a2408',
         })
         .setOrigin(0, 0.5)
         .setDepth(602);
-      this.add.rectangle(gx - 20, HEADER_H / 2 + 10, 110, 9, 0x000000, 0.32).setOrigin(0, 0.5).setDepth(602);
+      this.add.rectangle(gx - 20, this.L.headerH / 2 + 10, 110, 9, 0x000000, 0.32).setOrigin(0, 0.5).setDepth(602);
       this.gaugeFill = this.add
-        .rectangle(gx - 20, HEADER_H / 2 + 10, 0, 9, 0xf2a52b)
+        .rectangle(gx - 20, this.L.headerH / 2 + 10, 0, 9, 0xf2a52b)
         .setOrigin(0, 0.5)
         .setDepth(603);
       this.gaugeText = this.add
-        .text(gx + 100, HEADER_H / 2 + 10, '0/0', { fontFamily: FONT, fontSize: '11px', color: '#3a2408' })
+        .text(gx + 100, this.L.headerH / 2 + 10, '0/0', { fontFamily: FONT, fontSize: '11px', color: '#3a2408' })
         .setOrigin(0, 0.5)
         .setDepth(603);
     }
@@ -354,8 +360,8 @@ export class PlayScene extends Phaser.Scene {
     // 🪙 지갑 (시안의 골드 칩)
     this.add
       .image(
-        560,
-        HEADER_H / 2,
+        goldX,
+        this.L.headerH / 2,
         panelTexture(this, 'chip-gold', 150, 48, {
           top: PALETTE.goldTop,
           bottom: PALETTE.goldBottom,
@@ -365,9 +371,12 @@ export class PlayScene extends Phaser.Scene {
         }),
       )
       .setDepth(601);
-    this.add.text(505, HEADER_H / 2, '🪙', { fontFamily: FONT, fontSize: '20px' }).setOrigin(0.5).setDepth(602);
+    this.add
+      .text(goldX - 55, this.L.headerH / 2, '🪙', { fontFamily: FONT, fontSize: '20px' })
+      .setOrigin(0.5)
+      .setDepth(602);
     this.goldText = this.add
-      .text(528, HEADER_H / 2, '0', {
+      .text(goldX - 32, this.L.headerH / 2, '0', {
         fontFamily: FONT,
         fontSize: '19px',
         color: PALETTE.goldText,
@@ -377,7 +386,11 @@ export class PlayScene extends Phaser.Scene {
       .setDepth(602);
 
     this.add
-      .text(STAGE_W - 24, HEADER_H / 2, sourceLabel, { fontFamily: FONT, fontSize: '13px', color: '#e0c496' })
+      .text(this.L.W - 14, this.L.headerH / 2, sourceLabel, {
+        fontFamily: FONT,
+        fontSize: this.L.portrait ? '11px' : '13px',
+        color: '#e0c496',
+      })
       .setOrigin(1, 0.5)
       .setDepth(602);
 
@@ -386,17 +399,22 @@ export class PlayScene extends Phaser.Scene {
 
   // ---- 스포트라이트 (액티브 카드) ----
   private buildSpotlight(): void {
-    const halo = this.add.image(SPOT.x, SPOT.y, haloTexture(this, 'spot-halo', 340, '30,72,22', 0.72)).setDepth(2);
-    const rays = this.add.image(SPOT.x, SPOT.y, raysTexture(this, 'spot-rays', 260)).setDepth(1).setAlpha(0.9);
+    const spotX = this.L.spot.x;
+    // 세로 화면은 보드 뭉치가 작을 때 아래 여백이 커지므로 카드 바로 아래로 끌어올린다
+    const spotY = this.L.portrait
+      ? Math.max(this.L.spot.y - 190, Math.min(this.L.spot.y, this.boardBottom + this.L.spot.cardH * 0.72 + 34))
+      : this.L.spot.y;
+    const halo = this.add.image(spotX, spotY, haloTexture(this, 'spot-halo', 340, '30,72,22', 0.72)).setDepth(2);
+    const rays = this.add.image(spotX, spotY, raysTexture(this, 'spot-rays', 260)).setDepth(1).setAlpha(0.9);
     this.tweens.add({ targets: rays, angle: 360, duration: 40000, repeat: -1 });
     void halo;
 
     // 카드 뒤 나무 프레임
     this.add
       .image(
-        SPOT.x,
-        SPOT.y,
-        panelTexture(this, 'spot-frame', SPOT_CARD_W + 18, SPOT_CARD_H + 18, {
+        spotX,
+        spotY,
+        panelTexture(this, 'spot-frame', this.L.spot.cardW + 18, this.L.spot.cardH + 18, {
           top: PALETTE.woodLightTop,
           bottom: PALETTE.woodLightBottom,
           shadow: PALETTE.woodDeep,
@@ -408,9 +426,9 @@ export class PlayScene extends Phaser.Scene {
       .setDepth(400);
     this.add
       .image(
-        SPOT.x,
-        SPOT.y,
-        panelTexture(this, 'spot-card', SPOT_CARD_W, SPOT_CARD_H, {
+        spotX,
+        spotY,
+        panelTexture(this, 'spot-card', this.L.spot.cardW, this.L.spot.cardH, {
           top: PALETTE.cardTop,
           bottom: PALETTE.cardBottom,
           radius: 14,
@@ -421,9 +439,9 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(401);
     this.spotSymbols = this.add
-      .text(SPOT.x, SPOT.y, '', {
+      .text(spotX, spotY, '', {
         fontFamily: FONT,
-        fontSize: `${this.symbolFontSize(this.level.k, SPOT_CARD_H)}px`,
+        fontSize: `${this.symbolFontSize(this.level.k, this.L.spot.cardH)}px`,
         color: '#2b1f12',
         align: 'center',
       })
@@ -431,10 +449,10 @@ export class PlayScene extends Phaser.Scene {
       .setDepth(402);
 
     // "▼ 같은 그림 찾기 ▼" 배너 (bob)
-    const bannerY = SPOT.y - SPOT_CARD_H / 2 - 30;
+    const bannerY = spotY - this.L.spot.cardH / 2 - 30;
     this.add
       .image(
-        SPOT.x,
+        spotX,
         bannerY,
         panelTexture(this, 'banner', 172, 32, {
           top: PALETTE.goldTop,
@@ -447,7 +465,7 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(403);
     const bannerText = this.add
-      .text(SPOT.x, bannerY, '▼ 같은 그림 찾기 ▼', {
+      .text(spotX, bannerY, '▼ 같은 그림 찾기 ▼', {
         fontFamily: FONT,
         fontSize: '15px',
         color: PALETTE.goldText,
@@ -458,7 +476,8 @@ export class PlayScene extends Phaser.Scene {
     this.tweens.add({ targets: bannerText, y: bannerY - 7, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     // COMBO 뱃지 (콤보 1 이상일 때만 노출)
-    this.comboBadge = this.add.container(SPOT.x + 128, SPOT.y - 44).setDepth(410);
+    const badgeX = Math.min(this.L.W - 62, spotX + this.L.spot.cardW / 2 + 56);
+    this.comboBadge = this.add.container(badgeX, spotY - this.L.spot.cardH * 0.33).setDepth(410);
     const badgeBg = this.add.image(
       0,
       0,
@@ -492,7 +511,7 @@ export class PlayScene extends Phaser.Scene {
 
     // 배너(스포트라이트 상단)와 겹치지 않도록 보드와 스포트라이트 사이 여백에 띄운다
     this.toastText = this.add
-      .text(STAGE_W / 2, 500, '', { fontFamily: FONT, fontSize: '21px', color: '#fff0cf', fontStyle: 'bold' })
+      .text(this.L.W / 2, 500, '', { fontFamily: FONT, fontSize: '21px', color: '#fff0cf', fontStyle: 'bold' })
       .setOrigin(0.5)
       .setDepth(900)
       .setAlpha(0);
@@ -501,11 +520,12 @@ export class PlayScene extends Phaser.Scene {
   // ---- 좌우 콘솔 (덱 · 이동수 · 와일드) ----
   private buildSideConsoles(): void {
     // 덱 박스 (좌하단) — 클릭 = 드로우
-    const deck = this.add.container(140, 650).setDepth(500);
+    const dk = this.L.deck;
+    const deck = this.add.container(dk.x, dk.y).setDepth(500);
     const deckBg = this.add.image(
       0,
       0,
-      panelTexture(this, 'deck-box', 104, 132, {
+      panelTexture(this, 'deck-box', dk.w, dk.h, {
         top: PALETTE.deckTop,
         bottom: PALETTE.deckBottom,
         shadow: PALETTE.deckShadow,
@@ -514,24 +534,32 @@ export class PlayScene extends Phaser.Scene {
         gloss: 0.2,
       }),
     );
-    const deckIcon = this.add.text(0, -22, '↺', { fontFamily: FONT, fontSize: '34px', color: '#ffffff' }).setOrigin(0.5);
+    const deckIcon = this.add
+      .text(0, -dk.h * 0.17, '↺', { fontFamily: FONT, fontSize: `${Math.round(dk.h * 0.27)}px`, color: '#ffffff' })
+      .setOrigin(0.5);
     this.deckCount = this.add
-      .text(0, 26, '0', { fontFamily: FONT, fontSize: '20px', color: '#ffffff', fontStyle: 'bold' })
+      .text(0, dk.h * 0.16, '0', {
+        fontFamily: FONT,
+        fontSize: `${Math.round(dk.h * 0.17)}px`,
+        color: '#ffffff',
+        fontStyle: 'bold',
+      })
       .setOrigin(0.5);
     const deckLabel = this.add
-      .text(0, 52, '드로우', { fontFamily: FONT, fontSize: '12px', color: '#d8ccff' })
+      .text(0, dk.h * 0.38, '드로우', { fontFamily: FONT, fontSize: `${Math.round(dk.h * 0.1)}px`, color: '#d8ccff' })
       .setOrigin(0.5);
     deck.add([deckBg, deckIcon, this.deckCount, deckLabel]);
-    deck.setInteractive(new Phaser.Geom.Rectangle(-52, -66, 104, 132), Phaser.Geom.Rectangle.Contains);
+    deck.setInteractive(new Phaser.Geom.Rectangle(-dk.w / 2, -dk.h / 2, dk.w, dk.h), Phaser.Geom.Rectangle.Contains);
     deck.on('pointerdown', () => this.onDraw());
 
     // MOVES (이동 제한이 있는 레벨만)
     if (this.level.moveLimit > 0) {
+      const mv = this.L.moves;
       this.add
         .image(
-          1188,
-          556,
-          panelTexture(this, 'moves-dial', 80, 80, {
+          mv.x,
+          mv.y,
+          panelTexture(this, 'moves-dial', mv.d, mv.d, {
             top: PALETTE.goldTop,
             bottom: PALETTE.goldBottom,
             shadow: PALETTE.goldShadow,
@@ -551,37 +579,52 @@ export class PlayScene extends Phaser.Scene {
     }
 
     // 와일드카드 슬롯 (우하단) — 클릭 = 무장 토글
-    const wildY = 668;
+    const wd = this.L.wild;
     this.add
-      .text(1188, wildY - 82, '와일드카드', { fontFamily: FONT, fontSize: '12px', color: PALETTE.cream, fontStyle: 'bold' })
+      .text(wd.x, wd.y - wd.h * 0.72, '와일드카드', {
+        fontFamily: FONT,
+        fontSize: `${Math.round(wd.h * 0.11)}px`,
+        color: PALETTE.cream,
+        fontStyle: 'bold',
+      })
       .setOrigin(0.5)
       .setDepth(501);
-    const wild = this.add.container(1188, wildY).setDepth(500);
+    const wild = this.add.container(wd.x, wd.y).setDepth(500);
     this.wildSlot = this.add.image(0, 0, this.wildSlotTexture(false));
-    const wildIcon = this.add.text(0, -6, '🌟', { fontFamily: FONT, fontSize: '44px' }).setOrigin(0.5);
+    const wildIcon = this.add
+      .text(0, -wd.h * 0.06, '🌟', { fontFamily: FONT, fontSize: `${Math.round(wd.h * 0.39)}px` })
+      .setOrigin(0.5);
     this.wildCount = this.add
-      .text(0, 40, '×0', { fontFamily: FONT, fontSize: '16px', color: PALETTE.goldText, fontStyle: 'bold' })
+      .text(0, wd.h * 0.35, '×0', {
+        fontFamily: FONT,
+        fontSize: `${Math.round(wd.h * 0.14)}px`,
+        color: PALETTE.goldText,
+        fontStyle: 'bold',
+      })
       .setOrigin(0.5);
     wild.add([this.wildSlot, wildIcon, this.wildCount]);
-    wild.setInteractive(new Phaser.Geom.Rectangle(-45, -57, 90, 114), Phaser.Geom.Rectangle.Contains);
+    wild.setInteractive(new Phaser.Geom.Rectangle(-wd.w / 2, -wd.h / 2, wd.w, wd.h), Phaser.Geom.Rectangle.Contains);
     wild.on('pointerdown', () => this.onWildSlot());
 
     this.wildHint = this.add
-      .text(1188, wildY + 66, '', { fontFamily: FONT, fontSize: '12px', color: '#ffd9a0' })
+      .text(wd.x, wd.y + wd.h * 0.6, '', { fontFamily: FONT, fontSize: `${Math.round(wd.h * 0.11)}px`, color: '#ffd9a0' })
       .setOrigin(0.5)
       .setDepth(501);
 
     // 🔍 힌트 · 🧲 집게 — 판 안에서 골드로 구매하는 아이템 (마스터 §4.3)
-    const items: { key: 'hint' | 'claw'; icon: string; label: string; x: number }[] = [
-      { key: 'hint', icon: '🔍', label: '힌트', x: 268 },
-      { key: 'claw', icon: '🧲', label: '집게', x: 366 },
+    const iw = this.L.itemW;
+    const ih = this.L.itemH;
+    const items: { key: 'hint' | 'claw'; icon: string; label: string }[] = [
+      { key: 'hint', icon: '🔍', label: '힌트' },
+      { key: 'claw', icon: '🧲', label: '집게' },
     ];
-    for (const it of items) {
-      const root = this.add.container(it.x, 668).setDepth(500);
+    items.forEach((it, idx) => {
+      const slot = this.L.items[idx]!;
+      const root = this.add.container(slot.x, slot.y).setDepth(500);
       const bg = this.add.image(
         0,
         0,
-        panelTexture(this, `item-${it.key}`, 86, 104, {
+        panelTexture(this, `item-${it.key}`, iw, ih, {
           top: PALETTE.woodChipTop,
           bottom: PALETTE.woodChipBottom,
           shadow: PALETTE.woodChipShadow,
@@ -591,26 +634,33 @@ export class PlayScene extends Phaser.Scene {
           gloss: 0.25,
         }),
       );
-      const icon = this.add.text(0, -22, it.icon, { fontFamily: FONT, fontSize: '32px' }).setOrigin(0.5);
+      const icon = this.add
+        .text(0, -ih * 0.21, it.icon, { fontFamily: FONT, fontSize: `${Math.round(ih * 0.31)}px` })
+        .setOrigin(0.5);
       const label = this.add
-        .text(0, 8, it.label, { fontFamily: FONT, fontSize: '13px', color: '#3a2408', fontStyle: 'bold' })
+        .text(0, ih * 0.08, it.label, {
+          fontFamily: FONT,
+          fontSize: `${Math.round(ih * 0.13)}px`,
+          color: '#3a2408',
+          fontStyle: 'bold',
+        })
         .setOrigin(0.5);
       const price = this.add
-        .text(0, 32, `🪙${this.eco.itemPrices[it.key]}`, {
+        .text(0, ih * 0.31, `🪙${this.eco.itemPrices[it.key]}`, {
           fontFamily: FONT,
-          fontSize: '13px',
+          fontSize: `${Math.round(ih * 0.12)}px`,
           color: '#5c4318',
         })
         .setOrigin(0.5);
       root.add([bg, icon, label, price]);
-      root.setInteractive(new Phaser.Geom.Rectangle(-43, -52, 86, 104), Phaser.Geom.Rectangle.Contains);
+      root.setInteractive(new Phaser.Geom.Rectangle(-iw / 2, -ih / 2, iw, ih), Phaser.Geom.Rectangle.Contains);
       root.on('pointerdown', () => this.onItem(it.key));
       this.itemButtons.push({ key: it.key, bg, price });
-    }
+    });
   }
 
   private wildSlotTexture(armed: boolean): string {
-    return panelTexture(this, `wild-slot-${armed ? 'on' : 'off'}`, 90, 114, {
+    return panelTexture(this, `wild-slot-${armed ? 'on' : 'off'}`, this.L.wild.w, this.L.wild.h, {
       top: '#fffdf6',
       bottom: '#f0e4cc',
       shadow: PALETTE.woodDeep,
@@ -644,10 +694,9 @@ export class PlayScene extends Phaser.Scene {
     if (this.movesText) this.movesText.setText(String(Math.max(0, this.level.moveLimit - s.moves)));
     this.refreshMatchable();
 
-    if (this.level.cgoal > 0) {
+    if (this.gaugeFill && this.gaugeText && this.level.cgoal > 0) {
       const progress = s.combo % this.level.cgoal;
-      const ratio = this.level.cgoal > 0 ? progress / this.level.cgoal : 0;
-      this.gaugeFill.setSize(110 * ratio, 9);
+      this.gaugeFill.setSize((110 * progress) / this.level.cgoal, 9);
       this.gaugeText.setText(`${progress}/${this.level.cgoal}`);
     }
 
@@ -866,12 +915,12 @@ export class PlayScene extends Phaser.Scene {
     if (this.ended) return;
     this.ended = true;
     const s = this.engine.getState();
-    const dim = this.add.rectangle(STAGE_W / 2, STAGE_H / 2, STAGE_W, STAGE_H, 0x120c06, 0.78).setDepth(1000);
+    const dim = this.add.rectangle(this.L.W / 2, this.L.H / 2, this.L.W, this.L.H, 0x120c06, 0.78).setDepth(1000);
     const panel = this.add
       .image(
-        STAGE_W / 2,
-        STAGE_H / 2,
-        panelTexture(this, 'result-panel', 540, 330, {
+        this.L.W / 2,
+        this.L.H / 2,
+        panelTexture(this, 'result-panel', Math.round(Math.min(540, this.L.W * 0.92)), 330, {
           top: PALETTE.woodBarTop,
           bottom: PALETTE.woodBarBottom,
           shadow: PALETTE.woodDeep,
@@ -883,7 +932,7 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(1001);
     this.add
-      .text(STAGE_W / 2, STAGE_H / 2 - 96, title, {
+      .text(this.L.W / 2, this.L.H / 2 - 96, title, {
         fontFamily: FONT,
         fontSize: '56px',
         color: PALETTE.cream,
@@ -892,11 +941,11 @@ export class PlayScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(1002);
     this.add
-      .text(STAGE_W / 2, STAGE_H / 2 - 38, subtitle, { fontFamily: FONT, fontSize: '24px', color: '#f0d9ad' })
+      .text(this.L.W / 2, this.L.H / 2 - 38, subtitle, { fontFamily: FONT, fontSize: '24px', color: '#f0d9ad' })
       .setOrigin(0.5)
       .setDepth(1002);
     this.add
-      .text(STAGE_W / 2, STAGE_H / 2 + 6, `SCORE ${s.score.toLocaleString()}`, {
+      .text(this.L.W / 2, this.L.H / 2 + 6, `SCORE ${s.score.toLocaleString()}`, {
         fontFamily: FONT,
         fontSize: '30px',
         color: '#ffd76a',
@@ -913,7 +962,7 @@ export class PlayScene extends Phaser.Scene {
       this.goldText.setText(this.gold.toLocaleString());
     }
     this.add
-      .text(STAGE_W / 2, STAGE_H / 2 + 44, `🪙 +${gained}   (보유 ${this.gold.toLocaleString()})`, {
+      .text(this.L.W / 2, this.L.H / 2 + 44, `🪙 +${gained}   (보유 ${this.gold.toLocaleString()})`, {
         fontFamily: FONT,
         fontSize: '18px',
         color: '#f0d9ad',
@@ -940,8 +989,8 @@ export class PlayScene extends Phaser.Scene {
     const gap = 18;
     const totalW = buttons.length * bw + (buttons.length - 1) * gap;
     buttons.forEach((b, i) => {
-      const bx = STAGE_W / 2 - totalW / 2 + bw / 2 + i * (bw + gap);
-      this.woodButton(bx, STAGE_H / 2 + 100, bw, 56, b.label, 20, b.onClick).setDepth(1003);
+      const bx = this.L.W / 2 - totalW / 2 + bw / 2 + i * (bw + gap);
+      this.woodButton(bx, this.L.H / 2 + 100, bw, 56, b.label, 20, b.onClick).setDepth(1003);
     });
   }
 

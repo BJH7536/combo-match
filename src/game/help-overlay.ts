@@ -1,11 +1,10 @@
 import Phaser from 'phaser';
+import { computeLayout } from './layout';
 import { PALETTE, panelTexture } from './skin';
 
 // 규칙 안내 — 심사자가 링크를 처음 열었을 때 매칭 규칙을 모른 채 헤매지 않도록.
 // 첫 플레이에서 1회 자동 표시하고, 이후에는 레벨 선택의 "규칙" 버튼으로 언제든 다시 본다.
 
-const STAGE_W = 1280;
-const STAGE_H = 760;
 const FONT = "'Segoe UI', 'Malgun Gothic', sans-serif";
 const SEEN_KEY = 'combo-match:seen-help';
 
@@ -38,6 +37,14 @@ export function markHelpSeen(): void {
 
 /** 규칙 오버레이를 띄운다. 닫으면 onClose 호출 */
 export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void {
+  const L = computeLayout(scene.scale.width, scene.scale.height);
+  const STAGE_W = L.W;
+  const STAGE_H = L.H;
+  // 좁은 화면에서도 패널이 넘치지 않게 크기와 글자를 함께 줄인다
+  const pw = Math.round(Math.min(860, STAGE_W * 0.94));
+  const ph = Math.round(Math.min(470, STAGE_H * 0.66));
+  const sc = Math.min(1, pw / 860);
+  const fs = (base: number): string => `${Math.max(11, Math.round(base * sc))}px`;
   const D = 20000; // 다른 UI보다 항상 위
   const parts: Phaser.GameObjects.GameObject[] = [];
 
@@ -50,7 +57,7 @@ export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void
       .image(
         STAGE_W / 2,
         STAGE_H / 2,
-        panelTexture(scene, 'help-panel', 860, 470, {
+        panelTexture(scene, 'help-panel', pw, ph, {
           top: PALETTE.woodBarTop,
           bottom: PALETTE.woodBarBottom,
           shadow: PALETTE.woodDeep,
@@ -63,12 +70,12 @@ export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void
       .setDepth(D + 1),
   );
 
-  const top = STAGE_H / 2 - 200;
+  const top = STAGE_H / 2 - ph / 2 + Math.round(28 * sc);
   parts.push(
     scene.add
       .text(STAGE_W / 2, top, '같은 그림 찾기 — 이렇게 플레이합니다', {
         fontFamily: FONT,
-        fontSize: '30px',
+        fontSize: fs(30),
         color: PALETTE.cream,
         fontStyle: 'bold',
       })
@@ -79,11 +86,11 @@ export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void
   RULES.forEach((line, i) => {
     parts.push(
       scene.add
-        .text(STAGE_W / 2 - 380, top + 62 + i * 40, line, {
+        .text(STAGE_W / 2 - pw / 2 + 28 * sc, top + (56 + i * 38) * sc, line, {
           fontFamily: FONT,
-          fontSize: '19px',
+          fontSize: fs(19),
           color: '#f2e3c4',
-          wordWrap: { width: 760 },
+          wordWrap: { width: pw - 56 * sc },
         })
         .setOrigin(0, 0)
         .setDepth(D + 2),
@@ -92,25 +99,25 @@ export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void
 
   parts.push(
     scene.add
-      .text(STAGE_W / 2, top + 282, DEVICES, { fontFamily: FONT, fontSize: '17px', color: '#d8bd92' })
+      .text(STAGE_W / 2, top + 262 * sc, DEVICES, { fontFamily: FONT, fontSize: fs(17), color: '#d8bd92' })
       .setOrigin(0.5, 0)
       .setDepth(D + 2),
     scene.add
-      .text(STAGE_W / 2, top + 314, ITEMS, { fontFamily: FONT, fontSize: '17px', color: '#ffd76a' })
+      .text(STAGE_W / 2, top + 294 * sc, ITEMS, { fontFamily: FONT, fontSize: fs(17), color: '#ffd76a' })
       .setOrigin(0.5, 0)
       .setDepth(D + 2),
   );
 
   // 닫기 버튼
-  const bw = 200;
-  const bh = 56;
-  const by = top + 372;
+  const bw = Math.round(200 * sc);
+  const bh = Math.round(56 * sc);
+  const by = top + ph - 84 * sc;
   const btn = scene.add.container(STAGE_W / 2, by).setDepth(D + 3);
   btn.add([
     scene.add.image(
       0,
       0,
-      panelTexture(scene, 'help-close', bw, bh, {
+      panelTexture(scene, `help-close-${bw}`, bw, bh, {
         top: PALETTE.goldTop,
         bottom: PALETTE.goldBottom,
         shadow: PALETTE.goldShadow,
@@ -119,7 +126,7 @@ export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void
       }),
     ),
     scene.add
-      .text(0, 0, '알겠어요', { fontFamily: FONT, fontSize: '22px', color: PALETTE.goldText, fontStyle: 'bold' })
+      .text(0, 0, '알겠어요', { fontFamily: FONT, fontSize: fs(22), color: PALETTE.goldText, fontStyle: 'bold' })
       .setOrigin(0.5),
   ]);
   btn.setInteractive(new Phaser.Geom.Rectangle(-bw / 2, -bh / 2, bw, bh), Phaser.Geom.Rectangle.Contains);

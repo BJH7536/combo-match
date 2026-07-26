@@ -1,7 +1,7 @@
 {
   "schema": "combo-match/level@2",
-  "seed": 1,
-  "difficulty": 21.8,
+  "seed": 2,
+  "difficulty": 21.5,
   "difficultyTier": "튜토리얼",
   "generator": {
     "mode": "levelpack",
@@ -9,9 +9,9 @@
     "name": "초읽기"
   },
   "metrics": {
-    "pStuck": 0.113,
-    "branchFactor": 1.83,
-    "avgMoves": 14.7,
+    "pStuck": 0.033,
+    "branchFactor": 1.94,
+    "avgMoves": 14.8,
     "solvable": true
   },
   "evaluation": null,
@@ -31,7 +31,7 @@
   "config": {
     "sim": 0,
     "tf": 0,
-    "topology": "stack",
+    "topology": "pyramid",
     "time": 0,
     "obst": 0,
     "fd": 0,
@@ -42,7 +42,7 @@
     "paper": 0,
     "moves": 0,
     "objective": "clear",
-    "seed": 1,
+    "seed": 2,
     "N": 10,
     "k": 2,
     "r": 1,
@@ -65,159 +65,40 @@
     "🥭"
   ],
   "active": [
-    "⭐",
-    "🍓"
+    "🥭",
+    "🚗"
   ],
   "deckStock": [
     [
-      "🚗",
-      "🥝"
-    ],
-    [
       "⭐",
-      "🍇"
+      "🔵"
     ],
     [
-      "🍇",
-      "🥝"
-    ],
-    [
-      "🚗",
-      "🥝"
-    ],
-    [
-      "🍇",
+      "🍊",
       "🐶"
     ],
     [
+      "🥭",
+      "🐶"
+    ],
+    [
+      "🔵",
+      "⭐"
+    ],
+    [
       "🍇",
-      "🍒"
+      "🔵"
+    ],
+    [
+      "🚗",
+      "🍓"
     ]
   ],
   "cards": [
     {
       "id": 0,
-      "x": 0,
+      "x": 115,
       "y": 0,
-      "layer": 0,
-      "symbols": [
-        "🥭",
-        "🚗"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 1,
-      "x": 40,
-      "y": 0,
-      "layer": 1,
-      "symbols": [
-        "🍇",
-        "🥭"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 2,
-      "x": 79,
-      "y": 0,
-      "layer": 2,
-      "symbols": [
-        "🚗",
-        "🐶"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 3,
-      "x": 119,
-      "y": 0,
-      "layer": 0,
-      "symbols": [
-        "🍊",
-        "🍇"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 4,
-      "x": 159,
-      "y": 0,
-      "layer": 1,
-      "symbols": [
-        "🍇",
-        "🔵"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 5,
-      "x": 18,
-      "y": 40,
-      "layer": 0,
-      "symbols": [
-        "🚗",
-        "🍓"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 20,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 6,
-      "x": 58,
-      "y": 40,
-      "layer": 1,
-      "symbols": [
-        "🚗",
-        "🍓"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 7,
-      "x": 97,
-      "y": 40,
       "layer": 2,
       "symbols": [
         "🐶",
@@ -232,13 +113,13 @@
       "piece": false
     },
     {
-      "id": 8,
-      "x": 137,
-      "y": 40,
-      "layer": 0,
+      "id": 1,
+      "x": 173,
+      "y": 0,
+      "layer": 2,
       "symbols": [
-        "🍇",
-        "🥝"
+        "🔵",
+        "🍇"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -249,12 +130,29 @@
       "piece": false
     },
     {
-      "id": 9,
-      "x": 177,
-      "y": 40,
+      "id": 2,
+      "x": 230,
+      "y": 0,
+      "layer": 2,
+      "symbols": [
+        "🔵",
+        "🍇"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 9,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 3,
+      "x": 58,
+      "y": 45,
       "layer": 1,
       "symbols": [
-        "🚗",
+        "🐶",
         "⭐"
       ],
       "lockReq": 0,
@@ -266,13 +164,30 @@
       "piece": false
     },
     {
-      "id": 10,
-      "x": 36,
-      "y": 80,
-      "layer": 0,
+      "id": 4,
+      "x": 115,
+      "y": 45,
+      "layer": 1,
       "symbols": [
-        "🍓",
-        "🥭"
+        "🍇",
+        "🍒"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 18,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 5,
+      "x": 173,
+      "y": 45,
+      "layer": 1,
+      "symbols": [
+        "🐶",
+        "🍓"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -283,27 +198,78 @@
       "piece": false
     },
     {
-      "id": 11,
-      "x": 76,
-      "y": 80,
+      "id": 6,
+      "x": 230,
+      "y": 45,
       "layer": 1,
       "symbols": [
-        "🥝",
-        "🍊"
+        "🔵",
+        "⭐"
       ],
       "lockReq": 0,
       "faceDown": false,
       "unlockedBy": [],
-      "bombCounter": 14,
+      "bombCounter": 0,
       "zone": 0,
       "paper": false,
       "piece": false
     },
     {
-      "id": 12,
+      "id": 7,
+      "x": 288,
+      "y": 45,
+      "layer": 1,
+      "symbols": [
+        "⭐",
+        "🐶"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 8,
+      "x": 0,
+      "y": 90,
+      "layer": 0,
+      "symbols": [
+        "🥭",
+        "🔵"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 9,
+      "x": 58,
+      "y": 90,
+      "layer": 0,
+      "symbols": [
+        "🔵",
+        "🚗"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 10,
       "x": 115,
-      "y": 80,
-      "layer": 2,
+      "y": 90,
+      "layer": 0,
       "symbols": [
         "🍇",
         "🍓"
@@ -317,13 +283,47 @@
       "piece": false
     },
     {
+      "id": 11,
+      "x": 173,
+      "y": 90,
+      "layer": 0,
+      "symbols": [
+        "🍓",
+        "🔵"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 12,
+      "x": 230,
+      "y": 90,
+      "layer": 0,
+      "symbols": [
+        "🐶",
+        "🍊"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
       "id": 13,
-      "x": 155,
-      "y": 80,
+      "x": 288,
+      "y": 90,
       "layer": 0,
       "symbols": [
         "🍇",
-        "⭐"
+        "🥭"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -335,12 +335,12 @@
     },
     {
       "id": 14,
-      "x": 195,
-      "y": 80,
-      "layer": 1,
+      "x": 346,
+      "y": 90,
+      "layer": 0,
       "symbols": [
-        "🍇",
-        "⭐"
+        "⭐",
+        "🥭"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -354,15 +354,11 @@
   "coverage": [
     {
       "id": 0,
-      "coveredBy": [
-        1
-      ]
+      "coveredBy": []
     },
     {
       "id": 1,
-      "coveredBy": [
-        2
-      ]
+      "coveredBy": []
     },
     {
       "id": 2,
@@ -370,28 +366,24 @@
     },
     {
       "id": 3,
-      "coveredBy": [
-        2,
-        4,
-        7
-      ]
+      "coveredBy": []
     },
     {
       "id": 4,
-      "coveredBy": []
+      "coveredBy": [
+        0
+      ]
     },
     {
       "id": 5,
       "coveredBy": [
-        1,
-        6
+        1
       ]
     },
     {
       "id": 6,
       "coveredBy": [
-        2,
-        7
+        2
       ]
     },
     {
@@ -400,41 +392,36 @@
     },
     {
       "id": 8,
-      "coveredBy": [
-        4,
-        7,
-        9,
-        12
-      ]
+      "coveredBy": []
     },
     {
       "id": 9,
-      "coveredBy": []
+      "coveredBy": [
+        3
+      ]
     },
     {
       "id": 10,
       "coveredBy": [
-        6,
-        11
+        4
       ]
     },
     {
       "id": 11,
       "coveredBy": [
-        7,
-        12
+        5
       ]
     },
     {
       "id": 12,
-      "coveredBy": []
+      "coveredBy": [
+        6
+      ]
     },
     {
       "id": 13,
       "coveredBy": [
-        9,
-        12,
-        14
+        7
       ]
     },
     {

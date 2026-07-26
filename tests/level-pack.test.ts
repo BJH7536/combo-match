@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import levelIndexJson from '../public/levels/index.json';
 import { ComboMatchEngine } from '../src/core/engine';
 import { loadLevel } from '../src/core/level-loader';
 import type { LevelData, SymbolId } from '../src/core/types';
@@ -10,8 +9,14 @@ import { liteFromLevelJson, runOneSimTraced } from './reference/reference-sim';
 // 로더 통과 + 레퍼런스 봇이 실제로 클리어 + 그 플레이를 우리 엔진이 동일하게 재현하는지 검증한다.
 // tools/generate-levels.mjs로 레벨을 다시 뽑아도 이 테스트가 회귀를 잡는다.
 
-const LEVELS_DIR = resolve(__dirname, '../public/levels');
-const readJson = (f: string) => JSON.parse(readFileSync(resolve(LEVELS_DIR, f), 'utf8'));
+const levelModules = import.meta.glob<{ default: LevelData }>('../public/levels/level-*.json', {
+  eager: true,
+});
+const readJson = (file: string): LevelData => {
+  const mod = levelModules[`../public/levels/${file}`];
+  if (!mod) throw new Error(`레벨 파일을 찾을 수 없음: ${file}`);
+  return mod.default;
+};
 
 interface IndexEntry {
   id: number;
@@ -24,7 +29,7 @@ interface IndexEntry {
   pStuck: number;
   branch: number;
 }
-const index = readJson('index.json') as { levels: IndexEntry[] };
+const index = levelIndexJson as { levels: IndexEntry[] };
 
 interface TraceEvent {
   t: 'm' | 'w' | 'd';
@@ -49,7 +54,7 @@ describe('레벨 팩 (public/levels)', () => {
   it('장치 7종이 팩 전체에서 최소 한 번씩 등장한다', () => {
     const seen = new Set<string>();
     for (const entry of index.levels) {
-      const lv = readJson(entry.file) as LevelData;
+      const lv = readJson(entry.file);
       for (const c of lv.cards) {
         if (c.lockReq && c.lockReq > 0) seen.add('lock');
         if (c.unlockedBy && c.unlockedBy.length > 0) seen.add('key');
@@ -68,7 +73,7 @@ describe('레벨 팩 (public/levels)', () => {
 
   for (const entry of index.levels) {
     it(`${entry.file} (${entry.name}) — 로드·클리어 가능·엔진 동치`, () => {
-      const data = readJson(entry.file) as LevelData;
+      const data = readJson(entry.file);
       const rt = loadLevel(data); // 스키마 검증 (실패 시 LevelLoadError)
       expect(rt.cards).toHaveLength(entry.cards);
 

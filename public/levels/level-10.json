@@ -1,7 +1,7 @@
 {
   "schema": "combo-match/level@2",
-  "seed": 2,
-  "difficulty": 32.4,
+  "seed": 1,
+  "difficulty": 32.6,
   "difficultyTier": "쉬움",
   "generator": {
     "mode": "levelpack",
@@ -9,16 +9,16 @@
     "name": "자물쇠 창고"
   },
   "metrics": {
-    "pStuck": 0.283,
-    "branchFactor": 2.06,
-    "avgMoves": 18.4,
+    "pStuck": 0.083,
+    "branchFactor": 1.95,
+    "avgMoves": 19.6,
     "solvable": true
   },
   "evaluation": null,
   "economy": {
     "levelIndex": 10,
     "baseGold": 45,
-    "scoreRate": 0.0181,
+    "scoreRate": 0.0182,
     "winMult": 1,
     "loseMult": 0.25,
     "itemPrices": {
@@ -31,7 +31,7 @@
   "config": {
     "sim": 2,
     "tf": 0,
-    "topology": "stack",
+    "topology": "pyramid",
     "time": 0,
     "obst": 15,
     "fd": 0,
@@ -42,7 +42,7 @@
     "paper": 0,
     "moves": 0,
     "objective": "clear",
-    "seed": 2,
+    "seed": 1,
     "N": 14,
     "k": 2,
     "r": 1,
@@ -69,44 +69,44 @@
     "🔮"
   ],
   "active": [
-    "🌽",
-    "🥭"
+    "🥭",
+    "🍆"
   ],
   "deckStock": [
     [
       "🍑",
-      "🍎"
+      "🍓"
     ],
     [
-      "🍅",
-      "🍑"
+      "🫐",
+      "🍊"
     ],
     [
-      "🍅",
-      "🔮"
+      "🌶️",
+      "🫐"
     ],
     [
-      "🍇",
-      "🍒"
+      "🌶️",
+      "🍊"
     ],
     [
-      "🍇",
-      "🍆"
+      "🍒",
+      "🌽"
     ],
     [
-      "🍅",
-      "🍆"
+      "🍑",
+      "🍊"
     ]
   ],
   "cards": [
     {
       "id": 0,
-      "x": 0,
+      "x": 173,
       "y": 0,
-      "layer": 0,
+      "layer": 3,
       "symbols": [
-        "🍒",
-        "🍆"
+        "🥭",
+        "🌶️"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -118,29 +118,29 @@
     },
     {
       "id": 1,
-      "x": 40,
+      "x": 230,
       "y": 0,
-      "layer": 1,
+      "layer": 3,
       "symbols": [
-        "🍅",
-        "🥭"
+        "🍑",
+        "🍊"
       ],
       "lockReq": 0,
       "faceDown": false,
       "unlockedBy": [],
-      "bombCounter": 16,
+      "bombCounter": 0,
       "zone": 0,
       "paper": false,
       "piece": false
     },
     {
       "id": 2,
-      "x": 79,
-      "y": 0,
+      "x": 115,
+      "y": 45,
       "layer": 2,
       "symbols": [
-        "🍇",
-        "🫐"
+        "🌶️",
+        "🍋"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -152,12 +152,12 @@
     },
     {
       "id": 3,
-      "x": 119,
-      "y": 0,
-      "layer": 3,
+      "x": 173,
+      "y": 45,
+      "layer": 2,
       "symbols": [
-        "🍇",
-        "🔮"
+        "🍑",
+        "🍅"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -169,34 +169,34 @@
     },
     {
       "id": 4,
-      "x": 159,
-      "y": 0,
-      "layer": 0,
+      "x": 230,
+      "y": 45,
+      "layer": 2,
       "symbols": [
-        "🍑",
-        "🍎"
+        "🍒",
+        "🫐"
       ],
       "lockReq": 2,
       "faceDown": false,
       "unlockedBy": [],
-      "bombCounter": 0,
+      "bombCounter": 21,
       "zone": 0,
       "paper": false,
       "piece": false
     },
     {
       "id": 5,
-      "x": 18,
-      "y": 40,
-      "layer": 0,
+      "x": 288,
+      "y": 45,
+      "layer": 2,
       "symbols": [
-        "🍑",
-        "🍅"
+        "🍋",
+        "🍇"
       ],
       "lockReq": 0,
       "faceDown": false,
       "unlockedBy": [],
-      "bombCounter": 0,
+      "bombCounter": 15,
       "zone": 0,
       "paper": false,
       "piece": false
@@ -204,11 +204,11 @@
     {
       "id": 6,
       "x": 58,
-      "y": 40,
+      "y": 90,
       "layer": 1,
       "symbols": [
-        "🍒",
-        "🍑"
+        "🌶️",
+        "🔮"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -220,28 +220,11 @@
     },
     {
       "id": 7,
-      "x": 97,
-      "y": 40,
-      "layer": 2,
+      "x": 115,
+      "y": 90,
+      "layer": 1,
       "symbols": [
-        "🍇",
-        "🍅"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 8,
-      "x": 137,
-      "y": 40,
-      "layer": 3,
-      "symbols": [
-        "🍇",
+        "🍋",
         "🥭"
       ],
       "lockReq": 0,
@@ -253,66 +236,13 @@
       "piece": false
     },
     {
-      "id": 9,
-      "x": 177,
-      "y": 40,
-      "layer": 0,
-      "symbols": [
-        "🍇",
-        "🌽"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 13,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 10,
-      "x": 36,
-      "y": 80,
-      "layer": 0,
-      "symbols": [
-        "🍅",
-        "🍊"
-      ],
-      "lockReq": 2,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 11,
-      "x": 76,
-      "y": 80,
+      "id": 8,
+      "x": 173,
+      "y": 90,
       "layer": 1,
       "symbols": [
-        "🍎",
-        "🍒"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [
-        17
-      ],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 12,
-      "x": 115,
-      "y": 80,
-      "layer": 2,
-      "symbols": [
-        "🍅",
-        "🍑"
+        "🍑",
+        "🫐"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -323,47 +253,13 @@
       "piece": false
     },
     {
-      "id": 13,
-      "x": 155,
-      "y": 80,
-      "layer": 3,
+      "id": 9,
+      "x": 230,
+      "y": 90,
+      "layer": 1,
       "symbols": [
-        "🍇",
-        "🌽"
-      ],
-      "lockReq": 0,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 14,
-      "x": 195,
-      "y": 80,
-      "layer": 0,
-      "symbols": [
-        "🍇",
+        "🫐",
         "🍆"
-      ],
-      "lockReq": 2,
-      "faceDown": false,
-      "unlockedBy": [],
-      "bombCounter": 0,
-      "zone": 0,
-      "paper": false,
-      "piece": false
-    },
-    {
-      "id": 15,
-      "x": 54,
-      "y": 120,
-      "layer": 0,
-      "symbols": [
-        "🍅",
-        "🍑"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -376,13 +272,117 @@
       "piece": false
     },
     {
-      "id": 16,
-      "x": 94,
-      "y": 120,
+      "id": 10,
+      "x": 288,
+      "y": 90,
       "layer": 1,
       "symbols": [
-        "🍆",
-        "🍅"
+        "🍊",
+        "🍒"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 11,
+      "x": 346,
+      "y": 90,
+      "layer": 1,
+      "symbols": [
+        "🍇",
+        "🥭"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 12,
+      "x": 0,
+      "y": 134,
+      "layer": 0,
+      "symbols": [
+        "🍒",
+        "🍇"
+      ],
+      "lockReq": 2,
+      "faceDown": false,
+      "unlockedBy": [
+        2
+      ],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 13,
+      "x": 58,
+      "y": 134,
+      "layer": 0,
+      "symbols": [
+        "🥭",
+        "🍋"
+      ],
+      "lockReq": 2,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 14,
+      "x": 115,
+      "y": 134,
+      "layer": 0,
+      "symbols": [
+        "🍇",
+        "🍑"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 15,
+      "x": 173,
+      "y": 134,
+      "layer": 0,
+      "symbols": [
+        "🫐",
+        "🍒"
+      ],
+      "lockReq": 0,
+      "faceDown": false,
+      "unlockedBy": [],
+      "bombCounter": 0,
+      "zone": 0,
+      "paper": false,
+      "piece": false
+    },
+    {
+      "id": 16,
+      "x": 230,
+      "y": 134,
+      "layer": 0,
+      "symbols": [
+        "🍇",
+        "🍋"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -394,12 +394,12 @@
     },
     {
       "id": 17,
-      "x": 133,
-      "y": 120,
-      "layer": 2,
+      "x": 288,
+      "y": 134,
+      "layer": 0,
       "symbols": [
-        "🍅",
-        "🍆"
+        "🍋",
+        "🌶️"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -411,12 +411,12 @@
     },
     {
       "id": 18,
-      "x": 173,
-      "y": 120,
-      "layer": 3,
+      "x": 346,
+      "y": 134,
+      "layer": 0,
       "symbols": [
-        "🍇",
-        "🍎"
+        "🌶️",
+        "🥭"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -428,12 +428,12 @@
     },
     {
       "id": 19,
-      "x": 213,
-      "y": 120,
+      "x": 403,
+      "y": 134,
       "layer": 0,
       "symbols": [
-        "🍒",
-        "🍑"
+        "🌶️",
+        "🥭"
       ],
       "lockReq": 0,
       "faceDown": false,
@@ -447,127 +447,107 @@
   "coverage": [
     {
       "id": 0,
+      "coveredBy": []
+    },
+    {
+      "id": 1,
+      "coveredBy": []
+    },
+    {
+      "id": 2,
+      "coveredBy": []
+    },
+    {
+      "id": 3,
+      "coveredBy": [
+        0
+      ]
+    },
+    {
+      "id": 4,
       "coveredBy": [
         1
       ]
     },
     {
-      "id": 1,
+      "id": 5,
+      "coveredBy": []
+    },
+    {
+      "id": 6,
+      "coveredBy": []
+    },
+    {
+      "id": 7,
       "coveredBy": [
         2
       ]
     },
     {
-      "id": 2,
+      "id": 8,
       "coveredBy": [
         3
       ]
     },
     {
-      "id": 3,
-      "coveredBy": []
-    },
-    {
-      "id": 4,
-      "coveredBy": [
-        3,
-        8
-      ]
-    },
-    {
-      "id": 5,
-      "coveredBy": [
-        1,
-        6
-      ]
-    },
-    {
-      "id": 6,
-      "coveredBy": [
-        2,
-        7
-      ]
-    },
-    {
-      "id": 7,
-      "coveredBy": [
-        3,
-        8
-      ]
-    },
-    {
-      "id": 8,
-      "coveredBy": []
-    },
-    {
       "id": 9,
       "coveredBy": [
-        8,
-        13
+        4
       ]
     },
     {
       "id": 10,
       "coveredBy": [
-        6,
-        11
+        5
       ]
     },
     {
       "id": 11,
-      "coveredBy": [
-        7,
-        12
-      ]
+      "coveredBy": []
     },
     {
       "id": 12,
-      "coveredBy": [
-        8,
-        13
-      ]
+      "coveredBy": []
     },
     {
       "id": 13,
-      "coveredBy": []
+      "coveredBy": [
+        6
+      ]
     },
     {
       "id": 14,
       "coveredBy": [
-        13,
-        18
+        7
       ]
     },
     {
       "id": 15,
       "coveredBy": [
-        11,
-        16
+        8
       ]
     },
     {
       "id": 16,
       "coveredBy": [
-        12,
-        17
+        9
       ]
     },
     {
       "id": 17,
       "coveredBy": [
-        13,
-        18
+        10
       ]
     },
     {
       "id": 18,
-      "coveredBy": []
+      "coveredBy": [
+        11
+      ]
     },
     {
       "id": 19,
-      "coveredBy": [
-        18
-      ]
+      "coveredBy": []
     }
   ]
 }

@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import { ComboMatchEngine, type EndReason, type RejectReason } from '../core/engine';
 import { LevelLoadError, loadLevel } from '../core/level-loader';
-import type { RuntimeCard, RuntimeLevel, SymbolId } from '../core/types';
+import type { LevelData, RuntimeCard, RuntimeLevel, SymbolId } from '../core/types';
 import { computeBoardTransform } from './board-layout';
+import type { LevelIndexEntry } from './level-select-scene';
 import { decodeLevelHash, demoLevel } from './level-source';
+import { saveResult } from './progress';
 import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTexture } from './skin';
 
 // 플레이 씬 — 보드 렌더·입력·HUD. 시각 기준: ui_draft.html (우드 콘솔 W2 스포트라이트).
@@ -75,8 +77,14 @@ export class PlayScene extends Phaser.Scene {
   private movesText: Phaser.GameObjects.Text | null = null;
   private toastText!: Phaser.GameObjects.Text;
 
+  private initData: { level?: LevelData; entry?: LevelIndexEntry } = {};
+
   constructor() {
     super('Play');
+  }
+
+  init(data?: { level?: LevelData; entry?: LevelIndexEntry }): void {
+    this.initData = data ?? {};
   }
 
   create(): void {
@@ -101,6 +109,18 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private resolveLevel(): { level: RuntimeLevel; sourceLabel: string } {
+    // 레벨 선택에서 넘어온 경우가 최우선, 그 다음 디자이너 해시, 마지막이 내장 데모
+    if (this.initData.level) {
+      try {
+        const entry = this.initData.entry;
+        return {
+          level: loadLevel(this.initData.level),
+          sourceLabel: entry ? `${entry.id}. ${entry.name}` : '레벨',
+        };
+      } catch (e) {
+        console.warn(`레벨 로드 실패 — 데모로 폴백: ${String(e)}`);
+      }
+    }
     const fromHash = decodeLevelHash(window.location.hash);
     if (fromHash) {
       try {
@@ -229,8 +249,12 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(600);
 
-    // ⟳ 재시작
-    this.woodButton(48, HEADER_H / 2, 48, 48, '⟳', 23, () => this.scene.restart()).setDepth(601);
+    // 좌상단: 레벨 선택에서 왔으면 목록으로, 아니면 재시작
+    const backLabel = this.initData.entry ? '≡' : '⟳';
+    this.woodButton(48, HEADER_H / 2, 48, 48, backLabel, 23, () => {
+      if (this.initData.entry) this.scene.start('LevelSelect');
+      else this.scene.restart();
+    }).setDepth(601);
 
     // SCORE 칩
     this.add
@@ -702,16 +726,42 @@ export class PlayScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(1002);
-    this.add
-      .text(STAGE_W / 2, STAGE_H / 2 + 92, '클릭하면 다시 시작합니다', {
-        fontFamily: FONT,
-        fontSize: '17px',
-        color: '#c8ab7e',
-      })
-      .setOrigin(0.5)
-      .setDepth(1002);
     void panel;
-    dim.setInteractive();
-    dim.once('pointerdown', () => this.scene.restart());
+    void dim;
+
+    // 진행 저장 — 레벨 선택에서 들어온 경우에만 기록한다 (데모·디자이너 해시는 제외)
+    const entry = this.initData.entry;
+    if (entry) saveResult(entry.id, this.engine.status === 'won', s.score);
+
+    const buttons: { label: string; onClick: () => void }[] = [
+      { label: '↻ 다시', onClick: () => this.scene.restart() },
+    ];
+    if (entry) {
+      buttons.push({ label: '≡ 레벨 선택', onClick: () => this.scene.start('LevelSelect') });
+      if (this.engine.status === 'won' && entry.id < 12) {
+        buttons.push({ label: '다음 ▶', onClick: () => void this.goToLevel(entry.id + 1) });
+      }
+    }
+    const bw = 168;
+    const gap = 18;
+    const totalW = buttons.length * bw + (buttons.length - 1) * gap;
+    buttons.forEach((b, i) => {
+      const bx = STAGE_W / 2 - totalW / 2 + bw / 2 + i * (bw + gap);
+      this.woodButton(bx, STAGE_H / 2 + 98, bw, 56, b.label, 20, b.onClick).setDepth(1003);
+    });
+  }
+
+  private async goToLevel(id: number): Promise<void> {
+    try {
+      const res = await fetch(`levels/index.json`);
+      const idx = (await res.json()) as { levels: LevelIndexEntry[] };
+      const entry = idx.levels.find((l) => l.id === id);
+      if (!entry) return;
+      const lv = await (await fetch(`levels/${entry.file}`)).json();
+      this.scene.start('Play', { level: lv as LevelData, entry });
+    } catch (e) {
+      console.warn(`다음 레벨 로드 실패: ${String(e)}`);
+      this.scene.start('LevelSelect');
+    }
   }
 }

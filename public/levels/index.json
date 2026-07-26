@@ -50,14 +50,14 @@
       "id": 5,
       "name": "초읽기",
       "file": "level-05.json",
-      "difficulty": 21.8,
+      "difficulty": 21.5,
       "tier": "튜토리얼",
       "devices": [
         "bomb"
       ],
       "cards": 15,
-      "pStuck": 0.113,
-      "branch": 1.83
+      "pStuck": 0.033,
+      "branch": 1.94
     },
     {
       "id": 6,
@@ -115,7 +115,7 @@
       "id": 10,
       "name": "자물쇠 창고",
       "file": "level-10.json",
-      "difficulty": 32.4,
+      "difficulty": 32.6,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -123,8 +123,8 @@
         "lock"
       ],
       "cards": 20,
-      "pStuck": 0.283,
-      "branch": 2.06
+      "pStuck": 0.083,
+      "branch": 1.95
     },
     {
       "id": 11,

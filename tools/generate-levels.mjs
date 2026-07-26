@@ -41,13 +41,13 @@ const PLAN = [
   { id: 2,  name: '겹친 카드',     devices: [],                  maxStuck: 0.10, cfg: { N: 7,  k: 2, r: 1, cards: 11, layers: 2, deck: 7, wild: 1, cgoal: 5 } },
   { id: 3,  name: '늘어난 그림',   devices: [],                  maxStuck: 0.14, cfg: { N: 9,  k: 2, r: 1, cards: 14, layers: 2, deck: 6, wild: 1, cgoal: 6 } },
   { id: 4,  name: '열쇠와 자물쇠', devices: ['key'],             maxStuck: 0.22, cfg: { N: 10, k: 2, r: 1, cards: 15, layers: 2, deck: 6, wild: 1, cgoal: 6, keylocks: 2 } },
-  { id: 5,  name: '초읽기',        devices: ['bomb'],            maxStuck: 0.26, cfg: { N: 10, k: 2, r: 1, cards: 15, layers: 3, topology: 'stack', deck: 6, wild: 1, cgoal: 6, bombs: 2 } },
+  { id: 5,  name: '초읽기',        devices: ['bomb'],            maxStuck: 0.26, cfg: { N: 10, k: 2, r: 1, cards: 15, layers: 3, deck: 6, wild: 1, cgoal: 6, bombs: 2 } },
   { id: 6,  name: '구역 개방',     devices: ['zone'],            maxStuck: 0.28, cfg: { N: 12, k: 2, r: 1, cards: 17, layers: 3, deck: 6, wild: 1, cgoal: 7, zones: 2 } },
   // 7번부터 유사 심볼군(sim)을 올려 지각 난이도를 더한다 — 같은 계열 과일이 섞여 탐색이 어려워진다
   { id: 7,  name: '수집가',        devices: ['collect'],         maxStuck: 0.32, cfg: { N: 11, k: 2, r: 1, cards: 16, layers: 2, topology: 'grid', deck: 6, wild: 1, cgoal: 7, objective: 'collect', sim: 1 } },
   { id: 8,  name: '찢어진 종이',   devices: ['paper'],           maxStuck: 0.34, cfg: { N: 12, k: 2, r: 1, cards: 18, layers: 3, deck: 6, wild: 1, cgoal: 7, paper: 25, sim: 1 } },
   { id: 9,  name: '두 개를 맞춰',  devices: ['r2'],              maxStuck: 0.38, cfg: { N: 12, k: 3, r: 2, cards: 16, layers: 3, deck: 7, wild: 1, cgoal: 8, sim: 1 } },
-  { id: 10, name: '자물쇠 창고',   devices: ['key', 'bomb', 'lock'], maxStuck: 0.30, cfg: { N: 14, k: 2, r: 1, cards: 20, layers: 4, topology: 'stack', deck: 6, wild: 1, cgoal: 8, keylocks: 2, bombs: 2, obst: 15, sim: 2 } },
+  { id: 10, name: '자물쇠 창고',   devices: ['key', 'bomb', 'lock'], maxStuck: 0.30, cfg: { N: 14, k: 2, r: 1, cards: 20, layers: 4, deck: 6, wild: 1, cgoal: 8, keylocks: 2, bombs: 2, obst: 15, sim: 2 } },
   { id: 11, name: '가려진 구역',   devices: ['zone', 'paper', 'facedown'], maxStuck: 0.30, cfg: { N: 14, k: 2, r: 1, cards: 20, layers: 3, deck: 6, wild: 1, cgoal: 9, zones: 3, paper: 20, fd: 15, sim: 2 } },
   { id: 12, name: '마지막 관문',   devices: ['key', 'bomb', 'zone', 'r2'], maxStuck: 0.35, cfg: { N: 15, k: 3, r: 2, cards: 22, layers: 4, deck: 7, wild: 2, cgoal: 10, keylocks: 3, bombs: 2, zones: 2, sim: 2 } },
 ];

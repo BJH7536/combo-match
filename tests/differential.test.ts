@@ -22,6 +22,7 @@ function replayAgainstReference(level: LevelData, seed: number, policy: 'greedy'
     cleared: boolean;
     moves: number;
     score: number;
+    why: 'collect' | 'bomb' | 'move-limit' | 'exhausted' | 'natural';
     trace: TraceEvent[];
   };
   let pendingFallback: SymbolId[] | null = null;
@@ -56,12 +57,19 @@ function replayAgainstReference(level: LevelData, seed: number, policy: 'greedy'
   const s = engine.getState();
   expect(s.moves, `moves (seed ${seed})`).toBe(ref.moves);
   expect(s.score, `final score (seed ${seed})`).toBe(ref.score);
+  // 종료 상태·사유까지 단언 (감사: endReason 미단언 시 사유 왜곡 뮤턴트가 전량 생존했음)
   if (ref.cleared) {
     expect(s.status, `won 기대 (seed ${seed})`).toBe('won');
+    expect(engine.endReason, `승리 사유 (seed ${seed})`).toBe(
+      ref.why === 'collect' ? 'collect-goal' : 'board-cleared',
+    );
+  } else if (ref.why === 'exhausted') {
+    // 자원 소진 막힘 — 엔진은 패배를 선언하지 않고 playing+stuck (패배 선언은 세션 계층 소유, D-5)
+    expect(s.status === 'playing' && engine.isStuck(), `stuck 기대 (seed ${seed})`).toBe(true);
   } else {
-    // 레퍼런스 실패 원인: 폭탄/이동제한/수집미달(엔진 lost) 또는 자원 소진 막힘(엔진 playing+stuck)
-    const stuckLike = s.status === 'playing' && engine.isStuck();
-    expect(s.status === 'lost' || stuckLike, `lost/stuck 기대 (seed ${seed})`).toBe(true);
+    const reasonMap = { bomb: 'bomb-exploded', 'move-limit': 'move-limit', natural: 'collect-unmet' } as const;
+    expect(s.status, `lost 기대 (seed ${seed})`).toBe('lost');
+    expect(engine.endReason, `패배 사유 (seed ${seed})`).toBe(reasonMap[ref.why as keyof typeof reasonMap]);
   }
 }
 

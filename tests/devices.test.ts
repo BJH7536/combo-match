@@ -169,6 +169,26 @@ describe('규칙 장치 (F계층)', () => {
     expect(e.endReason).toBe('bomb-exploded');
   });
 
+  it('💣 폭발은 드로우·와일드·집게 행동에서도 발생한다 (감사 갭)', () => {
+    const cards = [{ symbols: ['A', 'B'] }, { symbols: ['B', 'C'], bombCounter: 1 }];
+    const pool = ['A', 'B', 'C'];
+
+    const ld = makeLevel({ pool, active: ['A', 'B'], cards, stock: [['A', 'C']], config: { deck: 1, wild: 0, cgoal: 9 } });
+    const ed = engineOf(ld);
+    expect(ed.draw().ok).toBe(true);
+    expect(ed.endReason).toBe('bomb-exploded');
+
+    const lw = makeLevel({ pool, active: ['A', 'B'], cards, config: { deck: 0, wild: 1, cgoal: 9 } });
+    const ew = engineOf(lw);
+    expect(ew.useWild(0).ok).toBe(true);
+    expect(ew.endReason).toBe('bomb-exploded');
+
+    const lc = makeLevel({ pool, active: ['A', 'B'], cards, config: { deck: 0, wild: 0, cgoal: 9 } });
+    const ec = engineOf(lc);
+    expect(ec.useClaw(0).ok).toBe(true);
+    expect(ec.endReason).toBe('bomb-exploded');
+  });
+
   it('💣 제거된 폭탄은 틱되지 않는다 (제거 = 해체)', () => {
     const l = makeLevel({
       pool: ['A', 'B', 'C'],
@@ -197,15 +217,17 @@ describe('규칙 장치 (F계층)', () => {
     expect(e.endReason).toBe('collect-goal');
   });
 
-  it('🎯 수집 미달 + 보드 소진 → collect-unmet 패배', () => {
-    const l = makeLevel({
-      pool: ['A', 'B', 'C'],
-      active: ['A', 'B'],
-      cards: [{ symbols: ['A', 'B'] }, { symbols: ['B', 'C'] }],
-      config: { deck: 0, wild: 0, objective: 'collect', cgoal: 9 },
-      rules: { collectGoal: { symbol: 'A', count: 2 } },
-    });
-    const e = engineOf(l);
+  it('🎯 수집 미달 + 보드 소진 → collect-unmet 패배 (로더가 필패 레벨을 차단하므로 RuntimeLevel 직접 구성 — 방어 분기 핀)', () => {
+    const base = loadLevel(
+      makeLevel({
+        pool: ['A', 'B', 'C'],
+        active: ['A', 'B'],
+        cards: [{ symbols: ['A', 'B'] }, { symbols: ['B', 'C'] }],
+        config: { deck: 0, wild: 0, objective: 'collect', cgoal: 9 },
+        rules: { collectGoal: { symbol: 'A', count: 1 } },
+      }),
+    );
+    const e = new ComboMatchEngine({ ...base, collectGoal: { symbol: 'A', count: 2 } }, {});
     e.tryMatch(0); // A 수집 1
     e.tryMatch(1); // A 없음 — 보드 소진, 1 < 2
     expect(e.getState().status).toBe('lost');
@@ -224,6 +246,37 @@ describe('규칙 장치 (F계층)', () => {
     e.tryMatch(1);
     expect(e.getState().status).toBe('lost');
     expect(e.endReason).toBe('move-limit');
+  });
+
+  it('이동 제한: 와일드 제거는 검사하지 않는다 — 매치 경로 전용 (레퍼런스 준거 핀, 감사: 가드 제거 뮤턴트가 기존 스위트에서 생존했음)', () => {
+    const l = makeLevel({
+      pool: ['A', 'B', 'C', 'D', 'X', 'Y'],
+      active: ['X', 'Y'], // 어떤 카드와도 공유 없음 — 와일드 강제
+      cards: [{ symbols: ['A', 'B'] }, { symbols: ['B', 'C'] }, { symbols: ['C', 'D'] }],
+      config: { deck: 0, wild: 3, moves: 1, cgoal: 9 },
+    });
+    const e = engineOf(l);
+    expect(e.useWild(0).ok).toBe(true); // moves 1 = 한도 도달 — 그러나 와일드 경로는 미검사
+    expect(e.getState().status).toBe('playing');
+    expect(e.tryMatch(1).ok).toBe(true); // 매치 경로에서 비로소 검사: moves 2 ≥ 1, 보드 미완
+    expect(e.getState().status).toBe('lost');
+    expect(e.endReason).toBe('move-limit');
+  });
+
+  it('🗺️ 구역 3단: 하위 구역이 소진될 때마다 순차 개방 (감사 갭)', () => {
+    const l = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'] }, { symbols: ['A', 'B'], zone: 1 }, { symbols: ['B', 'C'], zone: 2 }],
+      config: { deck: 0, wild: 0, cgoal: 9, zones: 3 },
+    });
+    const e = engineOf(l);
+    expect(e.tryMatch(2)).toEqual({ ok: false, reason: 'zone-locked' });
+    e.tryMatch(0); // zone0 소진
+    expect(e.tryMatch(2)).toEqual({ ok: false, reason: 'zone-locked' }); // zone1 잔존
+    e.tryMatch(1); // zone1 소진
+    expect(e.tryMatch(2).ok).toBe(true);
+    expect(e.getState().status).toBe('won');
   });
 
   it('🧲 집게: 덮인 카드도 제거, 콤보·액티브·점수 불변, 폭탄 틱O·수집 카운트O (ADR-001 O-5② 가정)', () => {

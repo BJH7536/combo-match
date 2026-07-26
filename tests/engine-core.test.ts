@@ -203,6 +203,91 @@ describe('매칭·체이닝·점수', () => {
     expect(engineOf(l2).isStuck()).toBe(false); // 와일드로 탈출 가능
   });
 
+  it('isStuck: wildLeft 판정이 useWild 가드(<=0)와 일치 — 음수 와일드에서도 막힘 보고 (감사 회귀)', () => {
+    const l = makeLevel({
+      pool: ['A', 'B', 'C', 'D'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['C', 'D'] }],
+      config: { deck: 0, wild: 0 },
+    });
+    const e = engineOf(l);
+    e.addWild(-1); // 세션 계층 오사용 상정 — useWild는 no-wild로 거부하므로 막힘이어야 한다
+    expect(e.useWild(0)).toEqual({ ok: false, reason: 'no-wild' });
+    expect(e.isStuck()).toBe(true);
+  });
+
+  it('isRevealed: faceDown 카드는 free 전까지 심볼 미공개, 개방 시 공개 (감사 갭)', () => {
+    const l = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'C'], faceDown: true }, { symbols: ['A', 'B'] }],
+      coverage: [{ id: 0, coveredBy: [1] }],
+      config: { deck: 0 },
+    });
+    const e = engineOf(l);
+    expect(e.isRevealed(0)).toBe(false); // faceDown + 덮임
+    expect(e.isRevealed(1)).toBe(true); // faceDown 아님 — 항상 공개
+    e.tryMatch(1); // 덮개 제거 → 0이 free
+    expect(e.isRevealed(0)).toBe(true);
+  });
+
+  it('addWild: 세션 보충 후 no-wild가 해제된다 (감사 갭)', () => {
+    const l = makeLevel({
+      pool: ['A', 'B', 'C', 'D'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['C', 'D'] }],
+      config: { deck: 0, wild: 0 },
+    });
+    const e = engineOf(l);
+    expect(e.useWild(0)).toEqual({ ok: false, reason: 'no-wild' });
+    e.addWild(1);
+    expect(e.useWild(0).ok).toBe(true);
+    expect(e.getState().wild).toBe(0);
+  });
+
+  it('getMatchableIds/getWildableIds: 게이트·공유·제거를 반영한 후보 목록 (감사 갭)', () => {
+    const l = makeLevel({
+      pool: ['A', 'B', 'C', 'D'],
+      active: ['A', 'B'],
+      cards: [
+        { symbols: ['A', 'C'] }, // 0: 매치 가능
+        { symbols: ['C', 'D'] }, // 1: 공유 없음 — 와일드만 가능
+        { symbols: ['A', 'B'], zone: 1 }, // 2: 구역 잠금 — 와일드도 불가
+      ],
+      config: { deck: 0, wild: 1, cgoal: 9, zones: 2 },
+    });
+    const e = engineOf(l);
+    expect(e.getMatchableIds()).toEqual([0]);
+    expect(e.getWildableIds()).toEqual([0, 1]); // zone 잠금(2)은 와일드 목록에서도 제외
+    e.tryMatch(0); // 제거 반영 + active [A,C]
+    expect(e.getMatchableIds()).toEqual([1]); // C 공유, zone0에 1 잔존이라 2는 여전히 잠금
+    expect(e.getWildableIds()).toEqual([1]);
+  });
+
+  it('scoreGoal: 와일드 경로에서도 발동하며, 같은 행동에서는 수집 목표가 선행한다 (C2 확장 경계, 감사 갭)', () => {
+    const lw = makeLevel({
+      pool: ['A', 'B', 'C', 'D'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['C', 'D'] }, { symbols: ['A', 'B'] }],
+      config: { deck: 0, wild: 1, cgoal: 9 },
+      rules: { scoreGoal: { score: 10 } },
+    });
+    const ew = engineOf(lw);
+    expect(ew.useWild(0).ok).toBe(true); // 10점 도달
+    expect(ew.endReason).toBe('score-goal');
+
+    const lb = makeLevel({
+      pool: ['A', 'B', 'C'],
+      active: ['A', 'B'],
+      cards: [{ symbols: ['A', 'B'] }, { symbols: ['B', 'C'] }],
+      config: { deck: 0, wild: 0, objective: 'collect', cgoal: 9 },
+      rules: { collectGoal: { symbol: 'A', count: 1 }, scoreGoal: { score: 10 } },
+    });
+    const eb = engineOf(lb);
+    expect(eb.tryMatch(0).ok).toBe(true); // 수집 1/1과 점수 10 동시 도달
+    expect(eb.endReason).toBe('collect-goal'); // 판정 순서 계약: 수집 → scoreGoal
+  });
+
   it('게임 종료 후 행동 → game-over', () => {
     const l = makeLevel({
       pool: ['A', 'B'],

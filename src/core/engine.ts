@@ -194,7 +194,7 @@ export class ComboMatchEngine {
     if (this.statusV !== 'playing') return false;
     if (this.getMatchableIds().length > 0) return false;
     if (this.deckLeft > 0) return false;
-    return this.wildLeft === 0 || this.getWildableIds().length === 0;
+    return this.wildLeft <= 0 || this.getWildableIds().length === 0; // useWild 가드(<=0)와 동일 극성 (감사)
   }
 
   // ---- 행동 ----
@@ -254,13 +254,16 @@ export class ComboMatchEngine {
   // ---- 내부 ----
   // 제거 공통부: 상태·구역·조각·언커버 이벤트 (액티브·점수는 경로별)
   private removeCardState(card: LevelCardData, via: 'match' | 'wildcard' | 'claw'): void {
-    const before = this.L.cards.filter((c) => !this.removed[c.id] && c.id !== card.id && this.isFree(c.id));
+    const wasFree = new Set<number>();
+    for (const c of this.L.cards) {
+      if (!this.removed[c.id] && c.id !== card.id && this.isFree(c.id)) wasFree.add(c.id);
+    }
     this.removed[card.id] = true;
     this.removedCount++;
     this.zoneRemaining[card.zone] = (this.zoneRemaining[card.zone] ?? 1) - 1;
     this.events.emit('cardRemoved', { id: card.id, via });
     for (const c of this.L.cards) {
-      if (!this.removed[c.id] && this.isFree(c.id) && !before.includes(c)) {
+      if (!this.removed[c.id] && this.isFree(c.id) && !wasFree.has(c.id)) {
         this.events.emit('cardUncovered', { id: c.id }); // id 오름차순 (cards 순회 순서)
       }
     }

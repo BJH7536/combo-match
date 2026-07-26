@@ -12,13 +12,25 @@ export function loadLevel(data: LevelData): RuntimeLevel {
   if (typeof data.schema !== 'string' || !data.schema.startsWith('combo-match/level@')) {
     throw new LevelLoadError(`알 수 없는 스키마: ${String(data.schema)}`);
   }
+  // 신뢰 불가 채널(#level=<base64>·localStorage) 대비 — 구조 분해 전에 최상위 형태부터 fail-fast
+  if (typeof data.config !== 'object' || data.config === null) throw new LevelLoadError('config 없음');
+  for (const f of ['cards', 'coverage', 'pool', 'active', 'deckStock'] as const) {
+    if (!Array.isArray(data[f])) throw new LevelLoadError(`${f}가 배열이 아님`);
+  }
+  if (typeof data.seed !== 'number' || !Number.isFinite(data.seed)) {
+    throw new LevelLoadError(`seed 무효: ${String(data.seed)}`);
+  }
   const { config, cards, coverage, pool } = data;
   const n = cards.length;
   if (n === 0) throw new LevelLoadError('카드가 없음');
+  if (!Number.isInteger(config.k) || config.k < 1) throw new LevelLoadError(`k 무효: ${config.k}`);
   if (!Number.isInteger(config.r) || config.r < 1) throw new LevelLoadError(`r 무효: ${config.r}`);
   if (config.r > config.k) throw new LevelLoadError(`r(${config.r}) > k(${config.k})`);
-  if (config.deck < 0 || config.wild < 0 || config.moves < 0) {
-    throw new LevelLoadError('deck/wild/moves는 음수 불가');
+  // 비숫자(undefined/NaN)도 차단 — 엔진 자원 가드는 부정형(<=0)이라 NaN에서 무한 드로우·무한 와일드가 된다 (감사)
+  for (const key of ['deck', 'wild', 'moves'] as const) {
+    if (!Number.isInteger(config[key]) || config[key] < 0) {
+      throw new LevelLoadError(`${key} 무효: ${config[key]} (0 이상 정수)`);
+    }
   }
   if (!Number.isInteger(config.cgoal) || config.cgoal < 0) {
     throw new LevelLoadError(`cgoal 무효: ${config.cgoal} (0=비활성, 그 외 양의 정수)`);
@@ -34,7 +46,9 @@ export function loadLevel(data: LevelData): RuntimeLevel {
 
   // 카드: id = index 보장 (레퍼런스 구현의 id-인덱스 동일성 관례)
   cards.forEach((c, i) => {
+    if (typeof c !== 'object' || c === null) throw new LevelLoadError(`cards[${i}]가 객체가 아님`);
     if (c.id !== i) throw new LevelLoadError(`cards[${i}].id=${c.id} — id는 index와 일치해야 함`);
+    if (!Array.isArray(c.symbols)) throw new LevelLoadError(`카드 ${i} symbols가 배열이 아님`);
     if (c.symbols.length < 1 || c.symbols.length > 6) {
       throw new LevelLoadError(`카드 ${i} 심볼 수 ${c.symbols.length} (1~6 허용)`);
     }
@@ -42,20 +56,33 @@ export function loadLevel(data: LevelData): RuntimeLevel {
       throw new LevelLoadError(`카드 ${i}에 중복 심볼`);
     }
     inPool(c.symbols, `카드 ${i}`);
+    if (!Array.isArray(c.unlockedBy)) throw new LevelLoadError(`카드 ${i} unlockedBy가 배열이 아님`);
     for (const k of c.unlockedBy) {
       if (!Number.isInteger(k) || k < 0 || k >= n) throw new LevelLoadError(`카드 ${i}의 열쇠 참조 무효: ${k}`);
       if (k === i) throw new LevelLoadError(`카드 ${i}가 자기 자신을 열쇠로 참조`);
     }
-    if (c.bombCounter < 0) throw new LevelLoadError(`카드 ${i} bombCounter 음수`);
-    if (c.zone < 0 || c.zone > 3) throw new LevelLoadError(`카드 ${i} zone 범위 밖: ${c.zone}`);
+    if (!Number.isInteger(c.lockReq) || c.lockReq < 0) throw new LevelLoadError(`카드 ${i} lockReq 무효: ${c.lockReq}`);
+    if (!Number.isInteger(c.bombCounter) || c.bombCounter < 0) {
+      throw new LevelLoadError(`카드 ${i} bombCounter 무효: ${c.bombCounter}`);
+    }
+    // zone은 정수 강제 — 레퍼런스는 ||0 정규화하지만 엔진은 원값을 배열 인덱스로 쓰므로 로더가 발산을 차단 (감사)
+    if (!Number.isInteger(c.zone) || c.zone < 0 || c.zone > 3) {
+      throw new LevelLoadError(`카드 ${i} zone 무효: ${c.zone} (0~3 정수)`);
+    }
   });
   inPool(data.active, 'active');
-  data.deckStock.forEach((s, i) => inPool(s, `deckStock[${i}]`));
+  data.deckStock.forEach((s, i) => {
+    if (!Array.isArray(s)) throw new LevelLoadError(`deckStock[${i}]가 배열이 아님`);
+    inPool(s, `deckStock[${i}]`);
+  });
 
   // coverage → coveredBy 배열 (전 카드 항목 필수, 참조 무결성)
   const coveredBy: number[][] = Array.from({ length: n }, () => []);
   const seen = new Set<number>();
   for (const entry of coverage) {
+    if (typeof entry !== 'object' || entry === null || !Array.isArray(entry.coveredBy)) {
+      throw new LevelLoadError('coverage 항목 형태 무효 (id + coveredBy 배열 필수)');
+    }
     if (!Number.isInteger(entry.id) || entry.id < 0 || entry.id >= n) {
       throw new LevelLoadError(`coverage id 무효: ${entry.id}`);
     }
@@ -96,11 +123,23 @@ export function loadLevel(data: LevelData): RuntimeLevel {
   const collectGoal = rules?.collectGoal ?? null;
   if (collectGoal) {
     if (!poolSet.has(collectGoal.symbol)) throw new LevelLoadError('collectGoal 심볼이 pool에 없음');
-    if (collectGoal.count < 1) throw new LevelLoadError('collectGoal.count < 1');
+    if (!Number.isInteger(collectGoal.count) || collectGoal.count < 1) {
+      throw new LevelLoadError(`collectGoal.count 무효: ${collectGoal.count}`);
+    }
+    // 달성 가능성 — 보유량 초과 목표는 구조적 필패 (종이 piecesNeeded 검사와 동형, 감사)
+    const holders = cards.filter((c) => c.symbols.includes(collectGoal.symbol)).length;
+    if (collectGoal.count > holders) {
+      throw new LevelLoadError(`collectGoal.count(${collectGoal.count}) > 목표 심볼 보유 카드 수(${holders})`);
+    }
+  }
+  const scoreGoalRule = rules?.scoreGoal ?? null;
+  if (scoreGoalRule && (!Number.isInteger(scoreGoalRule.score) || scoreGoalRule.score < 1)) {
+    throw new LevelLoadError(`scoreGoal.score 무효: ${scoreGoalRule.score} (1 이상 정수)`);
   }
 
   return {
-    cards,
+    // cards도 방어 복사 — pool 등과 복사 정책 통일, 호출자 측 변조가 진행 중인 판에 전파되지 않게 (감사)
+    cards: cards.map((c) => ({ ...c, symbols: c.symbols.slice(), unlockedBy: c.unlockedBy.slice() })),
     coveredBy,
     pool: pool.slice(),
     initialActive: data.active.slice(),
@@ -113,7 +152,7 @@ export function loadLevel(data: LevelData): RuntimeLevel {
     moveLimit: config.moves,
     collectGoal: collectGoal ? { symbol: collectGoal.symbol, count: collectGoal.count } : null,
     paperNeed,
-    scoreGoal: rules?.scoreGoal?.score ?? null,
+    scoreGoal: scoreGoalRule?.score ?? null,
     seed: data.seed,
   };
 }

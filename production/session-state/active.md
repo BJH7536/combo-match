@@ -4,14 +4,19 @@
 
 ## Current Task
 
-- **Task**: 엔진 독립 감사(wf_49cf7fab-663) 확정 지적 반영 — 완료
-- **감사 결과**: bughunt·coverage 감사 완료, fidelity 감사자+verify 단계는 세션 한도로 미완
-  (재개 필요 시 resumeFromRunId: wf_49cf7fab-663). 확정 결함 1건 수정: engine cgoal 가드
-  `> 0` → 레퍼런스 truthy 동치 + loader에 cgoal 검증(음수/비정수 차단). 커버리지 갭 5종
-  회귀 테스트 추가(프로덕션 drawFallback 시드 동치·와일드 게이트 거부 4종·다중 폭탄
-  틱 순서/중단·거부 우선순위 쌍 5종·r=2 경계) — 전부 즉시 통과(기존 동작 정상 확인).
-- **엔진 현황**: src/core 5개 모듈 (engine·level-loader·rng·events·types), 테스트 52개 통과
-  (차등 테스트 210회 재생 포함), tsc strict 통과. 다음: Phaser app-shell·보드 렌더 (7/30~)
+- **Task**: 엔진 독립 감사(wf_49cf7fab-663) 전체 완료 및 반영 — 완료
+- **감사 최종**: fidelity 재개 실행으로 3관점 감사 + verify 전부 완료(27건 중 25 확정·2 반박).
+  반영: ①cgoal 가드 truthy 동치+loader 검증 ②loader 강화(deck/wild/moves/k·zone·카드 필드
+  비숫자/비정수 차단, 최상위 필드 형태 가드 — raw TypeError 제거, collectGoal 달성 가능성,
+  scoreGoal 검증, cards 방어 복사) ③isStuck wildLeft 극성 통일(<=0) ④언커버 계산 Set화
+  ⑤차등 테스트 확장: 픽스처 9종×2정책×15시드=270회 + 종료 사유(endReason) 단언 +
+  와일드 강제 픽스처(기존 210회 중 w 6회 → 매 시드 강제) ⑥유닛 갭: 폭탄 폭발 3경로,
+  와일드×이동제한 핀, 구역 3단, isRevealed/addWild/getMatchableIds 직접 단언 등.
+- **반영 안 함(기록)**: 집게 수량 비추적(반박 — 세션 계층 소유가 의도), useWild/useClaw 거부
+  이벤트 비대칭(matching.md Open Question — UI 구현 시 결정), zone 상한 0..3 vs 마스터 0..2
+  (설계 판단 필요), 언커버 역인덱스 최적화(시뮬 전용화 시).
+- **엔진 현황**: src/core 5개 모듈, 테스트 70개 통과, tsc strict 통과.
+  다음: Phaser app-shell·보드 렌더 (7/30~)
 - **(이전 작업)**: 기획 마스터 GDD 채택 및 정렬 (ADR-001) — 완료
 - **Status**: combo-match-core.md를 규칙의 단일 진실로 채택 (사용자 결정 4건: 마스터 채택 /
   무표시+유료 힌트 / 목표 3종 / **장치 7종 전부 포함**). 충돌 13건 해소 기록, GDD 6종 배너,

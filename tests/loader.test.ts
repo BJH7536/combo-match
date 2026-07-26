@@ -90,4 +90,57 @@ describe('level@2 loader', () => {
     frac.config.cgoal = 2.5;
     expect(() => loadLevel(frac)).toThrow(/cgoal/);
   });
+
+  it('deck/wild/moves/k 비숫자·비정수 → LevelLoadError (NaN 무한 드로우·무한 와일드 차단 — 감사 회귀)', () => {
+    for (const key of ['deck', 'wild', 'moves', 'k'] as const) {
+      const missing = valid();
+      delete (missing.config as unknown as Record<string, unknown>)[key];
+      expect(() => loadLevel(missing), `${key} 누락`).toThrow(LevelLoadError);
+      const frac = valid();
+      (frac.config as unknown as Record<string, unknown>)[key] = 1.5;
+      expect(() => loadLevel(frac), `${key} 비정수`).toThrow(LevelLoadError);
+    }
+  });
+
+  it('zone 누락/비정수 → LevelLoadError (레퍼런스 ||0 정규화와의 게이트 발산 차단 — 감사 회귀)', () => {
+    const missing = valid();
+    delete (missing.cards[0] as unknown as Record<string, unknown>)['zone'];
+    expect(() => loadLevel(missing)).toThrow(/zone/);
+    const frac = valid();
+    (frac.cards[0] as unknown as Record<string, unknown>)['zone'] = 1.5;
+    expect(() => loadLevel(frac)).toThrow(/zone/);
+  });
+
+  it('collectGoal.count > 목표 심볼 보유 카드 수 → LevelLoadError (구조적 필패 레벨 차단 — 감사 회귀)', () => {
+    const l = valid(); // A 보유 카드는 [A,B] 1장
+    l.rules = { collectGoal: { symbol: 'A', count: 2 } };
+    expect(() => loadLevel(l)).toThrow(/collectGoal/);
+  });
+
+  it('scoreGoal.score 0/음수/비정수 → LevelLoadError (첫 매치 즉시 승리 차단 — 감사 회귀)', () => {
+    for (const bad of [0, -5, 2.5]) {
+      const l = valid();
+      l.rules = { scoreGoal: { score: bad } };
+      expect(() => loadLevel(l), `score=${bad}`).toThrow(/scoreGoal/);
+    }
+  });
+
+  it('최상위/카드 필드 누락 → raw TypeError가 아닌 LevelLoadError (신뢰 불가 채널 대비 — 감사 회귀)', () => {
+    expect(() => loadLevel({ schema: 'combo-match/level@2' } as never)).toThrow(LevelLoadError);
+    const noStock = valid();
+    delete (noStock as unknown as Record<string, unknown>)['deckStock'];
+    expect(() => loadLevel(noStock)).toThrow(LevelLoadError);
+    const noUb = valid();
+    delete (noUb.cards[0] as unknown as Record<string, unknown>)['unlockedBy'];
+    expect(() => loadLevel(noUb)).toThrow(LevelLoadError);
+  });
+
+  it('cards도 방어 복사한다 — 로드 후 원본 변조가 런타임에 전파되지 않음 (감사 회귀)', () => {
+    const data = valid();
+    const rt = loadLevel(data);
+    data.cards[0]!.symbols.push('C');
+    data.cards[0]!.lockReq = 99;
+    expect(rt.cards[0]!.symbols).toEqual(['A', 'B']);
+    expect(rt.cards[0]!.lockReq).toBe(0);
+  });
 });

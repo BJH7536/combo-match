@@ -185,6 +185,39 @@ const moveLimited = makeLevel({
   config: { deck: 2, wild: 1, moves: 3, cgoal: 3 },
 });
 
+// 와일드 강제: 초기 액티브가 어떤 카드와도 공유 없음 + 덱 0 → 레퍼런스 봇이 와일드로만 진입 가능.
+// 삼각 컴포넌트 2개라 첫 컴포넌트 소진 후 두 번째 와일드도 강제 — 콤보 유지(max(1,combo))와
+// cgoal 배수 시점의 와일드 무보너스 경로가 매 시드 강제로 커버된다 (감사: 기존 210회 중 w 6회뿐).
+const wildGauntlet = makeLevel({
+  pool: ['A', 'B', 'C', 'D', 'E', 'F', 'X', 'Y'],
+  active: ['X', 'Y'],
+  cards: [
+    { symbols: ['A', 'B'] },
+    { symbols: ['B', 'C'] },
+    { symbols: ['C', 'A'] },
+    { symbols: ['D', 'E'] },
+    { symbols: ['E', 'F'] },
+    { symbols: ['F', 'D'] },
+  ],
+  config: { deck: 0, wild: 3, cgoal: 3 },
+});
+
+// 수집 빠듯: C 보유 3장 = count 3, 자원 부족 — 시드에 따라 조기 승리 또는 자원 소진 막힘(stuck) 종료
+const collectTight = makeLevel({
+  pool: ['A', 'B', 'C', 'D', 'E'],
+  active: ['A', 'B'],
+  cards: [
+    { symbols: ['A', 'C'] },
+    { symbols: ['C', 'E'] },
+    { symbols: ['B', 'D'] },
+    { symbols: ['D', 'C'] },
+    { symbols: ['E', 'D'] },
+  ],
+  stock: [['A', 'D']],
+  config: { deck: 1, wild: 0, objective: 'collect', cgoal: 3 },
+  rules: { collectGoal: { symbol: 'C', count: 3 } },
+});
+
 export const DIFF_FIXTURES: { name: string; level: LevelData }[] = [
   { name: 'basic', level: basic },
   { name: 'pyramid', level: pyramid },
@@ -193,4 +226,6 @@ export const DIFF_FIXTURES: { name: string; level: LevelData }[] = [
   { name: 'collect', level: collect },
   { name: 'bomb-tight', level: bombTight },
   { name: 'move-limited', level: moveLimited },
+  { name: 'wild-gauntlet', level: wildGauntlet },
+  { name: 'collect-tight', level: collectTight },
 ];

@@ -3,7 +3,7 @@
    출처: tools/level-designer.html (mulberry32/shareCount: 줄 381~382, runOneSim: 줄 537~612,
    liteOf: 줄 615~624 — export JSON 형태에 맞게 coverage 어댑터만 추가).
    ⚠️ 규칙 로직 수정 금지 — 차등 테스트(differential.test.ts)의 기준이다.
-   트레이스 계측(trace.push)만 원본에 추가되었다. */
+   원본에 추가된 계측은 트레이스(trace.push)와 종료 사유(fin의 why 인자) 둘뿐이다. */
 
 export function mulberry32(a) {
   return function () {
@@ -102,7 +102,8 @@ export function runOneSimTraced(L, seed, policy) {
     }
     return bi[Math.floor(rng() * bi.length)];
   }
-  function fin(cleared) {
+  function fin(cleared, why) {
+    // why 계측 추가: collect | bomb | move-limit | exhausted | natural
     return {
       cleared,
       moves,
@@ -111,6 +112,7 @@ export function runOneSimTraced(L, seed, policy) {
       maxCombo,
       score,
       branch: branchN ? branchSum / branchN : 0,
+      why,
       trace,
     };
   }
@@ -147,9 +149,9 @@ export function runOneSimTraced(L, seed, policy) {
       if (L.cgoal && combo % L.cgoal === 0) score += 100 * combo;
       trace.push({ t: 'm', id: pick, combo, score, removedCount }); // 계측
       if (goal && L.cards[pick].symbols.indexOf(goal.symbol) >= 0 && ++collected >= goal.count)
-        return fin(true);
-      if (tickBombs()) return fin(false);
-      if (L.moveLimit > 0 && moves >= maxMoves && removedCount < N) return fin(false);
+        return fin(true, 'collect');
+      if (tickBombs()) return fin(false, 'bomb');
+      if (L.moveLimit > 0 && moves >= maxMoves && removedCount < N) return fin(false, 'move-limit');
       continue;
     }
     if (deck > 0) {
@@ -158,7 +160,7 @@ export function runOneSimTraced(L, seed, policy) {
       combo = 0;
       active = drawActive();
       trace.push({ t: 'd', active: active.slice(), combo, score, removedCount }); // 계측
-      if (tickBombs()) return fin(false);
+      if (tickBombs()) return fin(false, 'bomb');
       continue;
     }
     if (wild > 0) {
@@ -177,14 +179,14 @@ export function runOneSimTraced(L, seed, policy) {
         moves++;
         trace.push({ t: 'w', id: pick, combo, score, removedCount }); // 계측
         if (goal && L.cards[pick].symbols.indexOf(goal.symbol) >= 0 && ++collected >= goal.count)
-          return fin(true);
-        if (tickBombs()) return fin(false);
+          return fin(true, 'collect');
+        if (tickBombs()) return fin(false, 'bomb');
         continue;
       }
     }
-    return fin(false);
+    return fin(false, 'exhausted');
   }
-  return fin(goal ? collected >= goal.count : removedCount >= N);
+  return fin(goal ? collected >= goal.count : removedCount >= N, 'natural');
 }
 
 // export JSON(level@2) → 시뮬레이션 경량 구조 (원본 liteOf의 coverage 어댑터판)

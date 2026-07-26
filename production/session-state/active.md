@@ -16,7 +16,14 @@
   이벤트 비대칭(matching.md Open Question — UI 구현 시 결정), zone 상한 0..3 vs 마스터 0..2
   (설계 판단 필요), 언커버 역인덱스 최적화(시뮬 전용화 시).
 - **엔진 현황**: src/core 5개 모듈, 테스트 70개 통과, tsc strict 통과.
-  다음: Phaser app-shell·보드 렌더 (7/30~)
+- **(신규) Phaser app-shell 1차**: src/game 3모듈 + main.ts 부트스트랩 —
+  play-scene(보드 렌더·카드 입력·드로우/와일드 버튼·HUD·종료 오버레이·막힘 안내),
+  level-source(`#level=<base64>` 해시 디코드 — 디자이너 handoff 호환 + 내장 데모 레벨),
+  board-layout(뷰포트 맞춤 순수 함수). 테스트 77개, `npm run build` 통과(gzip 340KB).
+  **미검증**: 브라우저 확장 미연결로 실제 렌더 화면은 사용자 확인 필요(localhost:5173).
+  잔여: 우드 스킨·연출·사운드(8/3~), localStorage 채널, 소프트 실패 세션 계층,
+  Phaser 코드 스플릿(번들 경고), GitHub Pages 배포 개통.
+  다음: 렌더 확인 → 우드 스킨·장치 UI (8/3~)
 - **(이전 작업)**: 기획 마스터 GDD 채택 및 정렬 (ADR-001) — 완료
 - **Status**: combo-match-core.md를 규칙의 단일 진실로 채택 (사용자 결정 4건: 마스터 채택 /
   무표시+유료 힌트 / 목표 3종 / **장치 7종 전부 포함**). 충돌 13건 해소 기록, GDD 6종 배너,

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { LevelData } from '../core/types';
 import { loadProgress, type Progress } from './progress';
 import { feltTexture, PALETTE, panelTexture } from './skin';
+import { loadGold } from './wallet';
 
 // 레벨 선택 — public/levels/index.json을 읽어 레벨 카드를 깔고, 진행 상황(클리어·최고점)을 표시한다.
 // 심사 편의를 위해 잠금은 두지 않는다 (아무 레벨이나 바로 볼 수 있어야 장치 7종이 노출된다).
@@ -74,6 +75,31 @@ export class LevelSelectScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(11);
+
+    // 🪙 지갑 — 아이템 구매 재원 (마스터 §7)
+    this.add
+      .image(
+        STAGE_W - 110,
+        54,
+        panelTexture(this, 'select-gold', 160, 48, {
+          top: PALETTE.goldTop,
+          bottom: PALETTE.goldBottom,
+          shadow: PALETTE.goldShadow,
+          radius: 10,
+          gloss: 0.55,
+        }),
+      )
+      .setDepth(11);
+    this.add.text(STAGE_W - 168, 54, '🪙', { fontFamily: FONT, fontSize: '21px' }).setOrigin(0.5).setDepth(12);
+    this.add
+      .text(STAGE_W - 145, 54, loadGold().toLocaleString(), {
+        fontFamily: FONT,
+        fontSize: '20px',
+        color: PALETTE.goldText,
+        fontStyle: 'bold',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(12);
 
     const status = this.add
       .text(STAGE_W / 2, STAGE_H / 2, '레벨 목록을 불러오는 중…', {

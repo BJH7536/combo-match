@@ -6,6 +6,7 @@ import { computeBoardTransform } from './board-layout';
 import type { LevelIndexEntry } from './level-select-scene';
 import { decodeLevelHash, demoLevel } from './level-source';
 import { saveResult } from './progress';
+import { earn, type Economy, loadGold, normalizeEconomy, payout, spend } from './wallet';
 import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTexture } from './skin';
 
 // 플레이 씬 — 보드 렌더·입력·HUD. 시각 기준: ui_draft.html (우드 콘솔 W2 스포트라이트).
@@ -58,7 +59,10 @@ export class PlayScene extends Phaser.Scene {
   private level!: RuntimeLevel;
   private nodes = new Map<number, CardNode>();
   private bombCounters = new Map<number, number>();
-  private wildArmed = false;
+  private armed: 'none' | 'wild' | 'claw' = 'none'; // 다음 카드 클릭을 어떤 아이템이 가로챌지
+  private gold = 0;
+  private eco: Economy = normalizeEconomy(null);
+  private settled = false; // 정산은 판당 1회
   private ended = false;
   private cardW = 0;
   private cardH = 0;
@@ -74,6 +78,8 @@ export class PlayScene extends Phaser.Scene {
   private wildCount!: Phaser.GameObjects.Text;
   private wildSlot!: Phaser.GameObjects.Image;
   private wildHint!: Phaser.GameObjects.Text;
+  private goldText!: Phaser.GameObjects.Text;
+  private itemButtons: { key: 'hint' | 'claw'; bg: Phaser.GameObjects.Image; price: Phaser.GameObjects.Text }[] = [];
   private movesText: Phaser.GameObjects.Text | null = null;
   private toastText!: Phaser.GameObjects.Text;
 
@@ -90,7 +96,11 @@ export class PlayScene extends Phaser.Scene {
   create(): void {
     this.nodes.clear();
     this.bombCounters.clear();
-    this.wildArmed = false;
+    this.armed = 'none';
+    this.itemButtons = [];
+    this.settled = false;
+    this.gold = loadGold();
+    this.eco = normalizeEconomy((this.initData.level as { economy?: unknown } | undefined)?.economy);
     this.ended = false;
 
     const { level, sourceLabel } = this.resolveLevel();
@@ -314,6 +324,31 @@ export class PlayScene extends Phaser.Scene {
         .setDepth(603);
     }
 
+    // 🪙 지갑 (시안의 골드 칩)
+    this.add
+      .image(
+        560,
+        HEADER_H / 2,
+        panelTexture(this, 'chip-gold', 150, 48, {
+          top: PALETTE.goldTop,
+          bottom: PALETTE.goldBottom,
+          shadow: PALETTE.goldShadow,
+          radius: 10,
+          gloss: 0.55,
+        }),
+      )
+      .setDepth(601);
+    this.add.text(505, HEADER_H / 2, '🪙', { fontFamily: FONT, fontSize: '20px' }).setOrigin(0.5).setDepth(602);
+    this.goldText = this.add
+      .text(528, HEADER_H / 2, '0', {
+        fontFamily: FONT,
+        fontSize: '19px',
+        color: PALETTE.goldText,
+        fontStyle: 'bold',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(602);
+
     this.add
       .text(STAGE_W - 24, HEADER_H / 2, sourceLabel, { fontFamily: FONT, fontSize: '13px', color: '#e0c496' })
       .setOrigin(1, 0.5)
@@ -497,12 +532,49 @@ export class PlayScene extends Phaser.Scene {
       .setOrigin(0.5);
     wild.add([this.wildSlot, wildIcon, this.wildCount]);
     wild.setInteractive(new Phaser.Geom.Rectangle(-45, -57, 90, 114), Phaser.Geom.Rectangle.Contains);
-    wild.on('pointerdown', () => this.toggleWild());
+    wild.on('pointerdown', () => this.onWildSlot());
 
     this.wildHint = this.add
       .text(1188, wildY + 66, '', { fontFamily: FONT, fontSize: '12px', color: '#ffd9a0' })
       .setOrigin(0.5)
       .setDepth(501);
+
+    // 🔍 힌트 · 🧲 집게 — 판 안에서 골드로 구매하는 아이템 (마스터 §4.3)
+    const items: { key: 'hint' | 'claw'; icon: string; label: string; x: number }[] = [
+      { key: 'hint', icon: '🔍', label: '힌트', x: 268 },
+      { key: 'claw', icon: '🧲', label: '집게', x: 366 },
+    ];
+    for (const it of items) {
+      const root = this.add.container(it.x, 668).setDepth(500);
+      const bg = this.add.image(
+        0,
+        0,
+        panelTexture(this, `item-${it.key}`, 86, 104, {
+          top: PALETTE.woodChipTop,
+          bottom: PALETTE.woodChipBottom,
+          shadow: PALETTE.woodChipShadow,
+          shadowDepth: 4,
+          radius: 13,
+          grain: true,
+          gloss: 0.25,
+        }),
+      );
+      const icon = this.add.text(0, -22, it.icon, { fontFamily: FONT, fontSize: '32px' }).setOrigin(0.5);
+      const label = this.add
+        .text(0, 8, it.label, { fontFamily: FONT, fontSize: '13px', color: '#3a2408', fontStyle: 'bold' })
+        .setOrigin(0.5);
+      const price = this.add
+        .text(0, 32, `🪙${this.eco.itemPrices[it.key]}`, {
+          fontFamily: FONT,
+          fontSize: '13px',
+          color: '#5c4318',
+        })
+        .setOrigin(0.5);
+      root.add([bg, icon, label, price]);
+      root.setInteractive(new Phaser.Geom.Rectangle(-43, -52, 86, 104), Phaser.Geom.Rectangle.Contains);
+      root.on('pointerdown', () => this.onItem(it.key));
+      this.itemButtons.push({ key: it.key, bg, price });
+    }
   }
 
   private wildSlotTexture(armed: boolean): string {
@@ -526,8 +598,17 @@ export class PlayScene extends Phaser.Scene {
     this.spotSymbols.setText(this.symbolLines(s.active));
     this.deckCount.setText(String(s.deck));
     this.wildCount.setText(`×${s.wild}`);
-    this.wildSlot.setTexture(this.wildSlotTexture(this.wildArmed));
-    this.wildHint.setText(this.wildArmed ? '카드를 고르세요' : '');
+    this.goldText.setText(this.gold.toLocaleString());
+    this.wildSlot.setTexture(this.wildSlotTexture(this.armed === 'wild'));
+    this.wildHint.setText(
+      this.armed === 'wild' ? '카드를 고르세요' : s.wild <= 0 ? `🪙${this.eco.itemPrices.wild}` : '',
+    );
+    for (const b of this.itemButtons) {
+      const armedThis = b.key === 'claw' && this.armed === 'claw';
+      const affordable = this.gold >= this.eco.itemPrices[b.key];
+      b.bg.setAlpha(armedThis || affordable ? 1 : 0.45);
+      b.price.setText(armedThis ? '취소 · 환불' : `🪙${this.eco.itemPrices[b.key]}`);
+    }
     if (this.movesText) this.movesText.setText(String(Math.max(0, this.level.moveLimit - s.moves)));
 
     if (this.level.cgoal > 0) {
@@ -549,17 +630,65 @@ export class PlayScene extends Phaser.Scene {
   // ---- 행동 ----
   private onCardTap(id: number): void {
     if (this.ended) return;
-    const r = this.wildArmed ? this.engine.useWild(id) : this.engine.tryMatch(id);
+    const mode = this.armed;
+    const r =
+      mode === 'wild' ? this.engine.useWild(id) : mode === 'claw' ? this.engine.useClaw(id) : this.engine.tryMatch(id);
     if (!r.ok) {
       this.toast(REJECT_MSG[r.reason]);
       this.shake(id);
-      if (this.wildArmed && r.reason === 'no-wild') this.wildArmed = false;
+      // 거부돼도 무장은 유지한다 (잘못 눌렀을 때 다시 고를 수 있게). 와일드 소진만 예외.
+      if (r.reason === 'no-wild') this.armed = 'none';
     } else {
-      this.popSpotlight();
-      if (this.wildArmed) this.wildArmed = false;
+      if (mode !== 'claw') this.popSpotlight(); // 집게는 액티브를 바꾸지 않는다
+      this.armed = 'none';
     }
     this.updateHud();
     this.checkStuck();
+  }
+
+  /** 🔍 힌트 · 🧲 집게 구매 (집게는 무장 후 카드 클릭으로 사용, 재클릭 시 환불) */
+  private onItem(key: 'hint' | 'claw'): void {
+    if (this.ended) return;
+    if (key === 'claw' && this.armed === 'claw') {
+      this.gold = earn(this.eco.itemPrices.claw);
+      this.armed = 'none';
+      this.toast('집게 취소 · 환불');
+      this.updateHud();
+      return;
+    }
+    const cost = this.eco.itemPrices[key];
+    const res = spend(cost);
+    if (!res.ok) {
+      this.toast(`골드가 부족합니다 (🪙${cost})`);
+      return;
+    }
+    this.gold = res.gold;
+    if (key === 'hint') this.showHint();
+    else this.armed = 'claw';
+    this.updateHud();
+  }
+
+  // 상시 하이라이트는 폐기(D-2) — 유료 힌트에서만 잠깐 짚어 준다
+  private showHint(): void {
+    const ids = this.engine.getMatchableIds();
+    if (ids.length === 0) {
+      this.toast('지금 맞출 수 있는 카드가 없어요');
+      return;
+    }
+    const id = ids[Math.floor(Math.random() * ids.length)]!;
+    const node = this.nodes.get(id);
+    if (!node) return;
+    this.toast('🔍 여기예요!');
+    node.root.setDepth(node.root.depth + 5000);
+    this.tweens.add({
+      targets: node.root,
+      scale: 1.14,
+      duration: 300,
+      yoyo: true,
+      repeat: 3,
+      ease: 'Sine.easeInOut',
+      onComplete: () => node.root.setDepth(node.root.depth - 5000),
+    });
   }
 
   private onDraw(): void {
@@ -571,21 +700,37 @@ export class PlayScene extends Phaser.Scene {
     this.checkStuck();
   }
 
-  private toggleWild(): void {
+  /** 🌟 와일드 슬롯 — 보유분이 있으면 무장 토글, 소진됐으면 골드로 구매 (마스터 §4.3) */
+  private onWildSlot(): void {
     if (this.ended) return;
-    if (this.engine.getState().wild <= 0) {
-      this.toast(REJECT_MSG['no-wild']);
+    if (this.armed === 'wild') {
+      this.armed = 'none';
+      this.updateHud();
       return;
     }
-    this.wildArmed = !this.wildArmed;
+    if (this.engine.getState().wild <= 0) {
+      const cost = this.eco.itemPrices.wild;
+      const res = spend(cost);
+      if (!res.ok) {
+        this.toast(`골드가 부족합니다 (🪙${cost})`);
+        return;
+      }
+      this.gold = res.gold;
+      this.engine.addWild(1);
+      this.toast(`🌟 와일드 구매 · 🪙−${cost}`);
+    }
+    this.armed = 'wild';
     this.updateHud();
   }
 
   private checkStuck(): void {
-    if (!this.ended && this.engine.isStuck()) {
-      // 소프트 실패(D-5)의 세션 계층은 후속 스코프 — 지금은 재시작 안내만
-      this.showOverlay('막힘', '유효한 매치·덱·와일드가 없습니다');
+    if (this.ended || !this.engine.isStuck()) return;
+    // 소프트 실패(D-5): 집게를 살 수 있으면 아직 패배가 아니다 — 탈출 수단을 안내한다
+    if (this.gold >= this.eco.itemPrices.claw) {
+      this.toast('막혔습니다 — 🧲 집게로 카드를 치울 수 있어요');
+      return;
     }
+    this.showOverlay('막힘', '유효한 매치·덱·와일드가 없습니다');
   }
 
   // ---- 엔진 이벤트 ----
@@ -693,7 +838,7 @@ export class PlayScene extends Phaser.Scene {
       .image(
         STAGE_W / 2,
         STAGE_H / 2,
-        panelTexture(this, 'result-panel', 520, 280, {
+        panelTexture(this, 'result-panel', 540, 330, {
           top: PALETTE.woodBarTop,
           bottom: PALETTE.woodBarBottom,
           shadow: PALETTE.woodDeep,
@@ -705,7 +850,7 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(1001);
     this.add
-      .text(STAGE_W / 2, STAGE_H / 2 - 72, title, {
+      .text(STAGE_W / 2, STAGE_H / 2 - 96, title, {
         fontFamily: FONT,
         fontSize: '56px',
         color: PALETTE.cream,
@@ -714,15 +859,31 @@ export class PlayScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(1002);
     this.add
-      .text(STAGE_W / 2, STAGE_H / 2 - 12, subtitle, { fontFamily: FONT, fontSize: '24px', color: '#f0d9ad' })
+      .text(STAGE_W / 2, STAGE_H / 2 - 38, subtitle, { fontFamily: FONT, fontSize: '24px', color: '#f0d9ad' })
       .setOrigin(0.5)
       .setDepth(1002);
     this.add
-      .text(STAGE_W / 2, STAGE_H / 2 + 38, `SCORE ${s.score.toLocaleString()}`, {
+      .text(STAGE_W / 2, STAGE_H / 2 + 6, `SCORE ${s.score.toLocaleString()}`, {
         fontFamily: FONT,
         fontSize: '30px',
         color: '#ffd76a',
         fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setDepth(1002);
+
+    // 골드 정산 — 패배도 위로보상이 남는다 (마스터 §7 · D-5)
+    const gained = payout(this.eco, this.engine.status === 'won', s.score);
+    if (!this.settled) {
+      this.settled = true;
+      this.gold = earn(gained);
+      this.goldText.setText(this.gold.toLocaleString());
+    }
+    this.add
+      .text(STAGE_W / 2, STAGE_H / 2 + 44, `🪙 +${gained}   (보유 ${this.gold.toLocaleString()})`, {
+        fontFamily: FONT,
+        fontSize: '18px',
+        color: '#f0d9ad',
       })
       .setOrigin(0.5)
       .setDepth(1002);
@@ -747,7 +908,7 @@ export class PlayScene extends Phaser.Scene {
     const totalW = buttons.length * bw + (buttons.length - 1) * gap;
     buttons.forEach((b, i) => {
       const bx = STAGE_W / 2 - totalW / 2 + bw / 2 + i * (bw + gap);
-      this.woodButton(bx, STAGE_H / 2 + 98, bw, 56, b.label, 20, b.onClick).setDepth(1003);
+      this.woodButton(bx, STAGE_H / 2 + 100, bw, 56, b.label, 20, b.onClick).setDepth(1003);
     });
   }
 

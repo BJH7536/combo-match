@@ -7,10 +7,11 @@
 ## 제출물
 
 ### 1. 플레이 가능한 빌드 + 소스 코드 (GitHub)
-- [ ] **git 저장소 초기화 + 커밋 기록 유지** ⚠️ 요건 명시 — 조기 시작할수록 이력이 자연스러움
-- [ ] GitHub 저장소 (public 권장 — 비공개 시 심사 계정 `dl_gameai_reviewer@nhn.com` 초대)
-- [ ] GitHub Pages 배포 — 링크 클릭만으로 브라우저 플레이 (CLAUDE.md 확정: Vite 정적 빌드)
-- [ ] 유료 라이선스 없이 실행 가능 확인
+- [x] **git 저장소 초기화 + 커밋 기록 유지** ⚠️ 요건 명시 — 조기 시작할수록 이력이 자연스러움
+- [x] GitHub 저장소 (public) — https://github.com/BJH7536/combo-match (2026-07-26 개통)
+- [x] GitHub Pages 배포 — **https://bjh7536.github.io/combo-match/** (실기 검증 완료,
+      main 푸시마다 `.github/workflows/deploy.yml`이 테스트→빌드→배포 자동 수행)
+- [x] 유료 라이선스 없이 실행 가능 확인 (Phaser MIT, 외부 런타임 의존 없음)
 - 참고: PC 실행 파일(.exe) 불가 — 웹 타깃 결정과 부합
 
 ### 2. 플레이 동영상 (YouTube)

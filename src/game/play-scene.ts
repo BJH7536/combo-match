@@ -6,7 +6,7 @@ import { computeBoardTransform } from './board-layout';
 import { computeLayout, type Layout } from './layout';
 import { hasSeenHelp, showHelpOverlay } from './help-overlay';
 import type { LevelIndexEntry } from './level-select-scene';
-import { decodeLevelHash, demoLevel } from './level-source';
+import { decodeLevelHash, demoLevel, loadPlaytestLevel } from './level-source';
 import { saveResult } from './progress';
 import { earn, type Economy, loadGold, normalizeEconomy, payout, spend } from './wallet';
 import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTexture } from './skin';
@@ -156,6 +156,15 @@ export class PlayScene extends Phaser.Scene {
       } catch (e) {
         const msg = e instanceof LevelLoadError ? e.message : String(e);
         console.warn(`레벨 해시 로드 실패 — 데모로 폴백: ${msg}`);
+      }
+    }
+    // 디자이너 툴이 같은 브라우저에 남긴 플레이테스트 레벨
+    const fromStorage = loadPlaytestLevel();
+    if (fromStorage) {
+      try {
+        return { level: loadLevel(fromStorage), sourceLabel: '디자이너(플레이테스트)' };
+      } catch (e) {
+        console.warn(`플레이테스트 레벨 로드 실패 — 데모로 폴백: ${String(e)}`);
       }
     }
     return { level: loadLevel(demoLevel()), sourceLabel: '데모 레벨' };

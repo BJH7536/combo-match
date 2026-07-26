@@ -38,6 +38,19 @@ const onViewportChange = (): void => {
 window.addEventListener('resize', onViewportChange);
 window.addEventListener('orientationchange', onViewportChange);
 
+// 디자이너 툴을 옆 탭에 띄워 두면 「▶ 플레이 테스트」를 누를 때마다 이 탭이 새 레벨로 갱신된다
+window.addEventListener('storage', (e) => {
+  if (e.key !== 'combo-match:playtest' || !e.newValue) return;
+  try {
+    const level: unknown = JSON.parse(e.newValue);
+    if (typeof level !== 'object' || level === null) return;
+    for (const sc of game.scene.getScenes(true)) sc.scene.stop();
+    game.scene.start('Play', { level });
+  } catch {
+    /* 깨진 레벨은 무시 — 현재 화면을 유지한다 */
+  }
+});
+
 // 개발 모드에서만 콘솔·자동화 디버깅용으로 노출 (프로덕션 번들에는 포함되지 않음)
 if (import.meta.env.DEV) {
   (window as unknown as { game: Phaser.Game }).game = game;

@@ -98,7 +98,14 @@
   틱마다 배지 팝, 임박 시 카드 흔들림.
   ③**게이트 해제 플래시** — 구역·열쇠·종이 게이트가 풀리는 순간을 `getWildableIds` 전이로 감지해
   카드를 초록으로 반짝인다(hint 텍스처 재활용). 배지만 조용히 바뀌던 것을 눈에 띄게 만듦.
-  다음: ①영상 촬영 ②PDF 3종 ③사운드(여유 시) ④디자이너 localStorage 채널
+- **(신규) 디자이너 연동 완성(2026-07-26)**: 기획자가 레벨을 직접 만들 수 있게 3채널 개통.
+  ①`tools/sync-designer.mjs` — 툴을 `public/designer.html`로 복사하며 GAME_URL을 `./index.html`로
+  치환(prebuild/predev 자동). **툴이 배포에 포함**되어 `/designer.html`로 접근 가능.
+  ②`#level=<base64>` 링크(기존) ③**localStorage `combo-match:playtest` 채널 신설** —
+  툴과 게임을 두 탭에 띄우면 플레이 테스트를 누를 때마다 게임 탭이 storage 이벤트로 자동 갱신.
+  `docs/level-design.md` 가이드 작성(툴 사용법·레벨 팩 편입 절차·index.json 스키마·난이도 기준).
+  `npm run levels`로 팩 전체 재생성. 실기 검증: 툴 → 플레이 테스트 → 게임 로드 확인.
+  다음: ①영상 촬영 ②PDF 3종 ③사운드(여유 시)
 - **(이전 작업)**: 기획 마스터 GDD 채택 및 정렬 (ADR-001) — 완료
 - **Status**: combo-match-core.md를 규칙의 단일 진실로 채택 (사용자 결정 4건: 마스터 채택 /
   무표시+유료 힌트 / 목표 3종 / **장치 7종 전부 포함**). 충돌 13건 해소 기록, GDD 6종 배너,

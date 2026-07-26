@@ -1,7 +1,10 @@
 import type { LevelData } from '../core/types';
 
-// 레벨 입력 채널 — 1순위: URL 해시 `#level=<base64>` (디자이너 툴 handoff, ADR-001 O-2),
-// 폴백: 내장 데모 레벨. 디코드 실패는 예외 없이 null (호출자가 데모로 폴백).
+// 레벨 입력 채널 — 디자이너 툴과 같은 규약을 쓴다:
+//   1) URL 해시 `#level=<base64>`  2) localStorage `combo-match:playtest`  3) 내장 데모
+// 어느 경로든 디코드 실패는 예외 없이 null (호출자가 다음 순위로 폴백).
+
+export const PLAYTEST_KEY = 'combo-match:playtest';
 
 function b64ToUtf8(b64: string): string {
   // 디자이너 strToB64 = btoa(unescape(encodeURIComponent(s))) 의 역변환 (UTF-8 안전)
@@ -18,6 +21,19 @@ export function decodeLevelHash(hash: string): LevelData | null {
     const parsed: unknown = JSON.parse(json);
     if (typeof parsed !== 'object' || parsed === null) return null;
     return parsed as LevelData; // 구조 검증은 loadLevel이 fail-fast로 소유
+  } catch {
+    return null;
+  }
+}
+
+/** 디자이너 툴이 「▶ 플레이 테스트」로 남긴 레벨 (같은 브라우저에서 나란히 작업할 때 쓴다) */
+export function loadPlaytestLevel(): LevelData | null {
+  try {
+    const raw = localStorage.getItem(PLAYTEST_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    return parsed as LevelData;
   } catch {
     return null;
   }

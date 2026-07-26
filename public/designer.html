@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>콤보 매칭 · 레벨 디자인 툴</title>
+<style>
+  :root{
+    --wood-d:#4a2c11; --wood:#7c4f24; --wood-l:#a6703a; --felt:#3c7f2c; --felt-d:#2f6b24;
+    --cream:#f3ead8; --gold:#c79a3e; --gold-l:#f3d98f; --ink:#2b2016; --panel:#20242c; --panel2:#272c36;
+    --line:#3a404d; --txt:#e7e2d6; --muted:#9aa1ae; --accent:#ff9a3c; --good:#7ed957; --bad:#ff6b6b; --warn:#ffcf5a; --blue:#4db6ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:'Fredoka',system-ui,-apple-system,'Segoe UI',sans-serif;background:#171a20;color:var(--txt);
+       display:grid;grid-template-columns:370px 1fr;height:100vh;overflow:hidden}
+  h1,h2,h3{margin:0;font-weight:700}
+  .col{overflow-y:auto;height:100vh}
+  /* ---- left controls ---- */
+  #controls{background:var(--panel);border-right:1px solid var(--line);padding:14px 14px 60px}
+  #controls h1{font-size:16px;letter-spacing:.3px;margin-bottom:2px}
+  #controls .sub{font-size:11px;color:var(--muted);margin-bottom:12px}
+  .group{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:10px}
+  .group>.gh{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase}
+  .gh .dot{width:9px;height:9px;border-radius:50%}
+  .AUTO{border-color:var(--accent)}
+  .AUTO .dot{background:var(--accent)}
+  .EVAL{border-color:var(--blue)}
+  .EVAL .dot{background:var(--blue)}
+  .A .dot{background:#ff9a3c}.B .dot{background:#4db6ff}.C .dot{background:#7ed957}.D .dot{background:#ff6b6b}
+  .field{margin-bottom:9px}
+  .field:last-child{margin-bottom:0}
+  .field label{display:flex;justify-content:space-between;font-size:12px;color:var(--txt);margin-bottom:3px}
+  .field label .v{color:var(--accent);font-weight:700}
+  .field input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+  .field select,.field input[type=number]{width:100%;background:#161a20;color:var(--txt);border:1px solid var(--line);
+       border-radius:7px;padding:5px 7px;font-family:inherit;font-size:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chk{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+  .hint{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .btns{display:flex;gap:8px;margin-top:6px}
+  button{font-family:inherit;font-weight:700;border:none;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:13px}
+  .primary{background:linear-gradient(#ffb43a,#f27311);color:#fff;box-shadow:0 3px 0 #c2540c;flex:1}
+  .bluebtn{background:linear-gradient(#4db6ff,#2a7fd4);color:#fff;box-shadow:0 3px 0 #1a5aa0;flex:1}
+  .ghost{background:#2c323d;color:var(--txt);border:1px solid var(--line)}
+  .primary:active,.ghost:active,.bluebtn:active{transform:translateY(1px)}
+  button:disabled{opacity:.5;cursor:wait}
+  #modebadge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:#2c323d;border:1px solid var(--line)}
+  #modebadge.auto{color:var(--accent);border-color:var(--accent)}
+  #modebadge.manual{color:var(--blue);border-color:var(--blue)}
+  #modebadge.edited{color:var(--warn);border-color:var(--warn)}
+  #autoresult{font-size:11px;line-height:1.6;margin-top:7px;color:var(--txt)}
+  #autoresult b{color:var(--accent)}
+  #candlist{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+  #candlist button{font-size:10px;padding:4px 7px;border-radius:6px;background:#2c323d;border:1px solid var(--line);color:var(--txt)}
+  #candlist button.sel{border-color:var(--accent);color:var(--accent)}
+  .prog{height:7px;border-radius:5px;background:#161a20;overflow:hidden;margin-top:6px}
+  .prog>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#4db6ff,#7ed957);transition:width .15s}
+  .etable{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+  .etable td{padding:3px 4px;border-bottom:1px solid #2c313c}
+  .etable td:last-child{text-align:right;font-weight:700;color:#fff}
+  .etable tr.hl td{color:var(--warn)}
+  /* ---- right stage ---- */
+  #stage{background:#12151a;display:flex;flex-direction:column;position:relative}
+  #topbar{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:stretch;flex-wrap:wrap}
+  .meter{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:104px}
+  .meter .k{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .meter .val{font-size:22px;font-weight:700;line-height:1.1}
+  .meter .sub{font-size:10px;color:var(--muted)}
+  .bar{height:7px;border-radius:5px;background:#2a2f39;overflow:hidden;margin-top:5px}
+  .bar>span{display:block;height:100%;border-radius:5px}
+  #board-wrap{flex:1;overflow:auto;position:relative;
+      background:radial-gradient(120% 100% at 50% 12%,#5aad3a,#3c7f2c 68%,#2f6b24)}
+  #board{position:relative;margin:24px auto;transform-origin:top center}
+  .card{position:absolute;border-radius:13px;background:linear-gradient(#ffffff,#f3ead8);border:3px solid #e7d9bb;
+      box-shadow:0 5px 0 rgba(0,0,0,.16),0 8px 13px rgba(0,0,0,.22);display:flex;flex-wrap:wrap;
+      align-content:center;justify-content:center;gap:3px;padding:6px;transition:box-shadow .15s,transform .15s;cursor:pointer}
+  .card.covered{filter:brightness(.62) saturate(.7)}
+  .card.free{box-shadow:0 0 0 3px var(--good),0 5px 0 rgba(0,0,0,.16),0 8px 16px rgba(0,0,0,.25)}
+  .card.editing{box-shadow:0 0 0 4px var(--warn),0 0 24px rgba(255,207,90,.6);z-index:9999!important}
+  .card:hover{transform:translateY(-3px)}
+  .card.facedown{background:repeating-linear-gradient(96deg,rgba(0,0,0,.08)0 4px,rgba(255,255,255,.05)4px 9px),linear-gradient(#5a3fb0,#3d2a86)}
+  .card .sym{line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18))}
+  .card .lock{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#5e3a19;
+      border:2px solid #ffe6bf;display:flex;align-items:center;justify-content:center;font-size:11px}
+  .facedown .sym{visibility:hidden}
+  .facedown::after{content:"❔";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px}
+  .card.paperc{background:repeating-linear-gradient(45deg,#e8dcc0 0 7px,#d9cba6 7px 14px)}
+  .card.paperc .sym{visibility:hidden}
+  .card.paperc::after{content:"🧻";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:.9}
+  #legend{position:absolute;top:10px;left:12px;background:rgba(0,0,0,.4);border-radius:9px;padding:7px 10px;font-size:11px;line-height:1.7}
+  #legend b{color:#fff}
+  .lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+  /* card editor */
+  #cardeditor{position:absolute;top:70px;right:14px;width:280px;z-index:60;background:var(--panel);
+      border:1px solid var(--warn);border-radius:12px;padding:12px;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #cardeditor .ce-h{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;margin-bottom:8px}
+  #cardeditor .ce-sec{font-size:11px;color:var(--muted);margin:8px 0 4px}
+  #cardeditor .ce-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:8px}
+  .chip{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;
+      background:#161a20;border:1px solid var(--line);font-size:19px;cursor:pointer;opacity:.4;margin:2px}
+  .chip.on{opacity:1;border-color:var(--good);box-shadow:0 0 0 1px var(--good)}
+  /* inline playtest */
+  #playpanel{position:absolute;inset:0;z-index:80;background:rgba(10,12,16,.9);display:none;flex-direction:column}
+  /* active card dock */
+  #dock{border-top:1px solid var(--line);background:var(--panel);padding:10px 16px;display:flex;align-items:center;gap:16px}
+  #dock .dcard{width:60px;height:74px;border-radius:11px;background:linear-gradient(#fff,#f3ead8);border:3px solid var(--accent);
+      display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:2px;padding:4px;box-shadow:0 0 18px rgba(242,115,17,.5)}
+  #dock .dcard .sym{line-height:1}
+  code{background:#0c0e12;padding:1px 5px;border-radius:4px;font-size:11px;color:#ffcf8a}
+  .warnline{color:var(--warn);font-size:11px}
+  details summary{cursor:pointer;font-size:12px;color:var(--muted)}
+  #breakdown{font-size:11px;line-height:1.6;margin-top:6px}
+  #breakdown .brow{display:flex;justify-content:space-between;gap:8px}
+  #breakdown .brow .mini{flex:1;height:5px;border-radius:3px;background:#2a2f39;align-self:center;overflow:hidden;max-width:120px}
+  #breakdown .brow .mini>span{display:block;height:100%;background:var(--accent)}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+
+<!-- ===================== CONTROLS ===================== -->
+<div id="controls" class="col">
+  <h1>🎯 콤보 매칭 · 레벨 디자인 툴 <span id="modebadge" class="manual">🎛 수동</span></h1>
+  <div class="sub">난이도 스케일 → 자동 설계 · 직접 조정 · 대량 시뮬레이션 평가</div>
+
+  <!-- AUTO DESIGN -->
+  <div class="group AUTO">
+    <div class="gh"><span class="dot"></span>⚡ 자동 설계 (난이도 스케일 → 레벨)</div>
+    <div class="field"><label>목표 난이도 <span class="v" id="v-target">50 (표준)</span></label>
+      <input type="range" id="target" min="5" max="95" value="50">
+      <div class="hint">스케일을 움직이면 아키타입 후보 8개를 생성·검증해 목표에 가장 가까운 레벨을 자동 선택합니다.</div></div>
+    <div class="btns">
+      <button class="primary" id="autogen">⚡ 자동 설계 실행</button>
+      <button class="ghost" id="repattern" title="같은 난이도, 다른 패턴">🔀 다른 패턴</button>
+    </div>
+    <div class="prog"><span id="autobar"></span></div>
+    <div id="autoresult">아직 실행 안 됨 — 슬라이더를 움직이거나 버튼을 누르세요.</div>
+    <div id="candlist"></div>
+  </div>
+
+  <!-- MASS EVALUATION -->
+  <div class="group EVAL">
+    <div class="gh"><span class="dot"></span>🧪 대량 평가 (시뮬레이션 프레임워크)</div>
+    <div class="row2">
+      <div class="field"><label>플레이 횟수</label>
+        <select id="evalruns"><option>1000</option><option>5000</option><option selected>10000</option><option>20000</option></select></div>
+      <div class="field"><label>봇 정책</label>
+        <select id="evalpolicy"><option value="mix" selected>혼합 50:50</option><option value="greedy">그리디(합리적)</option><option value="random">랜덤(초보)</option></select></div>
+    </div>
+    <div class="btns"><button class="bluebtn" id="evalgo">🧪 평가 실행</button></div>
+    <div class="prog"><span id="evalbar"></span></div>
+    <div id="evalout" class="hint">현재 레벨을 대량 플레이하여 <b>클리어율·예상 시행횟수·사용 아이템 수</b>를 실측합니다.</div>
+  </div>
+
+  <div class="hint" style="margin:2px 0 10px">▼ 아래 노브를 직접 조정하면 <b>수동 모드</b>로 전환됩니다 (자동 설계 결과에서 이어서 조정 가능).</div>
+
+  <!-- A. Perception -->
+  <div class="group A">
+    <div class="gh"><span class="dot"></span>A · 지각 (찾기 난이도)</div>
+    <div class="field"><label>심볼 풀 크기 N <span class="v" id="v-N">12</span></label>
+      <input type="range" id="N" min="4" max="40" value="12"><div class="hint">서로 다른 심볼 종류. ↑ = 스캔 부담↑</div></div>
+    <div class="row2">
+      <div class="field"><label>카드당 심볼 k <span class="v" id="v-k">2</span></label>
+        <input type="range" id="k" min="1" max="6" value="2"></div>
+      <div class="field"><label>요구 매칭 r <span class="v" id="v-r">1</span></label>
+        <input type="range" id="r" min="1" max="4" value="1"></div>
+    </div>
+    <div class="hint" style="margin-top:-4px">r개 이상 공통 심볼이면 매칭 성공 (2~4개 매칭). r ≤ k 필요.</div>
+    <div class="field" style="margin-top:8px"><label>타깃-방해자극 유사도 <span class="v" id="v-sim">중간</span></label>
+      <input type="range" id="sim" min="0" max="2" value="1"><div class="hint">헷갈리는 심볼군을 함께 배치</div></div>
+    <div class="field"><label>시각 변형(회전·크기·채도) <span class="v" id="v-tf">30%</span></label>
+      <input type="range" id="tf" min="0" max="60" value="30"></div>
+  </div>
+
+  <!-- B. Structure -->
+  <div class="group B">
+    <div class="gh"><span class="dot"></span>B · 구조 (선택지·접근성)</div>
+    <div class="row2">
+      <div class="field"><label>보드 카드 수 <span class="v" id="v-cards">18</span></label>
+        <input type="range" id="cards" min="4" max="40" value="18"></div>
+      <div class="field"><label>레이어(겹침) <span class="v" id="v-layers">3</span></label>
+        <input type="range" id="layers" min="1" max="5" value="3"></div>
+    </div>
+    <div class="field"><label>레이아웃</label>
+      <select id="topology">
+        <option value="pyramid">피라미드 (트라이픽스식 가림)</option>
+        <option value="stack">스택 겹침 (목업형)</option>
+        <option value="grid">격자 (가림 없음·쉬움)</option>
+      </select></div>
+  </div>
+
+  <!-- C. Economy -->
+  <div class="group C">
+    <div class="gh"><span class="dot"></span>C · 자원 (여유)</div>
+    <div class="row2">
+      <div class="field"><label>덱(리드로우) <span class="v" id="v-deck">8</span></label>
+        <input type="range" id="deck" min="0" max="30" value="8"></div>
+      <div class="field"><label>와일드카드 <span class="v" id="v-wild">1</span></label>
+        <input type="range" id="wild" min="0" max="3" value="1"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>이동 제한(0=무한) <span class="v" id="v-moves">∞</span></label>
+        <input type="range" id="moves" min="0" max="60" value="0"></div>
+      <div class="field"><label>콤보 목표 <span class="v" id="v-cgoal">8</span></label>
+        <input type="range" id="cgoal" min="3" max="15" value="8"></div>
+    </div>
+    <div class="field"><label>목표 유형</label>
+      <select id="objective">
+        <option value="clear">전체 제거</option>
+        <option value="score">점수 도달</option>
+        <option value="collect">특정 심볼 수집</option>
+      </select></div>
+  </div>
+
+  <!-- D. Pressure -->
+  <div class="group D">
+    <div class="gh"><span class="dot"></span>D · 압박 (선택)</div>
+    <div class="row2">
+      <div class="field"><label>제한시간(초,0=off) <span class="v" id="v-time">0</span></label>
+        <input type="range" id="time" min="0" max="180" value="0" step="5"></div>
+      <div class="field"><label>장애물 카드 % <span class="v" id="v-obst">0</span></label>
+        <input type="range" id="obst" min="0" max="50" value="0" step="5"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>뒤집힌 카드 % <span class="v" id="v-fd">0</span></label>
+        <input type="range" id="fd" min="0" max="50" value="0" step="5"></div>
+      <div class="field" style="align-self:end"><label class="chk"><input type="checkbox" id="shuffle"> 셔플/이동 보드</label></div>
+    </div>
+    <div class="hint">장애물 = 콤보 연속 ≥2 일 때만 제거 가능. 뒤집힌 카드 = 언커버 시 공개(봇 시뮬레이션엔 영향 없음 — 인간 지각 난이도).</div>
+  </div>
+
+  <!-- F. Rule devices -->
+  <div class="group" style="border-color:#c58aff">
+    <div class="gh"><span class="dot" style="background:#c58aff"></span>F · 규칙 장치</div>
+    <div class="row2">
+      <div class="field"><label>🔑 열쇠-자물쇠 쌍 <span class="v" id="v-keylocks">0</span></label>
+        <input type="range" id="keylocks" min="0" max="8" value="0"></div>
+      <div class="field"><label>💣 폭탄 카드 <span class="v" id="v-bombs">0</span></label>
+        <input type="range" id="bombs" min="0" max="4" value="0"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>🗺️ 구역 수 <span class="v" id="v-zones">없음</span></label>
+        <input type="range" id="zones" min="1" max="3" value="1"></div>
+      <div class="field"><label>🧻 종이 가림 % <span class="v" id="v-paper">0</span></label>
+        <input type="range" id="paper" min="0" max="40" value="0" step="10"></div>
+    </div>
+    <div class="hint">🔑 자물쇠는 지정 열쇠 제거 후에만 선택 가능(해답 순서 기반 = 데드락 없음).
+    💣 폭탄은 표시된 수(手) 안에 제거 못하면 즉시 실패 — 카운터는 최단 제거거리+6.
+    🗺️ 구역은 왼쪽부터 순서대로 소진해야 다음 구역이 열림(경계 심볼 체인 자동 보장).</div>
+    <div id="ruleinfo" class="hint"></div>
+  </div>
+
+  <!-- E. Economy -->
+  <div class="group" style="border-color:#f3d98f">
+    <div class="gh"><span class="dot" style="background:#f3d98f"></span>E · 경제 (골드 보상 연동)</div>
+    <div class="field"><label>레벨 번호(진행도) <span class="v" id="v-lvlidx">1</span></label>
+      <input type="range" id="lvlidx" min="1" max="200" value="1"></div>
+    <div id="econpreview" class="hint"></div>
+    <div class="hint" style="margin-top:6px">공식: 기본골드 = 15+3×레벨 · 점수환율 = 0.01×(1+난이도/40) · 패배 시 25% 위로보상.<br>
+    → 레벨·난이도가 오를수록 골드 획득이 점진 증가. 아이템 가격은 고정(🔍120·🧲350·🌟500) = 수입 성장이 곧 파워 진행.</div>
+  </div>
+
+  <div class="field"><label>시드 <span class="v" id="v-seed"></span></label>
+    <input type="number" id="seed" value="1234"></div>
+
+  <div class="btns">
+    <button class="primary" id="gen">⚙️ 생성 & 검증</button>
+    <button class="ghost" id="reseed">🎲 시드</button>
+  </div>
+  <div class="btns">
+    <button class="ghost" id="export" style="flex:1">⬇️ 레벨 JSON</button>
+    <button class="ghost" id="copy" style="flex:1">📋 복사</button>
+  </div>
+  <div class="btns">
+    <button class="primary" id="playtest" style="background:linear-gradient(#4db6ff,#2a7fd4);box-shadow:0 3px 0 #1a5aa0">▶ 플레이 테스트</button>
+    <button class="ghost" id="playtab" title="새 탭에서 열기">↗</button>
+  </div>
+  <div class="hint">디자이너 → 게임(<code>game/play.html</code>)으로 동일 레벨 스키마를 넘겨 즉시 플레이합니다. 보드의 카드를 클릭하면 <b>직접 편집</b>할 수 있습니다.</div>
+</div>
+
+<!-- ===================== STAGE ===================== -->
+<div id="stage">
+  <div id="topbar">
+    <div class="meter">
+      <div class="k">난이도 점수</div>
+      <div class="val" id="m-diff">–</div>
+      <div class="bar"><span id="m-diffbar"></span></div>
+      <div class="sub" id="m-difftier"></div>
+    </div>
+    <div class="meter">
+      <div class="k">해결 가능성</div>
+      <div class="val" id="m-solv">–</div>
+      <div class="sub" id="m-solvsub">몬테카를로 검증</div>
+    </div>
+    <div class="meter">
+      <div class="k">막힘 확률 P</div>
+      <div class="val" id="m-stuck">–</div>
+      <div class="bar"><span id="m-stuckbar"></span></div>
+      <div class="sub">봇 플레이 실패율</div>
+    </div>
+    <div class="meter">
+      <div class="k">평균 분기 B</div>
+      <div class="val" id="m-branch">–</div>
+      <div class="sub" id="m-branchsub">유효 매칭 수</div>
+    </div>
+    <div class="meter">
+      <div class="k">실측 종합(대량평가)</div>
+      <div class="val" id="m-eval">–</div>
+      <div class="sub" id="m-evalsub">🧪 평가 실행 필요</div>
+    </div>
+    <div class="meter" style="flex:1;min-width:180px">
+      <div class="k">난이도 기여 분해</div>
+      <details open><summary style="font-size:11px">계층별 (A지각·B구조·C자원·D압박)</summary>
+        <div id="breakdown"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- card editor -->
+  <div id="cardeditor">
+    <div class="ce-h">✏️ 카드 #<span id="ce-id"></span> 직접 편집 <button class="ghost" id="ce-close" style="padding:3px 8px">✕</button></div>
+    <div class="ce-sec">심볼 (풀에서 토글 · 1~6개)</div>
+    <div id="ce-chips"></div>
+    <div class="ce-row">🔒 잠금(필요 콤보)
+      <select id="ce-lock" style="width:60px;background:#161a20;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px">
+        <option value="0">없음</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+      <label class="chk"><input type="checkbox" id="ce-fd"> ❔ 뒤집힘</label>
+    </div>
+    <div class="ce-row"><button class="primary" id="ce-apply">적용 & 재검증</button></div>
+    <div class="hint">적용 시 자동으로 재검증(300회)됩니다. 대량 평가 결과는 무효화되니 다시 실행하세요.</div>
+  </div>
+
+  <!-- inline playtest panel -->
+  <div id="playpanel">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)">
+      <b style="font-size:14px">🎮 인라인 플레이 테스트</b>
+      <span style="font-size:11px;color:var(--muted)" id="pp-info"></span>
+      <div style="flex:1"></div>
+      <button class="ghost" id="pp-reload" style="padding:6px 10px">↻ 현재 레벨 다시 로드</button>
+      <button class="ghost" id="pp-close" style="padding:6px 10px">✕ 닫기</button>
+    </div>
+    <iframe id="pp-frame" style="flex:1;border:0;width:100%;background:#191b21"></iframe>
+  </div>
+
+  <div id="board-wrap">
+    <div id="legend">
+      <div><span class="lg" style="background:#7ed957"></span><b>free</b> 선택가능</div>
+      <div><span class="lg" style="background:#5b5b5b"></span>covered 잠김</div>
+      <div><span class="lg" style="background:#ffcf5a"></span>클릭 = 직접 편집</div>
+    </div>
+    <div id="board"></div>
+  </div>
+
+  <div id="dock">
+    <div style="font-size:12px;color:var(--muted)">액티브</div>
+    <div class="dcard" id="dock-card"></div>
+    <div style="font-size:12px;line-height:1.7" id="dock-info"></div>
+    <div style="flex:1"></div>
+    <div class="warnline" id="warnings"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   콤보 매칭 레벨 디자이너 v2 — 자동 설계 + 대량 평가 프레임워크
+   1) 목표 난이도(0~100) → 아키타입 후보 생성 → 실측 검증 → 자동 선택
+   2) 직접 조정: 노브 수동 모드 + 카드 클릭 편집
+   3) 대량 평가: Web Worker에서 N회(기본 10,000) 봇 플레이
+      → 클리어율·예상 시행횟수·사용 아이템(덱/와일드)·실측 난이도
+   ============================================================ */
+
+// ---- 심볼 풀 (유사도 그룹) ----
+const SYMBOL_GROUPS = [
+  ["🍓","🍒","🍅","🌶️","🍎"],["🍊","🥭","🍋","🍑","🌽"],["🍇","🫐","🍆","🔮","🍚"],["🥝","🥑","🥦","🍏","🌿"],
+  ["🐶","🐱","🐭","🐹","🐰"],["🚗","🚕","🚙","🚌","🚓"],["⭐","✨","🌟","💫","❇️"],["🔵","🟢","🔴","🟡","🟣"],
+];
+
+// ---- seeded RNG & utils (worker에서도 재사용: function 선언 필수) ----
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shareCount(a,b){let n=0;const S=new Set(a);for(const x of b)if(S.has(x))n++;return n}
+let RNG=Math.random;
+function ri(n){return Math.floor(RNG()*n)}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=ri(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+const lerp=(a,b,t)=>a+(b-a)*t, clampi=(x,lo,hi)=>Math.max(lo,Math.min(hi,Math.round(x)));
+
+// ---- config from UI ----
+function cfg(){
+  const g=id=>document.getElementById(id), num=id=>+g(id).value;
+  let c={N:num('N'),k:num('k'),r:num('r'),sim:num('sim'),tf:num('tf'),
+    cards:num('cards'),layers:num('layers'),topology:g('topology').value,
+    deck:num('deck'),wild:num('wild'),moves:num('moves'),cgoal:num('cgoal'),objective:g('objective').value,
+    time:num('time'),obst:num('obst'),fd:num('fd'),shuffle:g('shuffle').checked,
+    keylocks:num('keylocks'),bombs:num('bombs'),zones:num('zones'),paper:num('paper'),seed:num('seed')};
+  if(c.r>c.k)c.r=c.k; if(c.k>c.N)c.N=c.k;
+  return c;
+}
+function applyCfgToUI(c){
+  const g=id=>document.getElementById(id);
+  ['N','k','r','sim','tf','cards','layers','deck','wild','moves','cgoal','time','obst','fd','seed']
+    .forEach(k=>{g(k).value=c[k]});
+  g('keylocks').value=c.keylocks||0;
+  g('bombs').value=c.bombs||0;
+  g('zones').value=c.zones||1;
+  g('paper').value=c.paper||0;
+  g('topology').value=c.topology; g('objective').value=c.objective; g('shuffle').checked=!!c.shuffle;
+  syncLabels(c);
+}
+
+// ---- generation engine ----
+function buildPool(c){
+  let pool=[];
+  if(c.sim>=2){for(const g of SYMBOL_GROUPS)for(const s of g)if(pool.length<c.N)pool.push(s);}
+  else if(c.sim===1){let gi=0,used=SYMBOL_GROUPS.map(()=>0);
+    while(pool.length<c.N){const g=SYMBOL_GROUPS[gi%SYMBOL_GROUPS.length];
+      if(used[gi%SYMBOL_GROUPS.length]<g.length)pool.push(g[used[gi%SYMBOL_GROUPS.length]++]);gi++;if(gi>500)break;}}
+  else{let round=0;while(pool.length<c.N){for(const g of SYMBOL_GROUPS)if(g[round]&&pool.length<c.N)pool.push(g[round]);round++;if(round>10)break;}}
+  return [...new Set(pool)].slice(0,c.N);
+}
+const CW=64, CH=80;
+function buildLayout(c){
+  const cards=[]; const L=Math.max(1,c.layers), target=c.cards;
+  if(c.topology==='grid'){
+    const cols=Math.ceil(Math.sqrt(target));
+    for(let i=0;i<target;i++){const cx=i%cols,cy=Math.floor(i/cols);cards.push({id:i,x:cx*(CW+14),y:cy*(CH+14),layer:0});}
+  } else if(c.topology==='stack'){
+    const perRow=Math.ceil(target/L);
+    for(let i=0;i<target;i++){const row=Math.floor(i/perRow),col=i%perRow;
+      cards.push({id:i,x:col*(CW*0.62)+row*18,y:row*(CH*0.5),layer:col%L});}
+  } else {
+    let counts=[];for(let l=0;l<L;l++){const w=Math.max(1,Math.round(target*(l+1)/(L*(L+1)/2)));counts.push(w);}
+    let s=counts.reduce((a,b)=>a+b,0),d=target-s,idx=L-1;
+    while(d!==0&&L>0){counts[idx]+=Math.sign(d);d-=Math.sign(d);idx=(idx-1+L)%L;if(counts[idx]<1)counts[idx]=1;}
+    let id=0;const bottomW=counts[L-1];
+    for(let l=0;l<L;l++){const w=counts[l],layer=L-1-l;const rowWpx=w*(CW*0.9),offset=(bottomW*(CW*0.9)-rowWpx)/2;
+      for(let j=0;j<w;j++)cards.push({id:id++,x:offset+j*(CW*0.9),y:l*(CH*0.56),layer});}
+  }
+  const covers=cards.map(()=>[]), coveredBy=cards.map(()=>[]);
+  for(let a=0;a<cards.length;a++)for(let b=0;b<cards.length;b++){
+    if(a===b)continue;const A=cards[a],B=cards[b];if(A.layer<=B.layer)continue;
+    const ox=Math.max(0,Math.min(A.x+CW,B.x+CW)-Math.max(A.x,B.x)),oy=Math.max(0,Math.min(A.y+CH,B.y+CH)-Math.max(A.y,B.y));
+    if(ox>CW*0.28&&oy>CH*0.28){covers[a].push(b);coveredBy[b].push(a);}}
+  return {cards,covers,coveredBy};
+}
+function removalOrder(layout,zoneOf){
+  const {cards,coveredBy}=layout;const removed=new Set(),order=[];
+  const isFree=id=>coveredBy[id].every(c=>removed.has(c));let guard=0;
+  while(order.length<cards.length&&guard++<cards.length*3){
+    let free=cards.filter(c=>!removed.has(c.id)&&isFree(c.id)).map(c=>c.id);
+    if(zoneOf){ // 🗺️ 구역 모드: 가장 낮은 미소진 구역에서만 뽑아 해답 체인이 구역 순서를 따르게 함
+      let az=99;for(const c of cards)if(!removed.has(c.id)&&zoneOf[c.id]<az)az=zoneOf[c.id];
+      free=free.filter(id=>zoneOf[id]===az);
+    }
+    if(!free.length)break;const p=free[ri(free.length)];removed.add(p);order.push(p);}
+  return order;
+}
+function assignSymbols(c,pool,layout,order){
+  const sym={};
+  const randCombo=(_,shared)=>{let s=new Set(shared||[]);const avail=pool.filter(x=>!s.has(x)),sh=shuffle(avail);
+    let i=0;while(s.size<c.k&&i<sh.length)s.add(sh[i++]);return[...s];};
+  if(order.length)sym[order[0]]=randCombo();
+  for(let i=1;i<order.length;i++){const prev=sym[order[i-1]],shared=shuffle(prev).slice(0,c.r);sym[order[i]]=randCombo(null,shared);}
+  layout.cards.forEach(cd=>{if(!sym[cd.id])sym[cd.id]=shuffle(pool).slice(0,c.k);});
+  let active;
+  if(order.length){const sh=shuffle(sym[order[0]]).slice(0,c.r);active=Array.from(new Set([...sh,...shuffle(pool)])).slice(0,c.k);}
+  else active=shuffle(pool).slice(0,c.k);
+  const stock=[];
+  for(let i=0;i<c.deck;i++){const t=layout.cards[ri(layout.cards.length)],sh=shuffle(sym[t.id]).slice(0,c.r);
+    stock.push(Array.from(new Set([...sh,...shuffle(pool)])).slice(0,c.k));}
+  return {sym,active,stock};
+}
+function generate(c){
+  RNG=mulberry32(c.seed>>>0);
+  const pool=buildPool(c), layout=buildLayout(c);
+  // 🗺️ 구역: x좌표 분할 후, 덮는 카드가 아래 구역을 덮으면 그 구역으로 강등(고정점) → 데드락 불가
+  const nz=Math.max(1,c.zones||1);
+  let zoneOf=null;
+  if(nz>1){
+    zoneOf={};
+    const xs=layout.cards.map(cd=>cd.x+CW/2);
+    const minX=Math.min(...xs), maxX=Math.max(...xs)+0.001;
+    layout.cards.forEach(cd=>{zoneOf[cd.id]=Math.min(nz-1,Math.floor((cd.x+CW/2-minX)/((maxX-minX)/nz)));});
+    let changed=true;
+    while(changed){changed=false;
+      for(let a=0;a<layout.cards.length;a++)for(const b of layout.covers[a])
+        if(zoneOf[a]>zoneOf[b]){zoneOf[a]=zoneOf[b];changed=true;}
+    }
+  }
+  const order=removalOrder(layout,zoneOf);
+  const {sym,active,stock}=assignSymbols(c,pool,layout,order);
+  const nObst=Math.round(layout.cards.length*c.obst/100), nFd=Math.round(layout.cards.length*c.fd/100);
+  const flagPool=shuffle(order.slice(Math.min(3,order.length)));
+  const obstacleSet=new Set(flagPool.slice(0,nObst)), fdSet=new Set(flagPool.slice(nObst,nObst+nFd));
+  // 🔑 열쇠-자물쇠: 해답 순서에서 앞선 카드를 열쇠로 지정 → 항상 DAG(데드락 없음)
+  const unlockedBy={};
+  const nKL=Math.min(c.keylocks||0,Math.max(0,order.length-4));
+  const lockIdxs=shuffle(order.map((_,i)=>i).filter(i=>i>=3)).slice(0,nKL);
+  for(const j of lockIdxs){
+    const key=order[ri(j)], lock=order[j];
+    if(key===lock)continue;
+    (unlockedBy[lock]=unlockedBy[lock]||[]).push(key);
+  }
+  // 🧻 종이: 해답 순서의 '꼬리' 구간을 종이로 덮음 · 🧩 조각은 종이 앞 구간에 배치 → 순서대로 풀면 반드시 열림
+  const paperSet=new Set(), pieceSet=new Set();
+  let paperNeed=0;
+  const nPaper=Math.round(order.length*(c.paper||0)/100);
+  if(nPaper>=2){
+    order.slice(order.length-nPaper).forEach(id=>paperSet.add(id));
+    paperNeed=Math.min(3,order.length-nPaper);
+    shuffle(order.slice(0,order.length-nPaper)).slice(0,paperNeed).forEach(id=>pieceSet.add(id));
+  }
+  // 💣 폭탄: 카운터 = 해답 순서상 위치+1(최단 제거거리) + 6 여유. 뒤집힌 카드·종이 카드엔 금지(보여야 공정)
+  const bombCounter={};
+  const nB=Math.min(c.bombs||0,Math.max(0,order.length-1));
+  const bombPos=shuffle(order.map((_,i)=>i).filter(i=>i>=1&&i<=Math.min(order.length-1,14)&&!fdSet.has(order[i])&&!paperSet.has(order[i]))).slice(0,nB);
+  for(const p of bombPos)bombCounter[order[p]]=p+7;
+  const cards=layout.cards.map(cd=>({id:cd.id,x:cd.x,y:cd.y,layer:cd.layer,symbols:sym[cd.id],
+    lockReq:obstacleSet.has(cd.id)?2:0,faceDown:fdSet.has(cd.id),unlockedBy:unlockedBy[cd.id]||[],
+    bombCounter:bombCounter[cd.id]||0,zone:zoneOf?zoneOf[cd.id]:0,
+    paper:paperSet.has(cd.id),piece:pieceSet.has(cd.id)}));
+  // 🎯 수집 목표: 목표 유형이 collect면 최다 심볼의 75%를 목표로 (조기 승리 가능)
+  let rules=null;
+  if(c.objective==='collect'){
+    const freq={};cards.forEach(cd=>cd.symbols.forEach(s=>freq[s]=(freq[s]||0)+1));
+    const symbol=Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0];
+    rules={collectGoal:{symbol,count:Math.max(3,Math.ceil(freq[symbol]*0.75)),available:freq[symbol]}};
+  }
+  if(paperNeed>0)rules=Object.assign(rules||{},{paper:{piecesNeeded:paperNeed,count:nPaper}});
+  return {config:c,pool,cards,covers:layout.covers,coveredBy:layout.coveredBy,order,active,stock,rules,
+    solvableOrder:order.length===layout.cards.length};
+}
+
+/* ============ 시뮬레이션 코어 (main + worker 공용) ============
+   runOneSim: 한 판을 봇이 플레이. policy='random'|'greedy'
+   greedy = 언커버 효과 큰 카드 우선(합리적 플레이어 근사)          */
+function runOneSim(L,seed,policy){
+  const rng=mulberry32(seed>>>0);
+  const N=L.cards.length;
+  const removed=new Array(N).fill(false); let removedCount=0;
+  let active=L.active.slice(), deck=L.deckN, wild=L.wildN;
+  let combo=0, moves=0, deckUsed=0, wildUsed=0, maxCombo=0, score=0, collected=0, pieces=0;
+  const goal=L.collectGoal||null, paperNeed=L.paperNeed||0;
+  const stock=L.stock.map(s=>s.slice());
+  const maxMoves=L.moveLimit>0?L.moveLimit:N*6;
+  let branchSum=0, branchN=0, safety=0;
+  function isFree(i){const cb=L.coveredBy[i];for(let j=0;j<cb.length;j++)if(!removed[cb[j]])return false;return true;}
+  function drawActive(){
+    if(stock.length)return stock.pop();
+    const arr=L.pool.slice();
+    for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=arr[i];arr[i]=arr[j];arr[j]=t;}
+    return arr.slice(0,L.k);
+  }
+  const bombs=[];for(let i=0;i<N;i++)if(L.cards[i].bombCounter)bombs.push({i,c:L.cards[i].bombCounter});
+  const zoneCount=[0,0,0,0];let maxZone=0; // 🗺️ 구역별 잔여 카드
+  for(let i=0;i<N;i++){const z=L.cards[i].zone||0;zoneCount[z]++;if(z>maxZone)maxZone=z;}
+  function activeZone(){for(let z=0;z<=maxZone;z++)if(zoneCount[z]>0)return z;return maxZone;}
+  function tickBombs(){ // 매 행동(제거·드로우)마다 미제거 폭탄 카운터 감소, 0이면 폭발
+    for(const b of bombs)if(!removed[b.i]&&--b.c<=0)return true;
+    return false;
+  }
+  function pickBest(list){
+    if(policy!=='greedy')return list[Math.floor(rng()*list.length)];
+    let bombPick=null,bc=1e9; // 그리디는 폭탄 해체 최우선(카운터 낮은 순)
+    for(const i of list){const b=bombs.find(x=>x.i===i&&!removed[i]);if(b&&b.c<bc){bc=b.c;bombPick=i;}}
+    if(bombPick!=null)return bombPick;
+    let best=-1,bi=[];
+    for(const i of list){const s=L.coversCount[i];if(s>best){best=s;bi=[i];}else if(s===best)bi.push(i);}
+    return bi[Math.floor(rng()*bi.length)];
+  }
+  function fin(cleared){return {cleared,moves,deckUsed,wildUsed,maxCombo,score,branch:branchN?branchSum/branchN:0};}
+  while(removedCount<N && safety++<N*20){
+    const freeIdx=[];for(let i=0;i<N;i++)if(!removed[i]&&isFree(i))freeIdx.push(i);
+    const az=activeZone();
+    const unlockOk=i=>{const ub=L.cards[i].unlockedBy;if(!ub||!ub.length)return true;
+      for(let j=0;j<ub.length;j++)if(!removed[ub[j]])return false;return true;};
+    const gateOk=i=>(L.cards[i].zone||0)<=az&&unlockOk(i)&&(!L.cards[i].paper||pieces>=paperNeed);
+    const valid=[];
+    for(const i of freeIdx){const c=L.cards[i];
+      if(gateOk(i)&&combo>=(c.lockReq||0)&&shareCount(c.symbols,active)>=L.r)valid.push(i);}
+    branchSum+=valid.length;branchN++;
+    if(valid.length){
+      const pick=pickBest(valid);
+      removed[pick]=true;removedCount++;zoneCount[L.cards[pick].zone||0]--;
+      if(L.cards[pick].piece)pieces++;
+      active=L.cards[pick].symbols.slice();
+      combo++;if(combo>maxCombo)maxCombo=combo;moves++;
+      score+=10*combo; if(L.cgoal&&combo%L.cgoal===0)score+=100*combo; // 게임과 동일 점수식
+      if(goal&&L.cards[pick].symbols.indexOf(goal.symbol)>=0&&++collected>=goal.count)return fin(true); // 🎯 조기 승리
+      if(tickBombs())return fin(false);
+      if(L.moveLimit>0&&moves>=maxMoves&&removedCount<N)return fin(false);
+      continue;
+    }
+    if(deck>0){deck--;deckUsed++;combo=0;active=drawActive();if(tickBombs())return fin(false);continue;}
+    if(wild>0){
+      const wildable=freeIdx.filter(gateOk); // 와일드도 열쇠·구역 게이트는 우회 불가
+      if(wildable.length){
+        wild--;wildUsed++;
+        const pick=pickBest(wildable);
+        removed[pick]=true;removedCount++;zoneCount[L.cards[pick].zone||0]--;
+        if(L.cards[pick].piece)pieces++;
+        active=L.cards[pick].symbols.slice();
+        combo=Math.max(1,combo);score+=10*combo;moves++;
+        if(goal&&L.cards[pick].symbols.indexOf(goal.symbol)>=0&&++collected>=goal.count)return fin(true);
+        if(tickBombs())return fin(false);
+        continue;
+      }
+    }
+    return fin(false);
+  }
+  return fin(goal?collected>=goal.count:removedCount>=N); // 🎯 수집형은 보드 다 비워도 목표 미달이면 실패
+}
+
+// level → 시뮬레이션용 경량 구조
+function liteOf(level){
+  const cc=level.cards.map(()=>0);
+  level.coveredBy.forEach(list=>list.forEach(a=>cc[a]++));
+  return {cards:level.cards.map(c=>({symbols:c.symbols,lockReq:c.lockReq||0,unlockedBy:c.unlockedBy||[],bombCounter:c.bombCounter||0,zone:c.zone||0,paper:!!c.paper,piece:!!c.piece})),
+    paperNeed:(level.rules&&level.rules.paper)?level.rules.paper.piecesNeeded:0,
+    coveredBy:level.coveredBy, coversCount:cc, pool:level.pool, active:level.active,
+    stock:level.stock, r:level.config.r, k:level.config.k, cgoal:level.config.cgoal,
+    deckN:level.config.deck, wildN:level.config.wild, moveLimit:level.config.moves,
+    collectGoal:(level.rules&&level.rules.collectGoal)?{symbol:level.rules.collectGoal.symbol,count:level.rules.collectGoal.count}:null};
+}
+// 빠른 검증 (메인 스레드, 300회, 혼합 정책)
+function quickValidate(level,runs){
+  runs=runs||300;
+  const L=liteOf(level);let fails=0,bs=0,ms=0;
+  for(let i=0;i<runs;i++){
+    const pol=i%2?'greedy':'random';
+    const res=runOneSim(L,(level.config.seed>>>0)+i*2654435761,pol);
+    if(!res.cleared)fails++;bs+=res.branch;ms+=res.moves;
+  }
+  return {pStuck:fails/runs,branch:bs/runs,avgMoves:ms/runs,everClears:fails<runs};
+}
+
+// ---- 난이도 점수 ----
+function difficulty(c,val){
+  const norm=(x,lo,hi)=>Math.max(0,Math.min(1,(x-lo)/(hi-lo)));
+  const A=[[0.15,norm(c.N,4,40)],[0.20,norm(c.k,1,6)],[0.20,norm(c.r,1,4)],[0.15,c.sim/2],[0.10,norm(c.tf,0,60)]];
+  const B=[[0.10,norm(c.cards,4,40)],[0.15,norm(c.layers,1,5)],[0.20,1-Math.max(0,Math.min(1,(val.branch-1)/3))],
+    [0.10,norm(c.keylocks||0,0,8)],[0.08,(Math.max(1,c.zones||1)-1)/2],[0.08,norm(c.paper||0,0,40)]];
+  const C=[[0.15,1-norm(c.deck,0,30)],[0.10,c.moves>0?1-norm(c.moves,10,60):0],[0.10,1-c.wild/3],[0.10,c.objective!=='clear'?0.6:0]];
+  const D=[[0.15,c.time>0?1-norm(c.time,20,180):0],[0.15,norm(c.obst,0,50)],[0.10,norm(c.fd,0,50)],[0.10,c.shuffle?1:0],
+    [0.12,norm(c.bombs||0,0,4)]];
+  const sum=g=>g.reduce((a,[w,x])=>a+w*x,0), wsum=g=>g.reduce((a,[w])=>a+w,0);
+  const layers={A:sum(A)/wsum(A),B:sum(B)/wsum(B),C:sum(C)/wsum(C),D:sum(D)/wsum(D)};
+  const allW=[...A,...B,...C,...D];
+  return {score:100*sum(allW)/wsum(allW),layers};
+}
+function measuredScore(pStuck,branch){
+  return 100*(0.65*pStuck+0.35*(1-Math.max(0,Math.min(1,(branch-1)/3))));
+}
+function combinedScore(staticScore,pStuck,branch){
+  return 0.5*staticScore+0.5*measuredScore(pStuck,branch);
+}
+function tierOf(s){if(s<25)return['튜토리얼','#7ed957'];if(s<45)return['쉬움','#a6d957'];
+  if(s<62)return['표준','#ffcf5a'];if(s<80)return['어려움','#ff9a3c'];return['하드코어','#ff6b6b'];}
+
+/* ============ ⚡ 자동 설계: 난이도 스케일 → 아키타입 후보 ============ */
+const ARCHETYPES=[
+ {key:'pyramid',name:'피라미드 표준형',make:(t,J)=>({topology:'pyramid',
+   N:clampi(lerp(7,30,t)+J(2),4,40),k:clampi(2+t*1.6+J(0.4),1,6),
+   r:clampi(1+(t>0.55?1:0)+(t>0.88?1:0),1,4),sim:t<0.33?0:t<0.7?1:2,tf:clampi(lerp(5,50,t),0,60),
+   cards:clampi(lerp(10,32,t)+J(3),4,40),layers:clampi(2+t*2.6,1,5),
+   deck:clampi(lerp(15,2,t)+J(2),0,30),wild:t<0.3?2:t<0.65?1:0,
+   moves:0,cgoal:clampi(lerp(5,12,t),3,15),objective:'clear',time:0,obst:0,fd:0,shuffle:false})},
+ {key:'stack',name:'스택 겹침형(목업)',make:(t,J)=>({topology:'stack',
+   N:clampi(lerp(8,28,t)+J(2),4,40),k:clampi(2+t*1.4+J(0.4),1,6),
+   r:clampi(1+(t>0.6?1:0)+(t>0.9?1:0),1,4),sim:t<0.4?0:t<0.75?1:2,tf:clampi(lerp(10,45,t),0,60),
+   cards:clampi(lerp(12,34,t)+J(3),4,40),layers:clampi(2+t*2,1,5),
+   deck:clampi(lerp(14,3,t)+J(2),0,30),wild:t<0.35?2:t<0.7?1:0,
+   moves:0,cgoal:clampi(lerp(5,11,t),3,15),objective:'clear',time:0,obst:0,fd:0,shuffle:false})},
+ {key:'grid-percept',name:'격자 지각집중형',make:(t,J)=>({topology:'grid',
+   N:clampi(lerp(8,38,t)+J(3),4,40),k:clampi(2+t*2.4+J(0.5),1,6),
+   r:clampi(1+(t>0.45?1:0)+(t>0.8?1:0),1,4),sim:t<0.25?1:2,tf:clampi(lerp(10,60,t),0,60),
+   cards:clampi(lerp(9,30,t)+J(3),4,40),layers:1,
+   deck:clampi(lerp(12,1,t)+J(1),0,30),wild:t<0.3?1:0,
+   moves:0,cgoal:clampi(lerp(4,12,t),3,15),objective:'clear',time:0,obst:0,fd:0,shuffle:false})},
+ {key:'gauntlet',name:'장애물 압박형',make:(t,J)=>({topology:'pyramid',
+   N:clampi(lerp(8,26,t)+J(2),4,40),k:clampi(2+t*1.2+J(0.3),1,6),
+   r:clampi(1+(t>0.7?1:0),1,4),sim:t<0.5?1:2,tf:clampi(lerp(5,40,t),0,60),
+   cards:clampi(lerp(12,30,t)+J(3),4,40),layers:clampi(2+t*2.2,1,5),
+   deck:clampi(lerp(16,4,t)+J(2),0,30),wild:t<0.4?2:1,
+   moves:0,cgoal:clampi(lerp(5,10,t),3,15),objective:'clear',time:0,
+   obst:t<0.35?0:clampi(Math.round(lerp(10,45,(t-0.35)/0.65)/5)*5,0,50),
+   fd:t<0.5?0:clampi(Math.round(lerp(10,35,(t-0.5)/0.5)/5)*5,0,50),
+   keylocks:t<0.45?0:clampi(1+(t-0.45)*7,1,6),
+   bombs:t<0.6?0:clampi((t-0.5)*5,1,3),shuffle:false})},
+];
+let MODE='manual', patternSeed=98765, CANDS=[], AUTOBUSY=false;
+function setMode(m){
+  MODE=m;const b=document.getElementById('modebadge');
+  b.className=m;
+  b.textContent=m==='auto'?'⚡ 자동':m==='edited'?'✏️ 편집됨':'🎛 수동';
+}
+const tick=()=>new Promise(r=>setTimeout(r,0));
+
+async function autoDesign(){
+  if(AUTOBUSY)return;AUTOBUSY=true;
+  const btn=document.getElementById('autogen');btn.disabled=true;
+  const target=+document.getElementById('target').value, t=target/100;
+  const rng=mulberry32(patternSeed>>>0);
+  const bar=document.getElementById('autobar'), out=document.getElementById('autoresult');
+  CANDS=[];
+  const NC=8;
+  for(let i=0;i<NC;i++){
+    const arch=ARCHETYPES[i%ARCHETYPES.length];
+    const J=mag=>(rng()*2-1)*mag;
+    let c=arch.make(t,J); c.seed=Math.floor(rng()*99999);
+    if(c.r>c.k)c.r=c.k; if(c.k>c.N)c.N=c.k;
+    const level=generate(c), val=quickValidate(level,300);
+    const diff=difficulty(c,val), comb=combinedScore(diff.score,val.pStuck,val.branch);
+    CANDS.push({arch:arch.name,cfg:c,level,val,diff,comb,dist:Math.abs(comb-target)});
+    bar.style.width=((i+1)/NC*100)+'%';
+    out.innerHTML=`후보 평가중… ${i+1}/${NC}`;
+    await tick();
+  }
+  CANDS.sort((a,b)=>a.dist-b.dist);
+  applyCandidate(0,target);
+  btn.disabled=false;AUTOBUSY=false;
+}
+function applyCandidate(idx,target){
+  target=target!=null?target:+document.getElementById('target').value;
+  const pick=CANDS[idx];if(!pick)return;
+  setMode('auto');
+  applyCfgToUI(pick.cfg);
+  LEVEL=pick.level;LEVEL._val=pick.val;LEVEL._diff=pick.diff;LEVEL._arch=pick.arch;LEVEL._eval=null;
+  render(LEVEL);paintMetrics(pick.cfg,pick.val,pick.diff,LEVEL);paintEvalMeter(null);paintEcon();paintRules();
+  document.getElementById('autoresult').innerHTML=
+    `선택: <b>${pick.arch}</b> · 목표 <b>${target}</b> → 종합 <b>${pick.comb.toFixed(0)}</b> `+
+    `(정적 ${pick.diff.score.toFixed(0)} · P ${(pick.val.pStuck*100).toFixed(0)}% · B ${pick.val.branch.toFixed(2)})<br>`+
+    `<span style="color:var(--muted)">다른 후보를 클릭하면 같은 난이도의 다른 패턴으로 교체됩니다.</span>`;
+  const cl=document.getElementById('candlist');
+  cl.innerHTML='';
+  CANDS.forEach((cd,i)=>{
+    const b=document.createElement('button');
+    b.textContent=`${cd.arch.slice(0,4)} ${cd.comb.toFixed(0)}`;
+    b.title=`${cd.arch} · 종합 ${cd.comb.toFixed(1)} · P ${(cd.val.pStuck*100).toFixed(0)}% · B ${cd.val.branch.toFixed(2)} · seed ${cd.cfg.seed}`;
+    if(i===idx)b.classList.add('sel');
+    b.onclick=()=>applyCandidate(i,target);
+    cl.appendChild(b);
+  });
+}
+
+/* ============ 🧪 대량 평가 (Web Worker, 기본 10,000회) ============ */
+function buildEvalWorker(){
+  const src=[mulberry32,shareCount,runOneSim].map(f=>f.toString()).join('\n')+`
+onmessage=function(e){
+  const {level,runs,policy,baseSeed}=e.data;
+  function mk(){return {n:0,clear:0,moves:0,deck:0,wild:0,maxCombo:0,branch:0,scoreW:0,scoreL:0}}
+  function add(a,r){a.n++;if(r.cleared){a.clear++;a.scoreW+=r.score}else{a.scoreL+=r.score}a.moves+=r.moves;a.deck+=r.deckUsed;a.wild+=r.wildUsed;a.maxCombo+=r.maxCombo;a.branch+=r.branch;}
+  const tot=mk(),per={random:mk(),greedy:mk()};
+  for(let i=0;i<runs;i++){
+    const pol=policy==='mix'?(i%2?'greedy':'random'):policy;
+    const res=runOneSim(level,(baseSeed+i*2654435761)>>>0,pol);
+    add(tot,res);add(per[pol],res);
+    if(i%500===0)postMessage({type:'prog',done:i,total:runs});
+  }
+  postMessage({type:'done',tot,per});
+};`;
+  return new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript;charset=utf-8'})));
+}
+function finalizeAgg(a){
+  if(!a.n)return null;
+  const clearRate=a.clear/a.n;
+  return {runs:a.n,clearRate,
+    expAttempts:clearRate>0?1/clearRate:Infinity,
+    avgMoves:a.moves/a.n,avgDeck:a.deck/a.n,avgWild:a.wild/a.n,
+    avgItems:(a.deck+a.wild)/a.n,avgMaxCombo:a.maxCombo/a.n,branch:a.branch/a.n,
+    avgScoreWin:a.clear?a.scoreW/a.clear:0,
+    avgScoreLose:(a.n-a.clear)?a.scoreL/(a.n-a.clear):0};
+}
+
+/* ============ E · 경제: 난이도·레벨 → 골드 곡선 ============ */
+function economyOf(levelIndex,diffScore){
+  return {levelIndex,
+    baseGold:Math.round(15+3*levelIndex),                    // 레벨 진행에 따라 선형 증가
+    scoreRate:+(0.01*(1+diffScore/40)).toFixed(4),           // 난이도가 높을수록 점수당 골드↑
+    winMult:1,loseMult:0.25,
+    itemPrices:{hint:120,claw:350,wild:500}};                // 가격 고정 → 수입 성장 = 파워 진행
+}
+function currentEco(){
+  return economyOf(+document.getElementById('lvlidx').value, LEVEL?LEVEL._diff.score:30);
+}
+function goldStats(ev,eco){ // 대량 평가 결과 + 경제 설정 → 골드 기대치
+  const cr=ev.clearRate;
+  const perWin=eco.baseGold+(ev.score?ev.score.win:0)*eco.scoreRate;
+  const perLose=(eco.baseGold+(ev.score?ev.score.lose:0)*eco.scoreRate)*eco.loseMult;
+  const avg=cr*perWin+(1-cr)*perLose;
+  return {perWin:Math.round(perWin),perLose:Math.round(perLose),
+    avgPerPlay:+avg.toFixed(1),
+    toClear:cr>0?Math.round((1/cr-1)*perLose+perWin):null};
+}
+function paintRules(){
+  if(!LEVEL)return;
+  const c=LEVEL.config, parts=[];
+  const nk=LEVEL.cards.filter(cd=>cd.unlockedBy&&cd.unlockedBy.length).length;
+  const nb=LEVEL.cards.filter(cd=>cd.bombCounter).length;
+  if((c.zones||1)>1){const zc=[0,0,0];LEVEL.cards.forEach(cd=>zc[cd.zone||0]++);
+    parts.push(`🗺️ 구역 ${c.zones}개 (${zc.slice(0,c.zones).join('·')}장, 왼쪽부터 소진)`);}
+  if(nk)parts.push(`🔑 자물쇠 ${nk}장`);
+  if(nb)parts.push(`💣 폭탄 ${nb}장 (카운터 ${LEVEL.cards.filter(cd=>cd.bombCounter).map(cd=>cd.bombCounter).join('·')})`);
+  if(LEVEL.rules&&LEVEL.rules.collectGoal){const g=LEVEL.rules.collectGoal;
+    parts.push(`🎯 수집 목표: ${g.symbol} ×${g.count} (보드에 ${g.available}개)`);}
+  if(LEVEL.rules&&LEVEL.rules.paper){const p=LEVEL.rules.paper;
+    parts.push(`🧻 종이 ${p.count}장 — 🧩 조각 ${p.piecesNeeded}개 수집 시 해방`);}
+  document.getElementById('ruleinfo').innerHTML=parts.length?('적용 중: '+parts.join(' · ')):'적용된 규칙 장치 없음';
+}
+function paintEcon(){
+  if(!LEVEL)return;
+  const eco=currentEco();
+  const sampleScore=(LEVEL._eval&&LEVEL._eval.score)?Math.round(LEVEL._eval.score.win):2000;
+  const sample=Math.round(eco.baseGold+sampleScore*eco.scoreRate);
+  document.getElementById('econpreview').innerHTML=
+    `레벨 <b>${eco.levelIndex}</b> · 난이도 ${LEVEL._diff.score.toFixed(0)} → 기본골드 <b>🪙${eco.baseGold}</b> · 점수환율 <b>${eco.scoreRate}</b>/pt<br>`+
+    `승리 예상: 점수 ${sampleScore.toLocaleString()} → <b>🪙 ${sample.toLocaleString()}</b>${LEVEL._eval?' (평가 실측 기반)':' (표본 점수 가정)'}`;
+}
+let EVALBUSY=false;
+function runEvaluation(){
+  return new Promise((resolve,reject)=>{
+    if(EVALBUSY||!LEVEL)return reject('busy');
+    EVALBUSY=true;
+    const btn=document.getElementById('evalgo');btn.disabled=true;
+    const runs=+document.getElementById('evalruns').value;
+    const policy=document.getElementById('evalpolicy').value;
+    const bar=document.getElementById('evalbar'), out=document.getElementById('evalout');
+    bar.style.width='0%';out.innerHTML=`시뮬레이션 준비중… (${runs.toLocaleString()}회)`;
+    const w=buildEvalWorker();
+    const t0=performance.now();
+    w.onmessage=e=>{
+      const d=e.data;
+      if(d.type==='prog'){bar.style.width=(d.done/d.total*100)+'%';
+        out.innerHTML=`플레이 중… ${d.done.toLocaleString()} / ${d.total.toLocaleString()}`;return;}
+      const ms=performance.now()-t0;
+      bar.style.width='100%';
+      const tot=finalizeAgg(d.tot), perR=finalizeAgg(d.per.random), perG=finalizeAgg(d.per.greedy);
+      const mDiff=combinedScore(LEVEL._diff.score,1-tot.clearRate,tot.branch);
+      const ev={runs,policy,elapsedMs:Math.round(ms),
+        clearRate:+tot.clearRate.toFixed(4),
+        expAttempts:isFinite(tot.expAttempts)?+tot.expAttempts.toFixed(2):null,
+        avgMoves:+tot.avgMoves.toFixed(1),
+        itemsUsed:{deck:+tot.avgDeck.toFixed(2),wild:+tot.avgWild.toFixed(2),total:+tot.avgItems.toFixed(2)},
+        avgMaxCombo:+tot.avgMaxCombo.toFixed(1),branch:+tot.branch.toFixed(2),
+        score:{win:+tot.avgScoreWin.toFixed(0),lose:+tot.avgScoreLose.toFixed(0)},
+        measuredDifficulty:+mDiff.toFixed(1),measuredTier:tierOf(mDiff)[0],
+        byPolicy:{
+          random:perR?{clearRate:+perR.clearRate.toFixed(4),items:+perR.avgItems.toFixed(2)}:null,
+          greedy:perG?{clearRate:+perG.clearRate.toFixed(4),items:+perG.avgItems.toFixed(2)}:null}};
+      LEVEL._eval=ev;
+      paintEvalResult(ev);paintEvalMeter(ev);
+      w.terminate();btn.disabled=false;EVALBUSY=false;resolve(ev);
+    };
+    w.onerror=err=>{out.innerHTML='워커 오류: '+err.message;w.terminate();btn.disabled=false;EVALBUSY=false;reject(err);};
+    w.postMessage({level:liteOf(LEVEL),runs,policy,baseSeed:LEVEL.config.seed>>>0});
+  });
+}
+function paintEvalResult(ev){
+  const attempts=ev.expAttempts==null?'∞ (클리어 불가)':ev.expAttempts+' 판';
+  const pol={mix:'혼합 50:50',greedy:'그리디',random:'랜덤'}[ev.policy];
+  const eco=currentEco(), gs=goldStats(ev,eco);
+  ev.gold={...gs,economy:eco}; // export 시 함께 기록
+  let perLine='';
+  if(ev.byPolicy.random&&ev.byPolicy.greedy)
+    perLine=`<tr><td>정책별 클리어율</td><td>랜덤 ${(ev.byPolicy.random.clearRate*100).toFixed(1)}% · 그리디 ${(ev.byPolicy.greedy.clearRate*100).toFixed(1)}%</td></tr>`;
+  document.getElementById('evalout').innerHTML=`
+  <table class="etable">
+    <tr class="hl"><td>실측 종합 난이도</td><td>${ev.measuredDifficulty} (${ev.measuredTier})</td></tr>
+    <tr><td>클리어율</td><td>${(ev.clearRate*100).toFixed(1)}%</td></tr>
+    <tr class="hl"><td>예상 시행횟수(클리어까지)</td><td>${attempts}</td></tr>
+    <tr class="hl"><td>사용 아이템(판당 평균)</td><td>덱 ${ev.itemsUsed.deck} + 와일드 ${ev.itemsUsed.wild} = ${ev.itemsUsed.total}</td></tr>
+    <tr><td>평균 점수 (승 / 패)</td><td>${ev.score.win.toLocaleString()} / ${ev.score.lose.toLocaleString()}</td></tr>
+    <tr class="hl"><td>🪙 골드/판 (승/패)</td><td>${gs.avgPerPlay} (${gs.perWin} / ${gs.perLose})</td></tr>
+    <tr><td>🪙 클리어까지 기대 골드</td><td>${gs.toClear==null?'—':gs.toClear.toLocaleString()}</td></tr>
+    <tr><td>평균 이동 / 최대콤보</td><td>${ev.avgMoves} / ×${ev.avgMaxCombo}</td></tr>
+    <tr><td>실측 분기 B</td><td>${ev.branch}</td></tr>
+    ${perLine}
+    <tr><td>수행</td><td>${ev.runs.toLocaleString()}회 · ${pol} · ${(ev.elapsedMs/1000).toFixed(1)}s</td></tr>
+  </table>`;
+  paintEcon();
+}
+function paintEvalMeter(ev){
+  const g=id=>document.getElementById(id);
+  if(!ev){g('m-eval').textContent='–';g('m-eval').style.color='';g('m-evalsub').textContent='🧪 평가 실행 필요';return;}
+  const [tier,col]=tierOf(ev.measuredDifficulty);
+  g('m-eval').textContent=ev.measuredDifficulty.toFixed(0);g('m-eval').style.color=col;
+  g('m-evalsub').textContent=`${tier} · 시행 ${ev.expAttempts==null?'∞':ev.expAttempts} · 아이템 ${ev.itemsUsed.total}`;
+}
+
+/* ============ 렌더 & 메트릭 ============ */
+let LEVEL=null, EDIT_ID=null;
+function render(level){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  const xs=level.cards.map(c=>c.x),ys=level.cards.map(c=>c.y);
+  const W=Math.max(...xs)+CW,H=Math.max(...ys)+CH;
+  board.style.width=W+'px';board.style.height=H+'px';
+  const wrapW=document.getElementById('board-wrap').clientWidth-60;
+  board.style.transform=`scale(${Math.min(1,wrapW/W)})`;
+  const removed=new Set();
+  const isFree=id=>level.coveredBy[id].every(x=>removed.has(x));
+  const c=level.config, symSize=Math.max(14,34-(c.k-2)*4);
+  level.cards.forEach(cd=>{
+    const el=document.createElement('div');el.className='card';
+    el.style.left=cd.x+'px';el.style.top=cd.y+'px';el.style.width=CW+'px';el.style.height=CH+'px';
+    el.style.zIndex=100+cd.layer*10;
+    if(!isFree(cd.id))el.classList.add('covered');else el.classList.add('free');
+    if(cd.faceDown)el.classList.add('facedown');
+    if(cd.paper)el.classList.add('paperc');
+    if(cd.id===EDIT_ID)el.classList.add('editing');
+    cd.symbols.forEach(s=>{const sp=document.createElement('span');sp.className='sym';sp.textContent=s;
+      let st=`font-size:${symSize}px;`;
+      if(c.tf>0){const rot=(Math.random()*2-1)*c.tf*0.5,sc=1-(Math.random()*c.tf/100)*0.4;
+        st+=`transform:rotate(${rot}deg) scale(${sc});`;if(c.tf>30)st+=`filter:saturate(${1-c.tf/150});`;}
+      sp.style.cssText=st;el.appendChild(sp);});
+    if(cd.lockReq>0){const lk=document.createElement('div');lk.className='lock';lk.textContent='🔒';el.appendChild(lk);}
+    if(cd.unlockedBy&&cd.unlockedBy.length){const kb=document.createElement('div');kb.className='lock';
+      kb.style.cssText='left:-8px;right:auto;background:#5b3a8a';kb.textContent='🔑';kb.title='열쇠: #'+cd.unlockedBy.join(', #');el.appendChild(kb);}
+    if(cd.bombCounter){const bb=document.createElement('div');bb.className='lock';
+      bb.style.cssText='top:auto;bottom:-8px;background:#b3261e;width:auto;padding:0 5px;border-radius:11px';
+      bb.textContent='💣'+cd.bombCounter;el.appendChild(bb);}
+    if((level.config.zones||1)>1){const zc=['#4db6ff','#ffcf5a','#ff6b6b'][cd.zone||0];
+      const zs=document.createElement('div');zs.style.cssText='position:absolute;top:2px;left:6px;right:6px;height:4px;border-radius:2px;opacity:.85;background:'+zc;el.appendChild(zs);}
+    if(cd.piece){const pb=document.createElement('div');pb.className='lock';
+      pb.style.cssText='left:-8px;right:auto;top:auto;bottom:-8px;background:#1e7b6f';pb.textContent='🧩';el.appendChild(pb);}
+    el.onclick=()=>openCardEditor(cd.id);
+    board.appendChild(el);
+  });
+  const dc=document.getElementById('dock-card');dc.innerHTML='';
+  level.active.forEach(s=>{const sp=document.createElement('span');sp.className='sym';sp.textContent=s;sp.style.fontSize='22px';dc.appendChild(sp);});
+  const freeCount=level.cards.filter(cd=>isFree(cd.id)).length;
+  document.getElementById('dock-info').innerHTML=
+    `보드 <b>${level.cards.length}</b>장 · free <b>${freeCount}</b> · 덱 <b>${c.deck}</b> · 와일드 <b>${c.wild}</b><br>`+
+    `풀 심볼 <b>${level.pool.length}</b> · k=${c.k} r=${c.r} · 목표 <b>${({clear:'전체제거',score:'점수도달',collect:'심볼수집'})[c.objective]}</b>`+
+    (level._arch?` · 아키타입 <b>${level._arch}</b>`:'');
+}
+function paintMetrics(c,val,diff,level){
+  const [tier,col]=tierOf(diff.score);
+  const g=id=>document.getElementById(id);
+  g('m-diff').textContent=diff.score.toFixed(0);g('m-diff').style.color=col;
+  g('m-diffbar').style.width=diff.score+'%';g('m-diffbar').style.background=col;
+  g('m-difftier').textContent=tier;
+  const solvable=level.solvableOrder&&val.everClears;
+  g('m-solv').textContent=solvable?'✅ 가능':(val.everClears?'⚠️ 조건부':'❌ 불가');
+  g('m-solv').style.color=solvable?'#7ed957':(val.everClears?'#ffcf5a':'#ff6b6b');
+  g('m-solvsub').textContent=level.solvableOrder?'해답체인 보장':'레이아웃 제거불가 존재';
+  const p=val.pStuck*100;
+  g('m-stuck').textContent=p.toFixed(0)+'%';g('m-stuckbar').style.width=p+'%';
+  g('m-stuckbar').style.background=p<15?'#7ed957':p<35?'#ffcf5a':'#ff6b6b';
+  g('m-branch').textContent=val.branch.toFixed(2);
+  g('m-branchsub').textContent=val.branch<1.3?'외길(고난이도)':val.branch>3?'널널':'적정';
+  const bd=g('breakdown'),L=diff.layers;
+  bd.innerHTML=[['A 지각',L.A],['B 구조',L.B],['C 자원',L.C],['D 압박',L.D]]
+    .map(([n,v])=>`<div class="brow"><span>${n}</span><span class="mini"><span style="width:${(v*100).toFixed(0)}%"></span></span><span>${(v*100).toFixed(0)}</span></div>`).join('');
+  const warns=[];
+  if(val.branch>4)warns.push('분기 과다 → 너무 쉬움(N·r↑ 권장)');
+  if(p>50)warns.push('막힘>50% → 덱·와일드 부족');
+  if(!level.solvableOrder)warns.push('일부 카드 제거 불가 레이아웃');
+  if(c.k===c.r)warns.push('k=r: 모든 카드가 서로 매칭(자명)');
+  g('warnings').textContent=warns.join(' · ');
+}
+
+/* ============ 직접 편집 (카드 에디터) ============ */
+function openCardEditor(id){
+  if(!LEVEL)return;
+  EDIT_ID=id;
+  const card=LEVEL.cards.find(c=>c.id===id);
+  document.getElementById('ce-id').textContent=id;
+  const chips=document.getElementById('ce-chips');chips.innerHTML='';
+  const sel=new Set(card.symbols);
+  LEVEL.pool.forEach(s=>{
+    const ch=document.createElement('span');ch.className='chip'+(sel.has(s)?' on':'');ch.textContent=s;
+    ch.onclick=()=>{
+      if(sel.has(s)){if(sel.size>1)sel.delete(s);}else if(sel.size<6)sel.add(s);
+      ch.classList.toggle('on',sel.has(s));
+    };
+    chips.appendChild(ch);
+  });
+  document.getElementById('ce-lock').value=String(card.lockReq||0);
+  document.getElementById('ce-fd').checked=!!card.faceDown;
+  document.getElementById('cardeditor').style.display='block';
+  document.getElementById('ce-apply').onclick=()=>{
+    card.symbols=[...sel];
+    card.lockReq=+document.getElementById('ce-lock').value;
+    card.faceDown=document.getElementById('ce-fd').checked;
+    LEVEL._eval=null;setMode('edited');
+    const val=quickValidate(LEVEL), diff=difficulty(LEVEL.config,val);
+    LEVEL._val=val;LEVEL._diff=diff;
+    closeCardEditor();render(LEVEL);paintMetrics(LEVEL.config,val,diff,LEVEL);paintEvalMeter(null);paintEcon();
+  };
+  render(LEVEL); // highlight
+}
+function closeCardEditor(){EDIT_ID=null;document.getElementById('cardeditor').style.display='none';}
+document.getElementById('ce-close').onclick=()=>{closeCardEditor();render(LEVEL);};
+
+/* ============ 파이프라인 ============ */
+function run(){
+  const c=cfg();syncLabels(c);
+  LEVEL=generate(c);
+  const val=quickValidate(LEVEL), diff=difficulty(c,val);
+  LEVEL._val=val;LEVEL._diff=diff;LEVEL._eval=null;
+  render(LEVEL);paintMetrics(c,val,diff,LEVEL);paintEvalMeter(null);paintEcon();paintRules();
+}
+function syncLabels(c){
+  const set=(id,v)=>document.getElementById(id).textContent=v;
+  set('v-N',c.N);set('v-k',c.k);set('v-r',c.r);set('v-sim',['낮음','중간','높음'][c.sim]);
+  set('v-tf',c.tf+'%');set('v-cards',c.cards);set('v-layers',c.layers);
+  set('v-deck',c.deck);set('v-wild',c.wild);set('v-moves',c.moves||'∞');set('v-cgoal',c.cgoal);
+  set('v-time',c.time||0);set('v-obst',c.obst);set('v-fd',c.fd);set('v-seed',c.seed);
+  set('v-keylocks',c.keylocks||0);set('v-bombs',c.bombs||0);
+  set('v-zones',(c.zones||1)<2?'없음':(c.zones+'개'));
+  set('v-paper',(c.paper||0)+'%');
+  const tgt=+document.getElementById('target').value;
+  set('v-target',tgt+' ('+tierOf(tgt)[0]+')');
+}
+
+/* ============ export & 게임 핸드오프 ============ */
+function levelJSON(){
+  const L=LEVEL;if(!L)return '{}';
+  return JSON.stringify({
+    schema:"combo-match/level@2",
+    seed:L.config.seed,difficulty:+L._diff.score.toFixed(1),difficultyTier:tierOf(L._diff.score)[0],
+    generator:{mode:MODE,archetype:L._arch||null,patternSeed,targetDifficulty:+document.getElementById('target').value},
+    metrics:{pStuck:+L._val.pStuck.toFixed(3),branchFactor:+L._val.branch.toFixed(2),
+      avgMoves:+L._val.avgMoves.toFixed(1),solvable:L.solvableOrder&&L._val.everClears},
+    evaluation:L._eval||null,
+    economy:currentEco(),
+    rules:L.rules||null,
+    config:L.config,pool:L.pool,active:L.active,deckStock:L.stock,
+    cards:L.cards.map(c=>({id:c.id,x:Math.round(c.x),y:Math.round(c.y),layer:c.layer,symbols:c.symbols,lockReq:c.lockReq,faceDown:c.faceDown,unlockedBy:c.unlockedBy||[],bombCounter:c.bombCounter||0,zone:c.zone||0,paper:!!c.paper,piece:!!c.piece})),
+    coverage:L.coveredBy.map((cb,i)=>({id:i,coveredBy:cb}))
+  },null,2);
+}
+const GAME_URL='./index.html';
+function strToB64(s){return btoa(unescape(encodeURIComponent(s)))}
+function handoff(){
+  const json=levelJSON();
+  try{localStorage.setItem('combo-match:playtest',json);}catch(e){}
+  return GAME_URL+'#level='+encodeURIComponent(strToB64(json));
+}
+
+/* ============ 이벤트 ============ */
+document.getElementById('gen').onclick=()=>{setMode('manual');run();};
+document.getElementById('reseed').onclick=()=>{document.getElementById('seed').value=Math.floor(Math.random()*99999);setMode('manual');run();};
+document.getElementById('autogen').onclick=()=>autoDesign();
+document.getElementById('repattern').onclick=()=>{patternSeed=Math.floor(Math.random()*1e9);autoDesign();};
+document.getElementById('target').addEventListener('input',()=>syncLabels(cfg()));
+document.getElementById('target').addEventListener('change',()=>autoDesign());
+document.getElementById('evalgo').onclick=()=>runEvaluation().catch(()=>{});
+document.getElementById('lvlidx').addEventListener('input',()=>{ // 경제는 재생성 없이 실시간 반영
+  document.getElementById('v-lvlidx').textContent=document.getElementById('lvlidx').value;
+  paintEcon();
+  if(LEVEL&&LEVEL._eval)paintEvalResult(LEVEL._eval); // 골드 기대치 재계산
+});
+document.querySelectorAll('.A input,.A select,.B input,.B select,.C input,.C select,.D input,.D select,#keylocks,#bombs,#zones,#paper,#seed').forEach(el=>{
+  el.addEventListener('input',()=>{const c=cfg();syncLabels(c);});
+  el.addEventListener('change',()=>{setMode('manual');run();});
+});
+document.getElementById('export').onclick=()=>{
+  const blob=new Blob([levelJSON()],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`level_seed${LEVEL?LEVEL.config.seed:0}_diff${LEVEL?Math.round(LEVEL._diff.score):0}.json`;a.click();
+};
+document.getElementById('copy').onclick=async()=>{
+  try{await navigator.clipboard.writeText(levelJSON());document.getElementById('copy').textContent='✅ 복사됨';
+    setTimeout(()=>document.getElementById('copy').textContent='📋 복사',1200);}catch(e){alert('클립보드 권한 필요')}
+};
+document.getElementById('playtest').onclick=()=>{
+  const url=handoff();
+  document.getElementById('pp-frame').src=url;
+  document.getElementById('pp-info').textContent=`시드 #${LEVEL.config.seed} · 난이도 ${LEVEL._diff.score.toFixed(0)} (${tierOf(LEVEL._diff.score)[0]})`;
+  document.getElementById('playpanel').style.display='flex';
+};
+document.getElementById('playtab').onclick=()=>window.open(handoff(),'_blank');
+document.getElementById('pp-reload').onclick=()=>{document.getElementById('pp-frame').src=handoff();};
+document.getElementById('pp-close').onclick=()=>{document.getElementById('playpanel').style.display='none';document.getElementById('pp-frame').src='about:blank';};
+window.addEventListener('resize',()=>{if(LEVEL)render(LEVEL);});
+
+run(); // 초기: 수동 기본값
+</script>
+</body>
+</html>

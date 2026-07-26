@@ -8,7 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prebuild": "node tools/sync-designer.mjs",
+    "predev": "node tools/sync-designer.mjs",
+    "levels": "node tools/generate-levels.mjs"
   },
   "dependencies": {
     "phaser": "3.90.0"

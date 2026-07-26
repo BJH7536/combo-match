@@ -8,7 +8,7 @@ import { PlayScene } from './game/play-scene';
 const hasHandoff = /^#level=/.test(window.location.hash);
 
 // 스테이지 비율을 실제 화면 비율에 맞춰 잡는다 — FIT으로 스케일되므로 여백이 최소화된다
-const { W, H } = stageSize(window.innerWidth, window.innerHeight);
+const { W, H } = stageSize(window.innerWidth, window.innerHeight, window.devicePixelRatio);
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -29,7 +29,7 @@ let resizeTimer: number | undefined;
 const onViewportChange = (): void => {
   window.clearTimeout(resizeTimer);
   resizeTimer = window.setTimeout(() => {
-    const next = stageSize(window.innerWidth, window.innerHeight);
+    const next = stageSize(window.innerWidth, window.innerHeight, window.devicePixelRatio);
     if (Math.abs(next.W - game.scale.width) < 4 && Math.abs(next.H - game.scale.height) < 4) return;
     game.scale.resize(next.W, next.H);
     for (const sc of game.scene.getScenes(true)) sc.scene.restart();

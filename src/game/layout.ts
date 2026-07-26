@@ -27,24 +27,39 @@ export interface Layout {
   toastY: number;
   /** 레벨 선택 그리드 열 수 */
   selectCols: number;
+  /** 기준 스테이지(가로 1280 / 세로 720) 대비 배율 — 고정 크기 글자에 곱해 쓴다 */
+  ui: number;
 }
 
 const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
+// 렌더 부담 상한 — 이 픽셀 수를 넘으면 비율을 유지한 채 줄인다 (대략 1920×1350)
+const MAX_PIXELS = 2_600_000;
+
 /**
- * 뷰포트 종횡비에 맞는 스테이지 크기.
- * 가로는 폭을, 세로는 높이를 기준으로 잡고 반대 축을 비율로 맞춘다.
+ * 스테이지 크기 = 화면에 실제로 표시될 픽셀 수.
+ * 캔버스 내부 해상도를 표시 크기에 맞춰야 업스케일 흐림이 없다.
+ * devicePixelRatio는 2까지만 반영한다 (3배는 렌더 비용 대비 체감 이득이 작다).
  */
-export function stageSize(vw: number, vh: number): { W: number; H: number } {
-  const r = vw > 0 && vh > 0 ? vw / vh : 1280 / 760;
-  if (r >= 1.05) {
-    // 가로 — 폭 1280 고정, 높이는 비율대로 (너무 납작하거나 길지 않게 제한)
-    const W = 1280;
-    return { W, H: Math.round(clamp(W / r, 600, 1080)) };
+export function stageSize(vw: number, vh: number, dpr = 1): { W: number; H: number } {
+  const cssW = vw > 0 ? vw : 1280;
+  const cssH = vh > 0 ? vh : 760;
+  const k = clamp(Number.isFinite(dpr) && dpr > 0 ? dpr : 1, 1, 2);
+  let W = Math.round(cssW * k);
+  let H = Math.round(cssH * k);
+  const px = W * H;
+  if (px > MAX_PIXELS) {
+    const shrink = Math.sqrt(MAX_PIXELS / px);
+    W = Math.floor(W * shrink);
+    H = Math.floor(H * shrink);
   }
-  // 세로 — 높이 1280 고정, 폭은 비율대로
-  const H = 1280;
-  return { W: Math.round(clamp(H * r, 560, 1180)), H };
+  // 지나치게 작은 창에서도 레이아웃이 성립하도록 하한을 둔다
+  if (W < 480 || H < 480) {
+    const grow = Math.max(480 / W, 480 / H);
+    W = Math.round(W * grow);
+    H = Math.round(H * grow);
+  }
+  return { W, H };
 }
 
 /** 스테이지 크기에서 모든 UI 슬롯을 계산한다 */
@@ -82,7 +97,8 @@ export function computeLayout(W: number, H: number): Layout {
       wild: { x: Math.round(W * 0.928), y: rowY + 8, w: wildW, h: wildH },
       moves: { x: Math.round(W * 0.928), y: rowY - Math.round(wildH * 0.86), d: 78 },
       toastY: H - bottomH - 26,
-      selectCols: 4,
+      selectCols: W < 900 ? 3 : 4,
+      ui: clamp(W / 1280, 0.62, 2.1),
     };
   }
 
@@ -118,5 +134,6 @@ export function computeLayout(W: number, H: number): Layout {
     moves: { x: Math.round(W * 0.87), y: rowY - deckH - 18, d: 66 },
     toastY: boardTop + boardH + Math.round(spotH * 0.08),
     selectCols: W < 820 ? 2 : 3,
+    ui: clamp(W / 720, 0.62, 2.1),
   };
 }

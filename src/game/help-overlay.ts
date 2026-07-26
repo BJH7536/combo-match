@@ -41,9 +41,9 @@ export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void
   const STAGE_W = L.W;
   const STAGE_H = L.H;
   // 좁은 화면에서도 패널이 넘치지 않게 크기와 글자를 함께 줄인다
-  const pw = Math.round(Math.min(860, STAGE_W * 0.94));
-  const ph = Math.round(Math.min(470, STAGE_H * 0.66));
-  const sc = Math.min(1, pw / 860);
+  const pw = Math.round(Math.min(860 * L.ui, STAGE_W * 0.94));
+  const ph = Math.round(Math.min(470 * L.ui, STAGE_H * 0.66));
+  const sc = pw / 860;
   const fs = (base: number): string => `${Math.max(11, Math.round(base * sc))}px`;
   const D = 20000; // 다른 UI보다 항상 위
   const parts: Phaser.GameObjects.GameObject[] = [];

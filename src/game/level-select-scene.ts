@@ -40,6 +40,10 @@ export class LevelSelectScene extends Phaser.Scene {
     super('LevelSelect');
   }
 
+  private fs(px: number): string {
+    return `${Math.max(9, Math.round(px * this.L.ui))}px`;
+  }
+
   create(): void {
     this.L = computeLayout(this.scale.width, this.scale.height);
     this.progress = loadProgress();
@@ -63,7 +67,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.add
       .text(this.L.W / 2, this.L.headerH * 0.44, '콤보 매칭', {
         fontFamily: FONT,
-        fontSize: this.L.portrait ? '26px' : '34px',
+        fontSize: this.fs(this.L.portrait ? 26 : 34),
         color: PALETTE.cream,
         fontStyle: 'bold',
       })
@@ -72,7 +76,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.add
       .text(this.L.W / 2, this.L.headerH * 0.9, '같은 그림을 찾아 이어가세요 — 레벨을 고르면 시작합니다', {
         fontFamily: FONT,
-        fontSize: this.L.portrait ? '11px' : '14px',
+        fontSize: this.fs(this.L.portrait ? 11 : 14),
         color: '#d8bd92',
       })
       .setOrigin(0.5)
@@ -94,13 +98,13 @@ export class LevelSelectScene extends Phaser.Scene {
       )
       .setDepth(11);
     this.add
-      .text(this.L.W - (this.L.portrait ? 143 : 168), chipY, '🪙', { fontFamily: FONT, fontSize: '21px' })
+      .text(this.L.W - (this.L.portrait ? 143 : 168), chipY, '🪙', { fontFamily: FONT, fontSize: this.fs(21) })
       .setOrigin(0.5)
       .setDepth(12);
     this.add
       .text(this.L.W - (this.L.portrait ? 122 : 145), chipY, loadGold().toLocaleString(), {
         fontFamily: FONT,
-        fontSize: '20px',
+        fontSize: this.fs(20),
         color: PALETTE.goldText,
         fontStyle: 'bold',
       })
@@ -126,7 +130,7 @@ export class LevelSelectScene extends Phaser.Scene {
         }),
       ),
       this.add
-        .text(0, 0, '❓ 규칙', { fontFamily: FONT, fontSize: '18px', color: PALETTE.cream, fontStyle: 'bold' })
+        .text(0, 0, '❓ 규칙', { fontFamily: FONT, fontSize: this.fs(18), color: PALETTE.cream, fontStyle: 'bold' })
         .setOrigin(0.5),
     ]);
     help.setInteractive(new Phaser.Geom.Rectangle(-hw / 2, -hh / 2, hw, hh), Phaser.Geom.Rectangle.Contains);
@@ -135,7 +139,7 @@ export class LevelSelectScene extends Phaser.Scene {
     const status = this.add
       .text(this.L.W / 2, this.L.H / 2, '레벨 목록을 불러오는 중…', {
         fontFamily: FONT,
-        fontSize: '22px',
+        fontSize: this.fs(22),
         color: PALETTE.cream,
       })
       .setOrigin(0.5);

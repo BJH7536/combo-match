@@ -172,7 +172,8 @@ export class PlayScene extends Phaser.Scene {
 
   // ---- 보드 ----
   private buildBoard(): void {
-    const t = computeBoardTransform(this.level.cards, DATA_CW, DATA_CH, this.L.board, 1.4);
+    // 카드 상한 배율도 스테이지 배율을 따라야 해상도를 올려도 상대 크기가 유지된다
+    const t = computeBoardTransform(this.level.cards, DATA_CW, DATA_CH, this.L.board, 1.4 * this.L.ui);
     this.cardW = DATA_CW * t.scale;
     this.cardH = DATA_CH * t.scale;
     const w = this.cardW;
@@ -221,6 +222,11 @@ export class PlayScene extends Phaser.Scene {
     const rows: string[] = [];
     for (let i = 0; i < symbols.length; i += 2) rows.push(symbols.slice(i, i + 2).join(' '));
     return rows.join('\n');
+  }
+
+  /** 고정 크기 글자에 스테이지 배율을 곱한다 (해상도가 올라가도 시각 크기는 그대로) */
+  private fs(px: number): string {
+    return `${Math.max(9, Math.round(px * this.L.ui))}px`;
   }
 
   /** 심볼 수가 늘수록 줄이 쌓이므로 카드 높이에 맞춰 글자를 줄인다 */
@@ -314,11 +320,11 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(601);
     this.add
-      .text(scoreX, this.L.headerH / 2 - 13, 'SCORE', { fontFamily: FONT, fontSize: '11px', color: '#3a2408' })
+      .text(scoreX, this.L.headerH / 2 - 13, 'SCORE', { fontFamily: FONT, fontSize: this.fs(11), color: '#3a2408' })
       .setOrigin(0.5)
       .setDepth(602);
     this.scoreText = this.add
-      .text(scoreX, this.L.headerH / 2 + 9, '0', { fontFamily: FONT, fontSize: '20px', color: '#3a2408', fontStyle: 'bold' })
+      .text(scoreX, this.L.headerH / 2 + 9, '0', { fontFamily: FONT, fontSize: this.fs(20), color: '#3a2408', fontStyle: 'bold' })
       .setOrigin(0.5)
       .setDepth(602);
 
@@ -341,7 +347,7 @@ export class PlayScene extends Phaser.Scene {
       this.add
         .text(gx - 20, this.L.headerH / 2 - 14, `×${this.level.cgoal} 콤보 보너스`, {
           fontFamily: FONT,
-          fontSize: '11px',
+          fontSize: this.fs(11),
           color: '#3a2408',
         })
         .setOrigin(0, 0.5)
@@ -352,7 +358,7 @@ export class PlayScene extends Phaser.Scene {
         .setOrigin(0, 0.5)
         .setDepth(603);
       this.gaugeText = this.add
-        .text(gx + 100, this.L.headerH / 2 + 10, '0/0', { fontFamily: FONT, fontSize: '11px', color: '#3a2408' })
+        .text(gx + 100, this.L.headerH / 2 + 10, '0/0', { fontFamily: FONT, fontSize: this.fs(11), color: '#3a2408' })
         .setOrigin(0, 0.5)
         .setDepth(603);
     }
@@ -372,13 +378,13 @@ export class PlayScene extends Phaser.Scene {
       )
       .setDepth(601);
     this.add
-      .text(goldX - 55, this.L.headerH / 2, '🪙', { fontFamily: FONT, fontSize: '20px' })
+      .text(goldX - 55, this.L.headerH / 2, '🪙', { fontFamily: FONT, fontSize: this.fs(20) })
       .setOrigin(0.5)
       .setDepth(602);
     this.goldText = this.add
       .text(goldX - 32, this.L.headerH / 2, '0', {
         fontFamily: FONT,
-        fontSize: '19px',
+        fontSize: this.fs(19),
         color: PALETTE.goldText,
         fontStyle: 'bold',
       })
@@ -388,7 +394,7 @@ export class PlayScene extends Phaser.Scene {
     this.add
       .text(this.L.W - 14, this.L.headerH / 2, sourceLabel, {
         fontFamily: FONT,
-        fontSize: this.L.portrait ? '11px' : '13px',
+        fontSize: this.fs(this.L.portrait ? 11 : 13),
         color: '#e0c496',
       })
       .setOrigin(1, 0.5)
@@ -467,7 +473,7 @@ export class PlayScene extends Phaser.Scene {
     const bannerText = this.add
       .text(spotX, bannerY, '▼ 같은 그림 찾기 ▼', {
         fontFamily: FONT,
-        fontSize: '15px',
+        fontSize: this.fs(15),
         color: PALETTE.goldText,
         fontStyle: 'bold',
       })
@@ -492,12 +498,12 @@ export class PlayScene extends Phaser.Scene {
       }),
     );
     const comboLabel = this.add
-      .text(0, -24, 'COMBO', { fontFamily: FONT, fontSize: '13px', color: '#ffffff', fontStyle: 'bold' })
+      .text(0, -24, 'COMBO', { fontFamily: FONT, fontSize: this.fs(13), color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5);
     this.comboValue = this.add
-      .text(0, 2, '×0', { fontFamily: FONT, fontSize: '30px', color: '#ffffff', fontStyle: 'bold' })
+      .text(0, 2, '×0', { fontFamily: FONT, fontSize: this.fs(30), color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5);
-    this.comboFlames = this.add.text(0, 26, '🔥', { fontFamily: FONT, fontSize: '18px' }).setOrigin(0.5);
+    this.comboFlames = this.add.text(0, 26, '🔥', { fontFamily: FONT, fontSize: this.fs(18) }).setOrigin(0.5);
     this.comboBadge.add([badgeBg, comboLabel, this.comboValue, this.comboFlames]);
     this.comboBadge.setVisible(false);
     this.tweens.add({
@@ -511,7 +517,7 @@ export class PlayScene extends Phaser.Scene {
 
     // 배너(스포트라이트 상단)와 겹치지 않도록 보드와 스포트라이트 사이 여백에 띄운다
     this.toastText = this.add
-      .text(this.L.W / 2, 500, '', { fontFamily: FONT, fontSize: '21px', color: '#fff0cf', fontStyle: 'bold' })
+      .text(this.L.W / 2, 500, '', { fontFamily: FONT, fontSize: this.fs(21), color: '#fff0cf', fontStyle: 'bold' })
       .setOrigin(0.5)
       .setDepth(900)
       .setAlpha(0);
@@ -569,11 +575,11 @@ export class PlayScene extends Phaser.Scene {
         )
         .setDepth(500);
       this.movesText = this.add
-        .text(1188, 549, '0', { fontFamily: FONT, fontSize: '28px', color: PALETTE.goldText, fontStyle: 'bold' })
+        .text(1188, 549, '0', { fontFamily: FONT, fontSize: this.fs(28), color: PALETTE.goldText, fontStyle: 'bold' })
         .setOrigin(0.5)
         .setDepth(501);
       this.add
-        .text(1188, 572, 'MOVES', { fontFamily: FONT, fontSize: '10px', color: PALETTE.goldText })
+        .text(1188, 572, 'MOVES', { fontFamily: FONT, fontSize: this.fs(10), color: PALETTE.goldText })
         .setOrigin(0.5)
         .setDepth(501);
     }
@@ -934,20 +940,20 @@ export class PlayScene extends Phaser.Scene {
     this.add
       .text(this.L.W / 2, this.L.H / 2 - 96, title, {
         fontFamily: FONT,
-        fontSize: '56px',
+        fontSize: this.fs(56),
         color: PALETTE.cream,
         fontStyle: 'bold',
       })
       .setOrigin(0.5)
       .setDepth(1002);
     this.add
-      .text(this.L.W / 2, this.L.H / 2 - 38, subtitle, { fontFamily: FONT, fontSize: '24px', color: '#f0d9ad' })
+      .text(this.L.W / 2, this.L.H / 2 - 38, subtitle, { fontFamily: FONT, fontSize: this.fs(24), color: '#f0d9ad' })
       .setOrigin(0.5)
       .setDepth(1002);
     this.add
       .text(this.L.W / 2, this.L.H / 2 + 6, `SCORE ${s.score.toLocaleString()}`, {
         fontFamily: FONT,
-        fontSize: '30px',
+        fontSize: this.fs(30),
         color: '#ffd76a',
         fontStyle: 'bold',
       })
@@ -964,7 +970,7 @@ export class PlayScene extends Phaser.Scene {
     this.add
       .text(this.L.W / 2, this.L.H / 2 + 44, `🪙 +${gained}   (보유 ${this.gold.toLocaleString()})`, {
         fontFamily: FONT,
-        fontSize: '18px',
+        fontSize: this.fs(18),
         color: '#f0d9ad',
       })
       .setOrigin(0.5)

@@ -3,6 +3,7 @@ import { ComboMatchEngine, type EndReason, type RejectReason } from '../core/eng
 import { LevelLoadError, loadLevel } from '../core/level-loader';
 import type { LevelData, RuntimeCard, RuntimeLevel, SymbolId } from '../core/types';
 import { computeBoardTransform } from './board-layout';
+import { hasSeenHelp, showHelpOverlay } from './help-overlay';
 import type { LevelIndexEntry } from './level-select-scene';
 import { decodeLevelHash, demoLevel } from './level-source';
 import { saveResult } from './progress';
@@ -60,6 +61,8 @@ export class PlayScene extends Phaser.Scene {
   private nodes = new Map<number, CardNode>();
   private bombCounters = new Map<number, number>();
   private armed: 'none' | 'wild' | 'claw' = 'none'; // 다음 카드 클릭을 어떤 아이템이 가로챌지
+  private tutorial = false; // 레벨 1~3: 매칭 가능 카드를 초록으로 표시 (ADR-001 결정 2)
+  private matchable = new Set<number>();
   private gold = 0;
   private eco: Economy = normalizeEconomy(null);
   private settled = false; // 정산은 판당 1회
@@ -98,6 +101,8 @@ export class PlayScene extends Phaser.Scene {
     this.bombCounters.clear();
     this.armed = 'none';
     this.itemButtons = [];
+    this.matchable.clear();
+    this.tutorial = (this.initData.entry?.id ?? 99) <= 3;
     this.settled = false;
     this.gold = loadGold();
     this.eco = normalizeEconomy((this.initData.level as { economy?: unknown } | undefined)?.economy);
@@ -116,6 +121,9 @@ export class PlayScene extends Phaser.Scene {
     this.wireEngineEvents();
     this.refreshAllCards();
     this.updateHud();
+
+    // 첫 플레이 1회 — 매칭 규칙을 모르면 무슨 게임인지 알 수 없다
+    if (!hasSeenHelp()) showHelpOverlay(this);
   }
 
   private resolveLevel(): { level: RuntimeLevel; sourceLabel: string } {
@@ -172,6 +180,7 @@ export class PlayScene extends Phaser.Scene {
     cardTexture(this, w, h, 'face');
     cardTexture(this, w, h, 'covered');
     cardTexture(this, w, h, 'back');
+    if (this.tutorial) cardTexture(this, w, h, 'hint');
 
     for (const card of this.level.cards) {
       const cx = t.offsetX + (card.x + DATA_CW / 2) * t.scale;
@@ -228,13 +237,24 @@ export class PlayScene extends Phaser.Scene {
     const free = this.engine.isFree(id);
     const revealed = this.engine.isRevealed(id);
 
-    const variant = !revealed ? 'back' : free ? 'face' : 'covered';
+    const variant = !revealed ? 'back' : !free ? 'covered' : this.matchable.has(id) ? 'hint' : 'face';
     node.image.setTexture(cardTexture(this, node.w, node.h, variant));
     node.symbolText.setText(revealed ? this.symbolLines(card.symbols) : '❔');
     node.symbolText.setColor(revealed ? '#2b1f12' : PALETTE.cream);
     node.symbolText.setAlpha(free ? 1 : 0.7);
     node.badgeText.setText(this.badgeOf(card));
     node.root.setAlpha(free ? 1 : 0.88);
+  }
+
+  // 튜토리얼 표시 갱신 — 액티브가 바뀔 때마다 후보가 달라지므로 변경분만 다시 그린다
+  private refreshMatchable(): void {
+    if (!this.tutorial) return;
+    const next = new Set(this.engine.getMatchableIds());
+    const changed: number[] = [];
+    for (const id of next) if (!this.matchable.has(id)) changed.push(id);
+    for (const id of this.matchable) if (!next.has(id)) changed.push(id);
+    this.matchable = next;
+    for (const id of changed) this.refreshCard(id);
   }
 
   private refreshAllCards(): void {
@@ -610,6 +630,7 @@ export class PlayScene extends Phaser.Scene {
       b.price.setText(armedThis ? '취소 · 환불' : `🪙${this.eco.itemPrices[b.key]}`);
     }
     if (this.movesText) this.movesText.setText(String(Math.max(0, this.level.moveLimit - s.moves)));
+    this.refreshMatchable();
 
     if (this.level.cgoal > 0) {
       const progress = s.combo % this.level.cgoal;

@@ -29,6 +29,7 @@ export const PALETTE = {
   deckBottom: '#3d2a86',
   deckShadow: '#251a52',
   cream: '#ffe6bf',
+  hintEdge: '#7ed957', // 튜토리얼 매칭 가능 표시 (시안의 초록 글로우)
 } as const;
 
 export interface PanelStyle {
@@ -149,7 +150,8 @@ export function panelTexture(scene: Phaser.Scene, key: string, rawW: number, raw
   return key;
 }
 
-export type CardVariant = 'face' | 'covered' | 'back';
+// 'hint' = 매칭 가능 표시. 상시 표시는 폐기(D-2)이고 튜토리얼 1~3에서만 쓴다(ADR-001 결정 2·O-3).
+export type CardVariant = 'face' | 'covered' | 'back' | 'hint';
 
 /** 카드 텍스처 — 크기가 레벨마다 다르므로 키에 규격을 포함한다 */
 export function cardTexture(scene: Phaser.Scene, rawW: number, rawH: number, variant: CardVariant): string {
@@ -174,7 +176,7 @@ export function cardTexture(scene: Phaser.Scene, rawW: number, rawH: number, var
   ctx.shadowOffsetY = 0;
 
   const g = ctx.createLinearGradient(0, PAD, 0, PAD + h);
-  if (variant === 'face') {
+  if (variant === 'face' || variant === 'hint') {
     g.addColorStop(0, PALETTE.cardTop);
     g.addColorStop(1, PALETTE.cardBottom);
   } else if (variant === 'covered') {
@@ -196,8 +198,16 @@ export function cardTexture(scene: Phaser.Scene, rawW: number, rawH: number, var
     ctx.restore();
   }
 
-  ctx.strokeStyle = variant === 'back' ? PALETTE.woodDeep : PALETTE.cardEdge;
-  ctx.lineWidth = edgeW;
+  if (variant === 'hint') {
+    // 시안의 초록 글로우를 튜토리얼 전용으로 되살린다 (ADR-001 O-3 재정의)
+    ctx.shadowColor = 'rgba(126,217,87,0.9)';
+    ctx.shadowBlur = 16;
+    ctx.strokeStyle = PALETTE.hintEdge;
+    ctx.lineWidth = edgeW * 1.9;
+  } else {
+    ctx.strokeStyle = variant === 'back' ? PALETTE.woodDeep : PALETTE.cardEdge;
+    ctx.lineWidth = edgeW;
+  }
   roundRect(ctx, PAD + edgeW / 2, PAD + edgeW / 2, w - edgeW, h - edgeW, radius);
   ctx.stroke();
   ctx.restore();

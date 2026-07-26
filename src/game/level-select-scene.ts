@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { LevelData } from '../core/types';
+import { showHelpOverlay } from './help-overlay';
 import { loadProgress, type Progress } from './progress';
 import { feltTexture, PALETTE, panelTexture } from './skin';
 import { loadGold } from './wallet';
@@ -100,6 +101,31 @@ export class LevelSelectScene extends Phaser.Scene {
       })
       .setOrigin(0, 0.5)
       .setDepth(12);
+
+    // ❓ 규칙 — 언제든 다시 볼 수 있게
+    const hw = 130;
+    const hh = 44;
+    const help = this.add.container(120, 54).setDepth(12);
+    help.add([
+      this.add.image(
+        0,
+        0,
+        panelTexture(this, 'help-btn', hw, hh, {
+          top: PALETTE.woodLightTop,
+          bottom: PALETTE.woodLightBottom,
+          shadow: PALETTE.woodDeep,
+          shadowDepth: 3,
+          radius: 11,
+          grain: true,
+          gloss: 0.25,
+        }),
+      ),
+      this.add
+        .text(0, 0, '❓ 규칙', { fontFamily: FONT, fontSize: '18px', color: PALETTE.cream, fontStyle: 'bold' })
+        .setOrigin(0.5),
+    ]);
+    help.setInteractive(new Phaser.Geom.Rectangle(-hw / 2, -hh / 2, hw, hh), Phaser.Geom.Rectangle.Contains);
+    help.on('pointerdown', () => showHelpOverlay(this));
 
     const status = this.add
       .text(STAGE_W / 2, STAGE_H / 2, '레벨 목록을 불러오는 중…', {

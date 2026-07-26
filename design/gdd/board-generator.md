@@ -1,5 +1,11 @@
 # board-generator (보드 생성기)
 
+> ✅ **2026-07-26 구현 완료 — 이 문서는 설계 의도 기록이다.**
+> 실제 동작의 진실은 코드(`tools/generate-levels.mjs` — **자체 생성기를 만들지 않고 디자이너 툴의 생성·검증 로직을 재사용**한다 (규칙 이중화 방지)), 규칙의 진실은 마스터 GDD(`design/combo-match-core.md`)다.
+> 구현은 `runOneSim()` 동작 동치로 검증했고(테스트 123개) 이후 독립 감사 27건과 기능 추가가
+> 누적되어 **본문 세부와 코드가 다를 수 있다.** 코드를 고칠 때 이 문서를 기준으로 삼지 말 것.
+> 현재 구현 현황은 `design/gdd/systems-index.md`를 볼 것.
+
 > ⚠️ **2026-07-26 마스터 정렬**: 생성 방식이 **해답 체인 선배치(by construction)**로 대체됨
 > (C4) — rejection sampling 폐기, 레퍼런스 구현은 `tools/level-designer.html`의
 > `generate()`/`removalOrder()`/`assignSymbols()`. 전문은

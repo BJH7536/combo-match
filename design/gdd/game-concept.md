@@ -6,6 +6,13 @@ verified-by: 사용자 (2026-07-24 문답)
 reference-game: Disney Solitaire (SuperPlay, 2025)
 ---
 
+> ⚠️ **2026-07-26 — 이 문서는 마스터 GDD 채택 *이전*의 기록이다.**
+> 시안(`ui_draft.html`)에서 역설계한 컨셉·필러·톤 문서로, 규칙과 수치는
+> `design/combo-match-core.md`(기획 마스터 GDD)가 우선한다. 여기 적힌 규칙 중
+> **상시 하이라이트·심볼 2개 고정(k=2)·장치 없음** 등은 폐기·확장됐다
+> (전문: `production/adr/ADR-001-master-alignment.md` 충돌 13건 표).
+> **컨셉과 필러를 이해하는 용도로만 읽을 것** — 규칙 근거로 인용하지 말 것.
+
 # Game Concept: 콤보 매칭 (우드 콘솔 — 같은 그림 찾기에서 개칭)
 
 > ⚠️ **2026-07-26 마스터 정렬**: 기획 GDD `design/combo-match-core.md`(v1.0)가 규칙·밸런스의

@@ -1,5 +1,11 @@
 # level-config (레벨 정의/난이도 파라미터)
 
+> ✅ **2026-07-26 구현 완료 — 이 문서는 설계 의도 기록이다.**
+> 실제 동작의 진실은 코드(`src/core/level-loader.ts`(level@2 로더·fail-fast 검증·level@1 하위 호환)), 규칙의 진실은 마스터 GDD(`design/combo-match-core.md`)다.
+> 구현은 `runOneSim()` 동작 동치로 검증했고(테스트 123개) 이후 독립 감사 27건과 기능 추가가
+> 누적되어 **본문 세부와 코드가 다를 수 있다.** 코드를 고칠 때 이 문서를 기준으로 삼지 말 것.
+> 현재 구현 현황은 `design/gdd/systems-index.md`를 볼 것.
+
 > ⚠️ **2026-07-26 마스터 정렬**: 레벨 스키마가 `combo-match/level@2`로 전면 대체됨 (C13)
 > — 목표 유형 3종·16노브 config·evaluation 블록 포함. 전문은
 > `production/adr/ADR-001-master-alignment.md`. 충돌 시 마스터 우선, 본문 개정은 구현과 병행.

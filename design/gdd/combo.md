@@ -1,60 +1,28 @@
 # combo (콤보/스트릭)
 
-> **Status**: In Design
-> **Author**: 사용자 + Claude (design-system)
-> **Last Updated**: 2026-07-26
-> **Implements Pillar**: Pillar 2 "끊기지 않는 연쇄의 쾌감" — 연쇄의 수치화·보상 장치
+> ⛔ **이 문서는 작성되지 않았다 — 의도된 결정이다** (2026-07-26).
+>
+> 설계 착수 시점에 기획 마스터 GDD(`design/combo-match-core.md`)를 규칙의 단일 진실로
+> 채택했고(ADR-001 결정 1), 콤보 규칙은 마스터 **§4 코어 규칙**이 이미 완결적으로 명세하고
+> 있었다. 별도 GDD를 쓰면 같은 규칙이 두 곳에 존재해 어긋날 위험만 생기므로, 작성하지 않고
+> 마스터 + 레퍼런스 구현(`runOneSim()`)을 명세로 삼아 바로 구현했다.
+>
+> 이 파일은 `systems-index.md`의 참조를 끊지 않기 위해 남겨 둔다.
 
-## Overview
+## 규칙은 어디에 있나
 
-[To be designed]
+| 항목 | 위치 |
+|---|---|
+| 규칙·수치 (단일 진실) | `design/combo-match-core.md` §4 |
+| 실행 가능한 명세 (레퍼런스) | `tools/level-designer.html`의 `runOneSim()` |
+| 구현 | `src/core/engine.ts` — 콤보 카운터, `cgoal` 배수 점수 보너스, 드로우 시 리셋 |
+| 검증 | `tests/differential.test.ts` — 레퍼런스 트레이스 재생 270회로 동작 동치 확인 |
+| 게이지 의미 결정 | ADR-001 **O-1** — 게이지는 `cgoal` 진행 + 점수 보너스이며 **아이템을 지급하지 않는다** |
 
-## Player Fantasy
+## 요약 (편의용 — 충돌 시 마스터 우선)
 
-[To be designed]
-
-## Detailed Design
-
-### Core Rules
-
-[To be designed]
-
-### States and Transitions
-
-[To be designed]
-
-### Interactions with Other Systems
-
-[To be designed]
-
-## Formulas
-
-[To be designed]
-
-## Edge Cases
-
-[To be designed]
-
-## Dependencies
-
-[To be designed]
-
-## Tuning Knobs
-
-[To be designed]
-
-## Visual/Audio Requirements
-
-[To be designed]
-
-## UI Requirements
-
-[To be designed]
-
-## Acceptance Criteria
-
-[To be designed]
-
-## Open Questions
-
-[To be designed]
+- 매치가 성립하면 콤보 +1, 점수는 `10 × 콤보`.
+- 콤보가 `cgoal`의 배수에 도달하면 `+100 × 콤보` 보너스가 추가된다.
+- 드로우하면 콤보가 0으로 리셋된다.
+- 와일드로 제거할 때는 콤보가 유지되고(최소 1) **`cgoal` 보너스는 붙지 않는다** — 레퍼런스 준거.
+- 집게는 콤보·액티브·점수에 영향을 주지 않는다.

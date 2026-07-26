@@ -102,13 +102,17 @@ describe('level@2 loader', () => {
     }
   });
 
-  it('zone 누락/비정수 → LevelLoadError (레퍼런스 ||0 정규화와의 게이트 발산 차단 — 감사 회귀)', () => {
+  it('zone 부재는 0으로 정규화하고 비정수는 차단한다 (레퍼런스 ||0 준거 + 감사 회귀)', () => {
+    // 감사 지적의 본질은 "undefined가 그대로 배열 인덱스·비교에 새는 것". 정규화로 차단한다.
     const missing = valid();
     delete (missing.cards[0] as unknown as Record<string, unknown>)['zone'];
-    expect(() => loadLevel(missing)).toThrow(/zone/);
+    expect(loadLevel(missing).cards[0]!.zone).toBe(0);
     const frac = valid();
     (frac.cards[0] as unknown as Record<string, unknown>)['zone'] = 1.5;
     expect(() => loadLevel(frac)).toThrow(/zone/);
+    const neg = valid();
+    (neg.cards[0] as unknown as Record<string, unknown>)['zone'] = -1;
+    expect(() => loadLevel(neg)).toThrow(/zone/);
   });
 
   it('collectGoal.count > 목표 심볼 보유 카드 수 → LevelLoadError (구조적 필패 레벨 차단 — 감사 회귀)', () => {
@@ -125,14 +129,18 @@ describe('level@2 loader', () => {
     }
   });
 
-  it('최상위/카드 필드 누락 → raw TypeError가 아닌 LevelLoadError (신뢰 불가 채널 대비 — 감사 회귀)', () => {
+  it('최상위 필드 누락 → raw TypeError가 아닌 LevelLoadError (신뢰 불가 채널 대비 — 감사 회귀)', () => {
     expect(() => loadLevel({ schema: 'combo-match/level@2' } as never)).toThrow(LevelLoadError);
     const noStock = valid();
     delete (noStock as unknown as Record<string, unknown>)['deckStock'];
     expect(() => loadLevel(noStock)).toThrow(LevelLoadError);
+    const badSymbols = valid();
+    delete (badSymbols.cards[0] as unknown as Record<string, unknown>)['symbols'];
+    expect(() => loadLevel(badSymbols)).toThrow(LevelLoadError);
+    // F계층 필드(unlockedBy 등) 부재는 level@1 호환으로 허용 — tests/level-compat.test.ts가 소유
     const noUb = valid();
     delete (noUb.cards[0] as unknown as Record<string, unknown>)['unlockedBy'];
-    expect(() => loadLevel(noUb)).toThrow(LevelLoadError);
+    expect(loadLevel(noUb).cards[0]!.unlockedBy).toEqual([]);
   });
 
   it('cards도 방어 복사한다 — 로드 후 원본 변조가 런타임에 전파되지 않음 (감사 회귀)', () => {

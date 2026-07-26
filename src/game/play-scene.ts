@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { ComboMatchEngine, type EndReason, type RejectReason } from '../core/engine';
 import { LevelLoadError, loadLevel } from '../core/level-loader';
-import type { LevelCardData, RuntimeLevel, SymbolId } from '../core/types';
+import type { RuntimeCard, RuntimeLevel, SymbolId } from '../core/types';
 import { computeBoardTransform } from './board-layout';
 import { decodeLevelHash, demoLevel } from './level-source';
 import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTexture } from './skin';
@@ -179,7 +179,7 @@ export class PlayScene extends Phaser.Scene {
     return lines.join('\n');
   }
 
-  private badgeOf(card: LevelCardData): string {
+  private badgeOf(card: RuntimeCard): string {
     const parts: string[] = [];
     const bomb = this.bombCounters.get(card.id);
     if (bomb !== undefined) parts.push(`💣${bomb}`);

@@ -40,9 +40,19 @@
   해결: 규격 정수화 + 소스 캔버스 실측 비교. ②자동화 중 카드가 안 사라지는 현상은
   버그가 아니라 백그라운드 탭(document.hidden)에서 Phaser 루프가 멈춘 것 —
   검증 시 `game.step()` 수동 진행으로 확인.
-  잔여: 사운드, localStorage 채널, 소프트 실패 세션 계층, Phaser 코드 스플릿(번들 경고),
+  잔여: 사운드, Phaser 코드 스플릿(번들 경고),
   장치 UI 연출(자물쇠·폭탄·구역·종이는 배지로만 표시 중).
-  다음: 장치 UI·연출 심화 또는 디자이너 툴 레벨 팩 제작
+- **(신규) 기획자 자료 4종 수신·대조 완료(2026-07-26, ADR-001 O-2 해소)**:
+  `design/difficulty-elements.md`, `design/level-mechanics-brainstorm.md`,
+  `design/reference/{play-reference.html, sample-level-1234.json, planner-README.md}` 수록.
+  마스터 GDD·디자이너 툴은 바이트 동일(정렬 유효). **level@1 하위 호환 수정** — 실물 레벨이
+  F계층 필드 없이 오므로 로더를 "부재 허용·정규화 / 값 있으면 엄격 검증"으로 바꾸고
+  `LevelCardData`(입력) ↔ `RuntimeCard`(런타임) 타입 분리. 테스트 80개 통과.
+  **엔진 대비 미구현으로 확인된 것은 세션/경제 계층뿐**: 골드(`combo-match:gold`),
+  아이템 구매(힌트 120·집게 350·와일드 500 — 엔진 API는 이미 존재),
+  localStorage playtest 채널·storage 라이브 갱신, 파일 열기, `?level=` 쿼리.
+  다음 후보: ①레벨 팩 제작(현재 데모 1개뿐 — 심사 콘텐츠 부족) ②아이템·경제 세션 계층
+  ③장치 UI 연출 ④사운드
 - **(이전 작업)**: 기획 마스터 GDD 채택 및 정렬 (ADR-001) — 완료
 - **Status**: combo-match-core.md를 규칙의 단일 진실로 채택 (사용자 결정 4건: 마스터 채택 /
   무표시+유료 힌트 / 목표 3종 / **장치 7종 전부 포함**). 충돌 13건 해소 기록, GDD 6종 배너,

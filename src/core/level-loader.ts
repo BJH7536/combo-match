@@ -56,17 +56,22 @@ export function loadLevel(data: LevelData): RuntimeLevel {
       throw new LevelLoadError(`카드 ${i}에 중복 심볼`);
     }
     inPool(c.symbols, `카드 ${i}`);
-    if (!Array.isArray(c.unlockedBy)) throw new LevelLoadError(`카드 ${i} unlockedBy가 배열이 아님`);
-    for (const k of c.unlockedBy) {
-      if (!Number.isInteger(k) || k < 0 || k >= n) throw new LevelLoadError(`카드 ${i}의 열쇠 참조 무효: ${k}`);
-      if (k === i) throw new LevelLoadError(`카드 ${i}가 자기 자신을 열쇠로 참조`);
+    // F계층 필드는 부재를 허용하고(level@1 호환 — 레퍼런스도 ||0 정규화) 값이 있을 때만 엄격 검증한다.
+    // 정규화는 아래 반환부에서 일괄 수행하므로 엔진은 항상 완전한 카드만 본다.
+    if (c.unlockedBy !== undefined) {
+      if (!Array.isArray(c.unlockedBy)) throw new LevelLoadError(`카드 ${i} unlockedBy가 배열이 아님`);
+      for (const k of c.unlockedBy) {
+        if (!Number.isInteger(k) || k < 0 || k >= n) throw new LevelLoadError(`카드 ${i}의 열쇠 참조 무효: ${k}`);
+        if (k === i) throw new LevelLoadError(`카드 ${i}가 자기 자신을 열쇠로 참조`);
+      }
     }
-    if (!Number.isInteger(c.lockReq) || c.lockReq < 0) throw new LevelLoadError(`카드 ${i} lockReq 무효: ${c.lockReq}`);
-    if (!Number.isInteger(c.bombCounter) || c.bombCounter < 0) {
+    if (c.lockReq !== undefined && (!Number.isInteger(c.lockReq) || c.lockReq < 0)) {
+      throw new LevelLoadError(`카드 ${i} lockReq 무효: ${c.lockReq}`);
+    }
+    if (c.bombCounter !== undefined && (!Number.isInteger(c.bombCounter) || c.bombCounter < 0)) {
       throw new LevelLoadError(`카드 ${i} bombCounter 무효: ${c.bombCounter}`);
     }
-    // zone은 정수 강제 — 레퍼런스는 ||0 정규화하지만 엔진은 원값을 배열 인덱스로 쓰므로 로더가 발산을 차단 (감사)
-    if (!Number.isInteger(c.zone) || c.zone < 0 || c.zone > 3) {
+    if (c.zone !== undefined && (!Number.isInteger(c.zone) || c.zone < 0 || c.zone > 3)) {
       throw new LevelLoadError(`카드 ${i} zone 무효: ${c.zone} (0~3 정수)`);
     }
   });
@@ -115,8 +120,8 @@ export function loadLevel(data: LevelData): RuntimeLevel {
   }
 
   const rules = data.rules ?? null;
-  const paperCount = cards.filter((c) => c.paper).length;
-  const pieceCount = cards.filter((c) => c.piece).length;
+  const paperCount = cards.filter((c) => c.paper === true).length;
+  const pieceCount = cards.filter((c) => c.piece === true).length;
   const paperNeed = rules?.paper?.piecesNeeded ?? 0;
   if (paperCount > 0 && paperNeed <= 0) throw new LevelLoadError('종이 카드가 있는데 rules.paper 없음');
   if (paperNeed > pieceCount) throw new LevelLoadError(`piecesNeeded(${paperNeed}) > 조각 카드 수(${pieceCount})`);
@@ -138,8 +143,21 @@ export function loadLevel(data: LevelData): RuntimeLevel {
   }
 
   return {
-    // cards도 방어 복사 — pool 등과 복사 정책 통일, 호출자 측 변조가 진행 중인 판에 전파되지 않게 (감사)
-    cards: cards.map((c) => ({ ...c, symbols: c.symbols.slice(), unlockedBy: c.unlockedBy.slice() })),
+    // 방어 복사 + F계층 정규화 — 부재 필드에 레퍼런스와 동일한 기본값을 채워 엔진에 넘긴다
+    cards: cards.map((c) => ({
+      id: c.id,
+      x: c.x,
+      y: c.y,
+      layer: c.layer,
+      symbols: c.symbols.slice(),
+      lockReq: c.lockReq ?? 0,
+      faceDown: c.faceDown === true,
+      unlockedBy: (c.unlockedBy ?? []).slice(),
+      bombCounter: c.bombCounter ?? 0,
+      zone: c.zone ?? 0,
+      paper: c.paper === true,
+      piece: c.piece === true,
+    })),
     coveredBy,
     pool: pool.slice(),
     initialActive: data.active.slice(),

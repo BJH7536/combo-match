@@ -1,6 +1,6 @@
 import { Emitter } from './events';
 import { mulberry32, shuffled, type Rng } from './rng';
-import type { LevelCardData, RuntimeLevel, SymbolId } from './types';
+import type { RuntimeCard, RuntimeLevel, SymbolId } from './types';
 
 // 규칙의 단일 진실: design/combo-match-core.md §4 + tools/level-designer.html runOneSim()
 // (동작 동치 — 차등 테스트 tests/differential.test.ts가 검증. 규칙 변경은 ADR 필요)
@@ -150,7 +150,7 @@ export class ComboMatchEngine {
     return this.maxZone;
   }
 
-  private unlockOk(card: LevelCardData): boolean {
+  private unlockOk(card: RuntimeCard): boolean {
     return card.unlockedBy.every((k) => this.removed[k]);
   }
 
@@ -253,7 +253,7 @@ export class ComboMatchEngine {
 
   // ---- 내부 ----
   // 제거 공통부: 상태·구역·조각·언커버 이벤트 (액티브·점수는 경로별)
-  private removeCardState(card: LevelCardData, via: 'match' | 'wildcard' | 'claw'): void {
+  private removeCardState(card: RuntimeCard, via: 'match' | 'wildcard' | 'claw'): void {
     const wasFree = new Set<number>();
     for (const c of this.L.cards) {
       if (!this.removed[c.id] && c.id !== card.id && this.isFree(c.id)) wasFree.add(c.id);
@@ -274,7 +274,7 @@ export class ComboMatchEngine {
     }
   }
 
-  private checkCollectAfterRemoval(card: LevelCardData): boolean {
+  private checkCollectAfterRemoval(card: RuntimeCard): boolean {
     const goal = this.L.collectGoal;
     if (goal && card.symbols.includes(goal.symbol)) {
       this.collectedV++;
@@ -295,7 +295,7 @@ export class ComboMatchEngine {
     }
   }
 
-  private executeRemoval(card: LevelCardData, via: 'match' | 'wildcard'): void {
+  private executeRemoval(card: RuntimeCard, via: 'match' | 'wildcard'): void {
     this.removeCardState(card, via);
     this.activeSymbols = card.symbols.slice();
     this.events.emit('activeChanged', { active: this.activeSymbols.slice(), source: via });

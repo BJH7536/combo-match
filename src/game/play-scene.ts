@@ -10,6 +10,7 @@ import { decodeLevelHash, demoLevel, loadPlaytestLevel } from './level-source';
 import { saveResult } from './progress';
 import { earn, type Economy, loadGold, normalizeEconomy, payout, spend } from './wallet';
 import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTexture } from './skin';
+import { isMuted, sfx, toggleMute } from './audio';
 
 // 플레이 씬 — 보드 렌더·입력·HUD. 시각 기준: ui_draft.html (우드 콘솔 W2 스포트라이트).
 // 규칙 상태는 전부 엔진 소유 — 씬은 이벤트 구독 + 행동 호출만 한다.
@@ -74,6 +75,8 @@ export class PlayScene extends Phaser.Scene {
   private comboValue!: Phaser.GameObjects.Text;
   private comboFlames!: Phaser.GameObjects.Text;
   private spotSymbols!: Phaser.GameObjects.Text;
+  private spotHalo!: Phaser.GameObjects.Image; // 콤보가 오를 때 발광시킨다
+  private spotAt = { x: 0, y: 0 }; // 제거된 카드가 빨려 들어갈 목적지
   private deckCount!: Phaser.GameObjects.Text;
   private wildCount!: Phaser.GameObjects.Text;
   private wildSlot!: Phaser.GameObjects.Image;
@@ -298,14 +301,19 @@ export class PlayScene extends Phaser.Scene {
   private refreshGates(): void {
     const open = new Set(this.engine.getWildableIds()); // 게이트를 통과한 자유 카드
     const blocked = new Set<number>();
+    let unlocked = 0;
     for (const c of this.level.cards) {
       if (this.engine.isRemoved(c.id) || !this.engine.isFree(c.id)) continue;
       if (open.has(c.id)) {
-        if (this.gateBlocked.has(c.id)) this.flashUnlock(c.id);
+        if (this.gateBlocked.has(c.id)) {
+          this.flashUnlock(c.id);
+          unlocked++;
+        }
       } else {
         blocked.add(c.id);
       }
     }
+    if (unlocked > 0) sfx.sparkle(); // 여러 장이 한꺼번에 풀려도 소리는 한 번
     this.gateBlocked = blocked;
   }
 
@@ -450,8 +458,17 @@ export class PlayScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setDepth(602);
 
+    // 우상단: 음소거 토글 — 흐려지면 꺼진 상태 (영상 촬영·조용한 자리에서 필요하다)
+    const muteBtn = this.woodButton(this.L.W - 32, this.L.headerH / 2, 44, 44, '🔊', 19, () => {
+      const off = toggleMute();
+      muteBtn.setAlpha(off ? 0.42 : 1);
+      this.toast(off ? '🔇 소리 끔' : '🔊 소리 켬');
+      if (!off) sfx.tap(); // 켠 순간 바로 들리게
+    });
+    muteBtn.setAlpha(isMuted() ? 0.42 : 1).setDepth(601);
+
     this.add
-      .text(this.L.W - 14, this.L.headerH / 2, sourceLabel, {
+      .text(this.L.W - 62, this.L.headerH / 2, sourceLabel, {
         fontFamily: FONT,
         fontSize: this.fs(this.L.portrait ? 11 : 13),
         color: '#e0c496',
@@ -481,10 +498,10 @@ export class PlayScene extends Phaser.Scene {
     const spotY = this.L.portrait
       ? Math.max(this.L.spot.y - 190, Math.min(this.L.spot.y, this.boardBottom + this.L.spot.cardH * 0.72 + 34))
       : this.L.spot.y;
-    const halo = this.add.image(spotX, spotY, haloTexture(this, 'spot-halo', 340, '30,72,22', 0.72)).setDepth(2);
+    this.spotAt = { x: spotX, y: spotY };
+    this.spotHalo = this.add.image(spotX, spotY, haloTexture(this, 'spot-halo', 340, '30,72,22', 0.72)).setDepth(2);
     const rays = this.add.image(spotX, spotY, raysTexture(this, 'spot-rays', 260)).setDepth(1).setAlpha(0.9);
     this.tweens.add({ targets: rays, angle: 360, duration: 40000, repeat: -1 });
-    void halo;
 
     // 카드 뒤 나무 프레임
     this.add
@@ -802,6 +819,7 @@ export class PlayScene extends Phaser.Scene {
       mode === 'wild' ? this.engine.useWild(id) : mode === 'claw' ? this.engine.useClaw(id) : this.engine.tryMatch(id);
     if (!r.ok) {
       this.toast(REJECT_MSG[r.reason]);
+      sfx.reject();
       this.shake(id);
       // 거부돼도 무장은 유지한다 (잘못 눌렀을 때 다시 고를 수 있게). 와일드 소진만 예외.
       if (r.reason === 'no-wild') this.armed = 'none';
@@ -820,6 +838,7 @@ export class PlayScene extends Phaser.Scene {
       this.gold = earn(this.eco.itemPrices.claw);
       this.armed = 'none';
       this.toast('집게 취소 · 환불');
+      sfx.tap();
       this.updateHud();
       return;
     }
@@ -827,9 +846,11 @@ export class PlayScene extends Phaser.Scene {
     const res = spend(cost);
     if (!res.ok) {
       this.toast(`골드가 부족합니다 (🪙${cost})`);
+      sfx.reject();
       return;
     }
     this.gold = res.gold;
+    sfx.sparkle();
     if (key === 'hint') this.showHint();
     else this.armed = 'claw';
     this.updateHud();
@@ -861,8 +882,13 @@ export class PlayScene extends Phaser.Scene {
   private onDraw(): void {
     if (this.ended) return;
     const r = this.engine.draw();
-    if (!r.ok) this.toast(REJECT_MSG[r.reason]);
-    else this.popSpotlight();
+    if (!r.ok) {
+      this.toast(REJECT_MSG[r.reason]);
+      sfx.reject();
+    } else {
+      sfx.draw();
+      this.popSpotlight();
+    }
     this.updateHud();
     this.checkStuck();
   }
@@ -872,6 +898,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.ended) return;
     if (this.armed === 'wild') {
       this.armed = 'none';
+      sfx.tap();
       this.updateHud();
       return;
     }
@@ -880,6 +907,7 @@ export class PlayScene extends Phaser.Scene {
       const res = spend(cost);
       if (!res.ok) {
         this.toast(`골드가 부족합니다 (🪙${cost})`);
+        sfx.reject();
         return;
       }
       this.gold = res.gold;
@@ -887,6 +915,7 @@ export class PlayScene extends Phaser.Scene {
       this.toast(`🌟 와일드 구매 · 🪙−${cost}`);
     }
     this.armed = 'wild';
+    sfx.sparkle();
     this.updateHud();
   }
 
@@ -902,18 +931,35 @@ export class PlayScene extends Phaser.Scene {
 
   // ---- 엔진 이벤트 ----
   private wireEngineEvents(): void {
-    this.engine.events.on('cardRemoved', ({ id }) => {
+    this.engine.events.on('cardRemoved', ({ id, via }) => {
       const node = this.nodes.get(id);
       if (!node) return;
       this.nodes.delete(id);
       node.root.disableInteractive();
+      node.root.setDepth(node.root.depth + 3000); // 남은 카드 위를 지나가게
+      if (via === 'claw') {
+        // 집게는 치우는 동작 — 스포트라이트로 가지 않고 아래로 빠진다
+        sfx.draw();
+        this.tweens.add({
+          targets: node.root,
+          y: node.root.y + 70,
+          angle: 22,
+          alpha: 0,
+          duration: 260,
+          ease: 'Back.easeIn',
+          onComplete: () => node.root.destroy(),
+        });
+        return;
+      }
+      // 매칭된 카드는 스포트라이트로 빨려 들어간다 — 무엇과 맞았는지가 눈에 보인다
       this.tweens.add({
         targets: node.root,
-        alpha: 0,
-        scale: 1.22,
-        y: node.root.y - 12,
-        duration: 170,
-        ease: 'Back.easeIn',
+        x: this.spotAt.x,
+        y: this.spotAt.y,
+        scale: 0.3,
+        alpha: 0.1,
+        duration: 300,
+        ease: 'Cubic.easeIn',
         onComplete: () => node.root.destroy(),
       });
     });
@@ -926,15 +972,22 @@ export class PlayScene extends Phaser.Scene {
       }
     });
     this.engine.events.on('activeChanged', () => this.updateHud());
-    this.engine.events.on('comboChanged', () => this.updateHud());
+    this.engine.events.on('comboChanged', ({ combo }) => {
+      this.updateHud();
+      if (combo > 0) this.comboFeedback(combo); // 0은 덱 드로우로 끊긴 경우 — 소리는 onDraw가 낸다
+    });
     this.engine.events.on('scoreChanged', ({ delta }) => {
       this.updateHud();
-      if (delta >= 100) this.toast(`콤보 보너스 +${delta}!`);
+      if (delta >= 100) {
+        this.toast(`콤보 보너스 +${delta}!`);
+        sfx.sparkle();
+      }
     });
     this.engine.events.on('deckChanged', () => this.updateHud());
     this.engine.events.on('bombTicked', ({ id, counter }) => {
       this.bombCounters.set(id, counter);
       this.refreshCard(id);
+      sfx.tick(counter <= 3);
       const node = this.nodes.get(id);
       if (!node) return;
       node.bombText.setScale(1.5);
@@ -959,23 +1012,39 @@ export class PlayScene extends Phaser.Scene {
     this.engine.events.on('collectProgress', ({ collected, count }) => {
       this.updateHud();
       popObjective();
+      sfx.collect();
       this.toast(`🎯 수집 ${collected}/${count}`);
     });
     this.engine.events.on('pieceCollected', ({ pieces, needed }) => {
       this.updateHud();
       popObjective();
+      sfx.collect();
       this.toast(`🧩 조각 ${pieces}/${needed}`);
     });
     this.engine.events.on('paperFreed', () => {
       this.toast('종이가 풀렸습니다!');
+      sfx.sparkle();
       this.refreshAllCards();
     });
     this.engine.events.on('gameEnded', ({ result, reason }) => {
+      if (result === 'won') sfx.win();
+      else sfx.lose();
       this.showOverlay(result === 'won' ? '승리!' : '패배', END_MSG[reason]);
     });
   }
 
   // ---- 피드백 ----
+  /** 콤보가 오른 순간 — 소리·발광·흔들림을 콤보 크기에 비례시켜 연쇄가 고조되게 만든다 */
+  private comboFeedback(combo: number): void {
+    sfx.match(combo);
+    const power = Math.min(combo, 8) / 8;
+    this.tweens.killTweensOf(this.spotHalo);
+    this.spotHalo.setScale(1 + 0.2 * power);
+    this.tweens.add({ targets: this.spotHalo, scale: 1, duration: 420, ease: 'Sine.easeOut' });
+    // 3콤보부터 화면이 반응한다 — 매 매칭마다 흔들면 눈이 피로하다
+    if (combo >= 3) this.cameras.main.shake(70 + 70 * power, 0.0015 + 0.004 * power);
+  }
+
   private popSpotlight(): void {
     this.spotSymbols.setScale(0.78);
     this.tweens.add({ targets: this.spotSymbols, scale: 1, duration: 220, ease: 'Back.easeOut' });

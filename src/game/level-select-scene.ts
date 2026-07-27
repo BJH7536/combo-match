@@ -5,6 +5,7 @@ import { computeLayout, type Layout } from './layout';
 import { loadProgress, type Progress } from './progress';
 import { feltTexture, PALETTE, panelTexture } from './skin';
 import { loadGold } from './wallet';
+import { sfx } from './audio';
 
 // 레벨 선택 — public/levels/index.json을 읽어 레벨 카드를 깔고, 진행 상황(클리어·최고점)을 표시한다.
 // 심사 편의를 위해 잠금은 두지 않는다 (아무 레벨이나 바로 볼 수 있어야 장치 7종이 노출된다).
@@ -134,7 +135,10 @@ export class LevelSelectScene extends Phaser.Scene {
         .setOrigin(0.5),
     ]);
     help.setInteractive(new Phaser.Geom.Rectangle(-hw / 2, -hh / 2, hw, hh), Phaser.Geom.Rectangle.Contains);
-    help.on('pointerdown', () => showHelpOverlay(this));
+    help.on('pointerdown', () => {
+      sfx.tap();
+      showHelpOverlay(this);
+    });
 
     const status = this.add
       .text(this.L.W / 2, this.L.H / 2, '레벨 목록을 불러오는 중…', {
@@ -240,6 +244,7 @@ export class LevelSelectScene extends Phaser.Scene {
       root.on('pointerover', () => root.setScale(1.03));
       root.on('pointerout', () => root.setScale(1));
       root.on('pointerdown', () => {
+        sfx.tap();
         void this.startLevel(lv);
       });
     });

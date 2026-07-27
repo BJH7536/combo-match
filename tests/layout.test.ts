@@ -25,7 +25,17 @@ describe('stageSize', () => {
   it('렌더 부담 상한을 넘지 않는다', () => {
     for (const d of DEVICES) {
       const { W, H } = stageSize(d.vw, d.vh, d.dpr);
-      expect(W * H, `${d.name}`).toBeLessThanOrEqual(2_600_001);
+      expect(W * H, `${d.name}`).toBeLessThanOrEqual(3_200_001);
+    }
+  });
+
+  // CSS 픽셀만 채우면 dpr 3 화면에서 1.5배 업스케일돼 흐려진다. 실제 기준은 물리 픽셀이다.
+  it('고밀도 화면도 물리 픽셀만큼 그린다 (렌더 상한에 걸리지 않는 한)', () => {
+    for (const d of DEVICES) {
+      const physW = d.vw * d.dpr;
+      if (physW * d.vh * d.dpr > 3_200_000) continue; // 상한에 걸리는 대형 화면은 축소가 정상
+      const { W } = stageSize(d.vw, d.vh, d.dpr);
+      expect(W, `${d.name}`).toBeGreaterThanOrEqual(physW - 1);
     }
   });
 
@@ -109,10 +119,38 @@ describe('computeLayout', () => {
     });
   }
 
+  // 레벨 보드는 가로로 긴 띠(논리 폭 최대 582)라 세로 화면에서는 폭이 카드 크기를 정한다.
+  // 여백을 줄이고 상한을 풀어 주지 않으면 카드가 손가락보다 작아진다.
+  it('세로 화면은 보드 폭을 화면 대부분으로 쓴다', () => {
+    const tall = stageSize(390, 844, 3);
+    const L = computeLayout(tall.W, tall.H);
+    expect(L.board.width / L.W).toBeGreaterThanOrEqual(0.95);
+  });
+
+  it('세로 화면은 카드 상한 배율을 더 풀어 준다 (가로는 기존값 유지)', () => {
+    const tall = stageSize(390, 844, 3);
+    const Lt = computeLayout(tall.W, tall.H);
+    expect(Lt.cardMaxScale / Lt.ui).toBeGreaterThan(1.4);
+
+    const wide = stageSize(1920, 1080, 1);
+    const Lw = computeLayout(wide.W, wide.H);
+    expect(Lw.cardMaxScale / Lw.ui).toBeCloseTo(1.4, 5);
+  });
+
   it('세로 화면은 레벨 선택 열을 줄인다', () => {
     const wide = stageSize(1920, 1080, 1);
     const tall = stageSize(390, 844, 3);
     expect(computeLayout(wide.W, wide.H).selectCols).toBe(4);
     expect(computeLayout(tall.W, tall.H).selectCols).toBeLessThanOrEqual(2);
+  });
+
+  // 해상도를 올리면 스테이지 폭이 커진다 — 그걸 "넓은 화면"으로 오판해 폰에서 열이 늘면 안 된다
+  it('열 수는 해상도가 아니라 실제 화면 크기를 따른다', () => {
+    for (const phone of [[390, 844, 3], [360, 800, 3], [430, 932, 3], [375, 667, 2]] as const) {
+      const { W, H } = stageSize(phone[0], phone[1], phone[2]);
+      expect(computeLayout(W, H).selectCols, `폰 ${phone[0]}x${phone[1]}@${phone[2]}`).toBe(2);
+    }
+    const pad = stageSize(820, 1180, 2);
+    expect(computeLayout(pad.W, pad.H).selectCols, '아이패드 세로').toBe(3);
   });
 });

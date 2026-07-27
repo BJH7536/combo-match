@@ -194,8 +194,7 @@ export class PlayScene extends Phaser.Scene {
 
   // ---- 보드 ----
   private buildBoard(): void {
-    // 카드 상한 배율도 스테이지 배율을 따라야 해상도를 올려도 상대 크기가 유지된다
-    const t = computeBoardTransform(this.level.cards, DATA_CW, DATA_CH, this.L.board, 1.4 * this.L.ui);
+    const t = computeBoardTransform(this.level.cards, DATA_CW, DATA_CH, this.L.board, this.L.cardMaxScale);
     this.cardW = DATA_CW * t.scale;
     this.cardH = DATA_CH * t.scale;
     const w = this.cardW;

@@ -200,13 +200,17 @@ export class LevelSelectScene extends Phaser.Scene {
       }));
   }
 
-  /** count개 카드의 그리드 좌표·크기를 계산한다 (스테이지·레벨 그리드 공용) */
-  private gridSpec(count: number): { cx: (i: number) => number; cy: (i: number) => number; cw: number; ch: number } {
+  /** count개 카드의 그리드 좌표·크기를 계산한다 (스테이지·레벨 그리드 공용)
+   *  minTop: 그리드가 시작할 수 있는 최소 y (레벨 그리드는 뒤로가기 줄 아래여야 한다) */
+  private gridSpec(
+    count: number,
+    minTop = 0,
+  ): { cx: (i: number) => number; cy: (i: number) => number; cw: number; ch: number } {
     const cols = this.L.selectCols;
     const rows = Math.ceil(count / cols);
     const gapX = Math.round(this.L.W * 0.026);
     const gapY = Math.round(this.L.H * 0.022);
-    const top = Math.round(this.L.portrait ? this.L.headerH * 2.1 : this.L.headerH * 1.5);
+    const top = Math.max(Math.round(this.L.portrait ? this.L.headerH * 2.1 : this.L.headerH * 1.5), minTop);
     const availW = this.L.W * 0.94;
     const availH = this.L.H - top - Math.round(this.L.H * 0.03);
     const cw = Math.floor((availW - (cols - 1) * gapX) / cols);
@@ -277,31 +281,45 @@ export class LevelSelectScene extends Phaser.Scene {
       const lvs = this.levels.filter((l) => l.stage === st.id);
       const clearedN = lvs.filter((l) => this.progress[String(l.id)]?.cleared === true).length;
       const allDone = clearedN === lvs.length && lvs.length > 0;
-      const tiers = `${lvs[0]?.tier ?? ''}~${lvs[lvs.length - 1]?.tier ?? ''}`;
+      // 티어는 팩 전체가 튜토리얼~쉬움 대역이라 스테이지를 구분하지 못한다. 실제로 오르는
+      // 난이도 점수를 함께 적어 진행감을 드러낸다 (같은 티어면 물결표 없이 하나만).
+      const tierA = lvs[0]?.tier ?? '';
+      const tierB = lvs[lvs.length - 1]?.tier ?? '';
+      const tiers = tierA === tierB ? tierA : `${tierA}~${tierB}`;
+      const diffs = lvs.map((l) => l.difficulty);
+      const tierLine = `${tiers} · 난이도 ${Math.round(Math.min(...diffs))}~${Math.round(Math.max(...diffs))}`;
       const icons = [...new Set(lvs.flatMap((l) => l.devices))].slice(0, 5).map((d) => DEVICE_ICON[d] ?? '');
 
       const root = this.cardFrame(view, g.cx(i), g.cy(i), g.cw, g.ch, allDone, () => {
         this.buildLevelGrid(st.id);
       });
+      const stageTx = this.add
+        .text(-g.cw / 2 + g.ch * 0.12, -g.ch / 2 + g.ch * 0.09, `STAGE ${st.id}`, {
+          fontFamily: FONT,
+          fontSize: fs(0.17),
+          color: '#3a2408',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0);
+      const nameTx = this.add
+        .text(g.cw / 2 - g.ch * 0.12, -g.ch / 2 + g.ch * 0.14, st.name, {
+          fontFamily: FONT,
+          fontSize: fs(0.14),
+          color: '#3a2408',
+          fontStyle: 'bold',
+        })
+        .setOrigin(1, 0);
+      // 번호가 두 자리(STAGE 10)면 이름과 맞붙으므로, 남는 폭에 맞춰 이름만 줄인다
+      const nameMaxW = g.cw - g.ch * 0.34 - stageTx.width;
+      if (nameTx.width > nameMaxW) {
+        nameTx.setFontSize(Math.max(9, Math.floor((g.ch * 0.14 * nameMaxW) / nameTx.width)));
+      }
+
       root.add([
+        stageTx,
+        nameTx,
         this.add
-          .text(-g.cw / 2 + g.ch * 0.12, -g.ch / 2 + g.ch * 0.09, `STAGE ${st.id}`, {
-            fontFamily: FONT,
-            fontSize: fs(0.17),
-            color: '#3a2408',
-            fontStyle: 'bold',
-          })
-          .setOrigin(0, 0),
-        this.add
-          .text(g.cw / 2 - g.ch * 0.12, -g.ch / 2 + g.ch * 0.14, st.name, {
-            fontFamily: FONT,
-            fontSize: fs(0.14),
-            color: '#3a2408',
-            fontStyle: 'bold',
-          })
-          .setOrigin(1, 0),
-        this.add
-          .text(-g.cw / 2 + g.ch * 0.12, -g.ch / 2 + g.ch * 0.36, `레벨 ${st.from}–${st.to} · ${tiers}`, {
+          .text(-g.cw / 2 + g.ch * 0.12, -g.ch / 2 + g.ch * 0.36, `레벨 ${st.from}–${st.to} · ${tierLine}`, {
             fontFamily: FONT,
             fontSize: fs(0.088),
             color: '#5c4318',
@@ -328,13 +346,19 @@ export class LevelSelectScene extends Phaser.Scene {
     const view = this.resetView();
     const st = this.stages.find((s) => s.id === stageId);
     const lvs = this.levels.filter((l) => l.stage === stageId);
-    const g = this.gridSpec(lvs.length);
-    const fs = (r: number): string => `${Math.max(9, Math.round(g.ch * r))}px`;
 
     // ← 스테이지 목록으로
     const bw = 170;
     const bh = 42;
-    const backY = Math.round(this.L.portrait ? this.L.headerH * 1.95 : this.L.headerH * 1.38); // 헤더 바(≈1.24×headerH) 아래로
+    // 헤더 바(중심 0.62×headerH · 높이 1.24×headerH) 아래로 — 버튼 높이의 절반까지 확보해야 걸치지 않는다
+    const backY = Math.round(
+      Math.max(this.L.headerH * 1.24 + bh / 2 + 10, this.L.portrait ? this.L.headerH * 1.95 : 0),
+    );
+
+    // 카드가 뒤로가기 버튼·스테이지 제목을 덮지 않도록 그 줄 아래에서 시작한다
+    const g = this.gridSpec(lvs.length, backY + bh / 2 + Math.round(this.L.H * 0.02));
+    const fs = (r: number): string => `${Math.max(9, Math.round(g.ch * r))}px`;
+
     const back = this.add.container(this.L.portrait ? 100 : 118, backY);
     back.add([
       this.add.image(0, 0, panelTexture(this, 'stage-back', bw, bh, {
@@ -393,7 +417,7 @@ export class LevelSelectScene extends Phaser.Scene {
           })
           .setOrigin(1, 0),
         this.add
-          .text(-g.cw / 2 + g.ch * 0.12, -g.ch / 2 + g.ch * 0.35, `${lv.tier} · 카드 ${lv.cards}`, {
+          .text(-g.cw / 2 + g.ch * 0.12, -g.ch / 2 + g.ch * 0.35, `난이도 ${Math.round(lv.difficulty)} · 카드 ${lv.cards}`, {
             fontFamily: FONT,
             fontSize: fs(0.088),
             color: '#5c4318',

@@ -1,11 +1,11 @@
 # 콤보 매칭 (Dobble형 심볼 매칭 콤보 게임)
 
-> 📎 **기획자 원본 문서 (2026-07-26 수신) — 구버전 기준이다.**
-> 이 README는 `combo-match/level@1` 스키마와 규칙 장치 3종(열쇠·폭탄·수집) 시점에 작성됐다.
-> 현재 프로젝트는 **`level@2` · 장치 7종**을 쓴다 (마스터 GDD §8, ADR-001 O-2).
-> 폴더 구조·경로 설명도 기획자 원본 배치 기준이라 이 저장소와 다르다.
-> **툴·게임 연동 절차는 `docs/level-design.md`를 볼 것.**
-> 원본 그대로 보존하는 이유는 대조 검증 근거를 남기기 위함이다.
+> 📎 **기획자 원본 문서 — 2026-07-28 최신판 수신.**
+> `level@2` · 규칙 장치 7종 · 패턴 8종(시드 변형) · 콤보 보상 트랙 · 카드 치수 동적화 기준의 최신 원본이다.
+> 폴더 구조·경로 설명은 기획자 원본 배치 기준이라 이 저장소와 다르다.
+> **툴·게임 연동 절차는 `docs/level-design.md`를 볼 것.** 원본 보존 목적(대조 검증 근거).
+
+> 신규 합류자는 [HANDOFF.md](HANDOFF.md)(인수인계·남은 작업)와 [design/gdd/combo-match-core.md](design/gdd/combo-match-core.md)(코어 GDD)를 먼저 읽으세요.
 
 Wood Console W2 목업 기반의 **Dobble/스팟잇형 심볼 매칭 콤보 게임**. 레벨 **설계 → 검증 → 플레이**가 하나의 레벨 스키마(`combo-match/level@1`)로 연동됩니다.
 
@@ -17,9 +17,11 @@ combo-match/
 ├── design/
 │   ├── gdd/combo-match-core.md    # ★ 코어 GDD v1.0 (규격 명세 — 규칙·난이도·경제·스키마·검증 현황)
 │   ├── difficulty-elements.md     # 난이도 요소 리서치 & 4계층 노브 설계 (근거 포함)
-│   └── level-mechanics-brainstorm.md # 규칙 장치 조사·브레인스토밍 (도입 우선순위)
+│   ├── level-mechanics-brainstorm.md # 규칙 장치 조사·브레인스토밍 (도입 우선순위)
+│   └── combo-fx-proposals.html    # 콤보 연출 시안 3종 (자동 재생 데모 — 화염/전기/스타)
 ├── tools/
-│   └── level-designer.html        # 레벨 디자이너: 노브 조절 → 생성/검증 → export/플레이테스트
+│   ├── level-designer.html        # 레벨 디자이너: 노브 조절 → 생성/검증 → export/플레이테스트
+│   └── patterns.html              # 레이아웃 패턴 갤러리 (7종 실배치 예시 + 특성 태그)
 ├── game/
 │   └── play.html                  # 결과물 게임: level@1 JSON을 로드해 실제 플레이
 └── levels/

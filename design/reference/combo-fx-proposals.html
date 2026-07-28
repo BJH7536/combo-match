@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>콤보 연출 시안 3종</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Fredoka',system-ui,sans-serif;background:#171a20;color:#e7e2d6;padding:26px}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:#9aa1ae;font-size:13px;margin-bottom:20px;line-height:1.6}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:18px}
+  .prop{background:#20242c;border:1px solid #3a404d;border-radius:14px;overflow:hidden}
+  .prop h2{font-size:16px;margin:0;padding:12px 14px 2px}
+  .prop .d{font-size:12px;color:#9aa1ae;padding:2px 14px 10px;line-height:1.55;min-height:72px}
+  .stage{position:relative;height:300px;overflow:hidden;
+    background:radial-gradient(120% 100% at 50% 12%,#5aad3a,#3c7f2c 68%,#2f6b24)}
+  .card{position:absolute;left:50%;top:54%;width:84px;height:104px;margin:-52px 0 0 -42px;border-radius:12px;
+    background:linear-gradient(#fff,#f3ead8);border:3px solid #e7d9bb;display:flex;align-items:center;
+    justify-content:center;gap:4px;font-size:26px;box-shadow:0 5px 0 rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.25)}
+  .badge{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;align-items:center;
+    padding:7px 16px 9px;border-radius:13px;color:#fff;font-weight:700;
+    border:2.5px solid rgba(255,255,255,.92);text-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .12s}
+  .badge .l{font-size:11px;letter-spacing:2px}.badge .n{font-size:30px;line-height:.9}
+  .tier{position:absolute;left:50%;top:20%;transform:translateX(-50%);font-size:26px;font-weight:700;
+    color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5);opacity:0;pointer-events:none;white-space:nowrap}
+  .p{position:absolute;pointer-events:none;will-change:transform,opacity}
+  .vig{position:absolute;inset:0;pointer-events:none;transition:box-shadow .3s}
+  .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+  .pick{padding:10px 14px;font-size:11px;color:#9aa1ae;border-top:1px solid #2c313c}
+  svg.bolt{position:absolute;pointer-events:none;overflow:visible}
+  /* A: fire */
+  @keyframes rise{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-130px) scale(.4);opacity:0}}
+  @keyframes shake{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-2px,1px) rotate(-2deg)}75%{transform:translate(2px,-1px) rotate(2deg)}}
+  @keyframes tierPop{0%{opacity:0;transform:translateX(-50%) scale(.4)}25%{opacity:1;transform:translateX(-50%) scale(1.15)}70%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(1) translateY(-18px)}}
+  /* B: electric */
+  @keyframes boltFlash{0%{opacity:0}10%{opacity:1}60%{opacity:.8}100%{opacity:0}}
+  @keyframes elecPulse{0%,100%{box-shadow:0 0 12px #4db6ff,0 4px 0 #1a5aa0}50%{box-shadow:0 0 34px #9fe0ff,0 4px 0 #1a5aa0}}
+  @keyframes screenFlash{0%{opacity:.85}100%{opacity:0}}
+  /* C: star */
+  @keyframes burst{0%{transform:translate(0,0) scale(1) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.3) rotate(300deg);opacity:0}}
+  @keyframes confetti{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(320px) rotate(540deg);opacity:.2}}
+  @keyframes hue{to{filter:hue-rotate(360deg)}}
+  @keyframes bannerZoom{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}60%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+</style>
+</head>
+<body>
+<h1>🎆 콤보 연출 시안 3종</h1>
+<div class="sub">각 시안은 콤보 ×1→×10 상승을 자동 반복 재생합니다. 콤보가 높을수록 연출 강도가 단계적으로 상승하며, ×5·×10에서 마일스톤 연출이 터집니다. 마음에 드는 시안을 선택하시면 게임(play.html)에 이식합니다.</div>
+
+<div class="row">
+  <!-- A -->
+  <div class="prop">
+    <h2>시안 A · 🔥 화염 스택 (Fire Escalation)</h2>
+    <div class="d">콤보마다 <b>불꽃 파티클</b>이 카드에서 솟아오르고 배지가 커지며 흔들린다. 단계별 <b>티어 텍스트</b>(GOOD→GREAT→HOT→BLAZING→LEGENDARY)가 팝업. 고콤보에선 화면 가장자리가 달아오르는 <b>비네트 글로우</b>. — <i>직관적·중독적, 시각 부하 중간</i></div>
+    <div class="stage" id="stA">
+      <div class="vig" id="vigA"></div>
+      <div class="card" id="cardA">🍊🍇</div>
+      <div class="badge" id="badgeA" style="background:linear-gradient(#ffb43a,#f27311);box-shadow:0 4px 0 #c2540c">
+        <span class="l">COMBO</span><span class="n" id="numA">×1</span></div>
+      <div class="tier" id="tierA"></div>
+    </div>
+    <div class="pick">추천 상황: 캐주얼 메인 타깃 · 기존 목업(🔥 COMBO)과 연속성 최고</div>
+  </div>
+
+  <!-- B -->
+  <div class="prop">
+    <h2>시안 B · ⚡ 전기 체인 (Electric Chain)</h2>
+    <div class="d">매칭 순간 카드→배지로 <b>번개 아크</b>가 튀고 배지가 전기 펄스로 진동. 콤보가 높을수록 번개 갈래가 늘고, ×5·×10에서 <b>화면 백색 플래시</b> + 다중 낙뢰. — <i>스피디·타격감 강조, 연쇄(체인) 테마와 의미적 일치</i></div>
+    <div class="stage" id="stB">
+      <div class="card" id="cardB">🥝🍒</div>
+      <div class="badge" id="badgeB" style="background:linear-gradient(#4db6ff,#2a7fd4);animation:elecPulse 1.2s infinite">
+        <span class="l">CHAIN</span><span class="n" id="numB">×1</span></div>
+      <div class="flash" id="flashB"></div>
+    </div>
+    <div class="pick">추천 상황: 콤보 속도전 강조 빌드 · 타이머/폭탄 레벨과 톤 일치</div>
+  </div>
+
+  <!-- C -->
+  <div class="prop">
+    <h2>시안 C · 🌟 스타 카니발 (Star Carnival)</h2>
+    <div class="d">매칭마다 <b>별 버스트</b>가 사방으로 터지고 배지는 <b>무지개 그라데이션 회전</b>. ×5·×10 마일스톤에서 <b>대형 배너 줌</b>("×10 SPECTACULAR!") + <b>콘페티 샤워</b>. — <i>축제감 최대·보상 체감 최고, 시각 부하 높음</i></div>
+    <div class="stage" id="stC">
+      <div class="card" id="cardC">🍓⭐</div>
+      <div class="badge" id="badgeC" style="background:linear-gradient(45deg,#ff6b6b,#ffcf5a,#7ed957,#4db6ff);animation:hue 3s linear infinite;box-shadow:0 4px 0 rgba(0,0,0,.3)">
+        <span class="l">COMBO</span><span class="n" id="numC">×1</span></div>
+      <div class="tier" id="bannerC" style="top:50%;font-size:30px"></div>
+    </div>
+    <div class="pick">추천 상황: 수집·보상 중심 빌드 · 콤보 보상 게이지(🌟)와 연출 통일</div>
+  </div>
+</div>
+
+<script>
+const BEAT=900, MAXC=10;
+let combo=0;
+const el=id=>document.getElementById(id);
+function spawn(parent,html,style,life){
+  const s=document.createElement('div');s.className='p';s.innerHTML=html;s.style.cssText=style;
+  parent.appendChild(s);setTimeout(()=>s.remove(),life);
+}
+/* ---- A: fire ---- */
+const TIERS=[[2,'GOOD!','#ffd76a'],[4,'GREAT!','#ffb43a'],[6,'HOT! 🔥','#ff8c2e'],[8,'BLAZING!! 🔥🔥','#ff5e2e'],[10,'LEGENDARY!!! 🌋','#ff3b2e']];
+function beatA(c){
+  const st=el('stA'),card=el('cardA'),badge=el('badgeA');
+  el('numA').textContent='×'+c;
+  const k=c/MAXC;
+  badge.style.transform=`scale(${1+k*0.45})`;
+  badge.style.animation=c>=4?`shake ${0.5-k*0.25}s infinite`:'';
+  // fire particles from card (more & bigger with combo)
+  const n=1+Math.floor(c*0.8);
+  for(let i=0;i<n;i++){
+    const x=140+Math.random()*80, sz=12+k*16+Math.random()*8;
+    spawn(st,['🔥','🔥','✨'][Math.floor(Math.random()*3)],
+      `left:${x}px;top:150px;font-size:${sz}px;animation:rise ${0.7+Math.random()*0.5}s ease-out forwards`,1300);
+  }
+  // vignette heat
+  el('vigA').style.boxShadow=`inset 0 0 ${20+k*90}px rgba(255,${140-k*90},30,${k*0.75})`;
+  // tier text
+  const t=TIERS.find(t=>t[0]===c);
+  if(t){const tier=el('tierA');tier.textContent=t[1];tier.style.color=t[2];
+    tier.style.animation='none';void tier.offsetWidth;tier.style.animation='tierPop 1s ease forwards';}
+  card.style.transform=`translateY(${-2-k*4}px) scale(${1+k*0.06})`;
+}
+/* ---- B: electric ---- */
+function boltPath(x1,y1,x2,y2){
+  let d=`M${x1},${y1}`;const seg=6;
+  for(let i=1;i<seg;i++){const t=i/seg;
+    d+=` L${x1+(x2-x1)*t+(Math.random()*26-13)},${y1+(y2-y1)*t+(Math.random()*18-9)}`;}
+  return d+` L${x2},${y2}`;
+}
+function beatB(c){
+  const st=el('stB'),badge=el('badgeB');
+  el('numB').textContent='×'+c;
+  const k=c/MAXC;
+  badge.style.transform=`scale(${1+k*0.4}) rotate(${(Math.random()*6-3)*k}deg)`;
+  // bolts: card(center) -> badge, count grows
+  const bolts=1+Math.floor(c/3);
+  for(let i=0;i<bolts;i++){
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('class','bolt');svg.style.cssText='left:0;top:0;width:100%;height:100%';
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',boltPath(180,150,st.clientWidth-60,40));
+    p.setAttribute('stroke',i%2?'#9fe0ff':'#ffffff');p.setAttribute('stroke-width',2.5-i*0.5);
+    p.setAttribute('fill','none');p.style.filter='drop-shadow(0 0 6px #4db6ff)';
+    p.style.animation=`boltFlash ${0.35+Math.random()*0.2}s ease forwards`;
+    svg.appendChild(p);st.appendChild(svg);setTimeout(()=>svg.remove(),600);
+  }
+  spawn(st,'⚡',`left:${170+Math.random()*40}px;top:${130+Math.random()*30}px;font-size:${16+k*18}px;animation:rise .6s ease-out forwards`,700);
+  if(c===5||c===10){const f=el('flashB');f.style.animation='none';void f.offsetWidth;
+    f.style.animation=`screenFlash ${c===10?0.55:0.3}s ease forwards`;}
+}
+/* ---- C: star carnival ---- */
+function beatC(c){
+  const st=el('stC');
+  el('numC').textContent='×'+c;
+  const k=c/MAXC;
+  el('badgeC').style.transform=`scale(${1+k*0.4})`;
+  // star burst from card center
+  const n=4+c;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, d=60+Math.random()*70*(0.5+k);
+    spawn(st,['⭐','✨','🌟','💫'][i%4],
+      `left:180px;top:150px;font-size:${12+k*12}px;--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;`+
+      `animation:burst ${0.6+Math.random()*0.4}s ease-out forwards`,1100);
+  }
+  if(c===5||c===10){
+    const b=el('bannerC');b.textContent=c===10?'×10 SPECTACULAR!':'×5 FANTASTIC!';
+    b.style.animation='none';void b.offsetWidth;b.style.animation='bannerZoom 1.2s ease forwards';
+    for(let i=0;i<24;i++){
+      spawn(st,['🎊','🎉','⭐','💛','💚','💙'][i%6],
+        `left:${Math.random()*100}%;top:-10px;font-size:${10+Math.random()*12}px;`+
+        `animation:confetti ${1+Math.random()*0.8}s linear forwards`,2000);
+    }
+  }
+}
+/* ---- loop ---- */
+setInterval(()=>{
+  combo=combo>=MAXC?1:combo+1;
+  beatA(combo);beatB(combo);beatC(combo);
+},BEAT);
+</script>
+</body>
+</html>

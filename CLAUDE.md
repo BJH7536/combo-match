@@ -39,7 +39,7 @@ NHN 해커톤 참가용 웹 게임. 트라이픽스 솔리테어 변형(심볼 �
 - `design/gdd/*.md` 5종 — 설계 의도 기록이다. **실제 동작의 진실은 코드**이고 세부가 다를 수 있다
 - `design/gdd/game-concept.md` — 마스터 채택 *이전* 역설계 문서. 컨셉·필러 참고용
 - `design/gdd/combo.md` — 의도적으로 미작성 (마스터 §4가 명세)
-- `design/reference/planner-README.md` — 기획자 원본, `level@1`·장치 3종 기준 구버전
+- `design/reference/planner-README.md` — 기획자 원본, **2026-07-28 최신판** (`level@2`·장치 7종·패턴 8종·보상 트랙). 경로 설명만 저장소와 다름. 인수인계·백로그는 `planner-HANDOFF.md`
 - `ui_draft.html` — UI 시안. 초록 하이라이트 의미는 튜토리얼 전용으로 재정의됨 (ADR-001 O-3)
 
 ## 해커톤 우선순위

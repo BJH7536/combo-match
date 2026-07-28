@@ -1,10 +1,22 @@
 # Active Session State
 
-> Last Updated: 2026-07-26
+> Last Updated: 2026-07-28
 
 ## Current Task
 
-- **Task**: 엔진 독립 감사(wf_49cf7fab-663) 전체 완료 및 반영 — 완료
+- **Task**: 기획자 최신판 동기화 (2026-07-28 수신) — 완료
+- **Status**: 디자이너 툴(정본)·play 레퍼런스·마스터 GDD를 최신본으로 교체. 신규 수록:
+  패턴 갤러리(`tools/patterns.html`), 콤보 연출 확정 시안(`design/reference/combo-fx-proposals.html`
+  — 스타 카니발 채택), 기획자 인수인계(`design/reference/planner-HANDOFF.md`).
+  기획 델타 3건: ①레이아웃 8종(트라이픽스·다이아몬드·타워·웨이브·🧬복합) + 전 패턴 시드 변형
+  (패턴당 100+ 고유 배치, 시드 120개 검증 120/120) ②G계층 콤보 보상 트랙(`rules.comboRewards`
+  — 디자이너 정의 {콤보값×아이템}, rewardEase가 정적 난이도 C자원 반영 + 봇이 와일드·덱·집게
+  실사용, 실증 클리어율 8.6→64.6%) ③카드 치수 동적화(`cardW`/`cardH` — k≥3이면 108×96/126,
+  심볼 크기 고정으로 여백 유지).
+- **엔진 갭(후속 작업)**: TS 엔진·Phaser는 아직 ①~③ 미지원 — 신규 필드는 전부 optional이라
+  기존 level@2 레벨 팩·로더는 영향 없음. 단, 디자이너로 새로 만든 레벨의 보상 트랙·카드 치수는
+  게임에서 무시된다. 정본 designer의 `runOneSim`(checkRewards, 집게 최후수단)과 `setCardDims`를
+  엔진에 포팅해야 시뮬-게임 동치가 유지된다. 카니발 연출은 play-reference 참조.
 - **감사 최종**: fidelity 재개 실행으로 3관점 감사 + verify 전부 완료(27건 중 25 확정·2 반박).
   반영: ①cgoal 가드 truthy 동치+loader 검증 ②loader 강화(deck/wild/moves/k·zone·카드 필드
   비숫자/비정수 차단, 최상위 필드 형태 가드 — raw TypeError 제거, collectGoal 달성 가능성,

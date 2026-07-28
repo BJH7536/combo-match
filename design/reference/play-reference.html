@@ -94,6 +94,15 @@
      background:rgba(0,0,0,.42);color:#fff}
   #toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);z-index:15;opacity:0;pointer-events:none;
      font-size:30px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);transition:transform .25s,opacity .25s}
+  /* 🌟 스타 카니발 콤보 연출 */
+  @keyframes fxburst{0%{transform:translate(0,0) scale(1) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.3) rotate(300deg);opacity:0}}
+  @keyframes fxconf{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(760px) rotate(540deg);opacity:.15}}
+  @keyframes fxhue{to{filter:hue-rotate(360deg)}}
+  @keyframes fxbanner{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}60%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  .fxp{position:absolute;pointer-events:none;z-index:9000;will-change:transform,opacity;line-height:1}
+  #fxbanner{position:absolute;left:50%;top:40%;z-index:9500;transform:translate(-50%,-50%);font-size:34px;font-weight:700;
+     color:#fff;text-shadow:0 3px 10px rgba(0,0,0,.55);opacity:0;pointer-events:none;white-space:nowrap}
+  #combo:not(.off){background:linear-gradient(45deg,#ff6b6b,#ffcf5a,#7ed957,#4db6ff,#ff6b6b);background-size:300% 300%;animation:fxhue 2.6s linear infinite}
   #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
   input[type=file]{display:none}
 </style>
@@ -150,6 +159,7 @@
   </div>
 
   <div id="toast"></div>
+  <div id="fxbanner"></div>
 
   <div id="overlay">
     <h2 id="ov-title"></h2>
@@ -217,9 +227,10 @@ function loadLevel(){
 }
 
 // ---------- game state ----------
-const CW=64,CH=80;
+let CW=64,CH=80;
 let L,S; // level, state
 function initState(level){
+  CW=level.cardW||64; CH=level.cardH||80; // 심볼 수에 맞춘 카드 치수 (디자이너가 기록)
   const coveredBy={}; (level.coverage||[]).forEach(c=>coveredBy[c.id]=c.coveredBy||[]);
   L={...level, coveredBy, byId:Object.fromEntries(level.cards.map(c=>[c.id,c]))};
   S={removed:new Set(),revealed:new Set(),active:level.active.slice(),combo:0,maxCombo:0,score:0,
@@ -238,6 +249,39 @@ function initState(level){
   S.goal=(level.rules&&level.rules.collectGoal)||null; S.collected=0; // 🎯 수집 목표
   S.paperNeed=(level.rules&&level.rules.paper)?level.rules.paper.piecesNeeded:0; // 🧻 종이
   S.pieces=0; S.paperTorn=S.paperNeed===0;
+  S.rewards=(level.rules&&level.rules.comboRewards)||[]; // 🎁 콤보 보상 트랙
+  S.rewardGot=S.rewards.map(()=>false);
+  S.freeHints=0; S.freeClaws=0; S.clawArmedFree=false;
+}
+/* ---- 🌟 스타 카니발 FX ---- */
+function fxSpawn(parent,html,style,life){const s=document.createElement('div');s.className='fxp';s.innerHTML=html;
+  s.style.cssText=style;parent.appendChild(s);setTimeout(()=>s.remove(),life);}
+function fxBurst(card,intensity){
+  const board=document.getElementById('board');
+  const n=4+Math.min(14,intensity*2);
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=50+Math.random()*60*(1+intensity*0.15);
+    fxSpawn(board,['⭐','✨','🌟','💫'][i%4],
+      `left:${card.x+CW/2}px;top:${card.y+CH/2}px;font-size:${12+Math.min(14,intensity)}px;`+
+      `--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;animation:fxburst ${0.55+Math.random()*0.4}s ease-out forwards`,1050);}
+}
+function fxBanner(text){const b=document.getElementById('fxbanner');b.textContent=text;
+  b.style.animation='none';void b.offsetWidth;b.style.animation='fxbanner 1.3s ease forwards';}
+function fxConfetti(n){const st=document.getElementById('stage');
+  for(let i=0;i<n;i++)fxSpawn(st,['🎊','🎉','⭐','💛','💚','💙'][i%6],
+    `left:${Math.random()*100}%;top:-12px;font-size:${11+Math.random()*13}px;animation:fxconf ${1.1+Math.random()*0.9}s linear forwards`,2300);}
+const RW_NAME={hint:'🔍 힌트 1회',claw:'🧲 집게 1회',wild:'🌟 와일드 +1',deck:'🃏 덱 +1',gold:'🪙 골드 +50'};
+function checkComboRewards(){ // 🎁 디자이너 정의 트랙 — 레벨당 1회씩 지급
+  S.rewards.forEach((r,i)=>{
+    if(S.rewardGot[i]||S.combo<r.at)return;
+    S.rewardGot[i]=true;
+    if(r.item==='hint')S.freeHints++;
+    else if(r.item==='claw')S.freeClaws++;
+    else if(r.item==='wild')S.wild++;
+    else if(r.item==='deck')S.deck++;
+    else if(r.item==='gold'){GOLD+=50;saveGold();}
+    fxBanner('🎁 ×'+r.at+' 콤보! '+RW_NAME[r.item]+' 획득');
+    fxConfetti(18);
+  });
 }
 function collectOn(card){ // 카드 제거 시 수집 카운트 (매칭·와일드·집게 공통)
   if(S.goal&&card.symbols.indexOf(S.goal.symbol)>=0)S.collected++;
@@ -280,7 +324,7 @@ function render(){
   const wrap=document.getElementById('boardwrap');
   const scale=Math.min(1.6, Math.min((wrap.clientWidth-40)/W,(wrap.clientHeight-40)/H));
   board.style.transform=`scale(${scale})`;
-  const k=(L.config&&L.config.k)||2, symSize=Math.max(15,34-(k-2)*4);
+  const k=(L.config&&L.config.k)||2, symSize=k<=2?32:30; // 카드가 커지므로 심볼 크기 고정
   const tf=(L.config&&L.config.tf)||0;
   L.cards.forEach(c=>{
     if(S.removed.has(c.id))return;
@@ -341,14 +385,16 @@ function paintHUD(){
   if(S.paperNeed>0&&!S.paperTorn){g('piecepill').style.display='';g('h-pieces').textContent=S.pieces+'/'+S.paperNeed;}
   else g('piecepill').style.display='none';
   g('w-count').textContent=S.wild;
-  g('p-hint').textContent=S.eco.itemPrices.hint;
-  g('p-claw').textContent=S.eco.itemPrices.claw;
+  const setChip=(spanId,free,price)=>{const chip=g(spanId).parentElement;
+    chip.innerHTML=free>0?`🎁 <span id="${spanId}">무료 ×${free}</span>`:`🪙 <span id="${spanId}">${price}</span>`;};
+  setChip('p-hint',S.freeHints||0,S.eco.itemPrices.hint);
+  setChip('p-claw',S.freeClaws||0,S.eco.itemPrices.claw);
   g('p-wild').textContent=S.eco.itemPrices.wild;
   g('wild').classList.toggle('armed',S.wildArmed);
   g('clawbtn').classList.toggle('armed',S.clawArmed);
   // active card
   const a=g('active');a.innerHTML='';const k=(L.config&&L.config.k)||2;
-  S.active.forEach(s=>{const sp=document.createElement('span');sp.className='sym';sp.textContent=s;sp.style.fontSize=Math.max(20,40-(k-2)*4)+'px';a.appendChild(sp);});
+  S.active.forEach(s=>{const sp=document.createElement('span');sp.className='sym';sp.textContent=s;sp.style.fontSize=(k<=2?34:26)+'px';a.appendChild(sp);});
   g('src').textContent=L._src||'–';
 }
 
@@ -380,24 +426,36 @@ function clickCard(c){
   doRemove(c,false);
 }
 // ---------- 아이템 ----------
-function useHint(){ // 🔍 힌트: 매칭 가능한 카드 1장을 잠깐 표시 (초록 상시표시 제거의 유료 대체재)
+function useHint(){ // 🔍 힌트: 무료 충전(보상 트랙) 우선, 없으면 골드
   if(S.status!=='play')return;
   const targets=L.cards.filter(matchable);
   if(!targets.length){toast('🔍 매칭 없음 — 덱을 뽑으세요');return;}
-  const price=S.eco.itemPrices.hint;
-  if(GOLD<price){toast('🪙 골드 부족 ('+price+')');return;}
-  GOLD-=price; saveGold(); paintHUD();
+  if(S.freeHints>0){S.freeHints--;}
+  else{
+    const price=S.eco.itemPrices.hint;
+    if(GOLD<price){toast('🪙 골드 부족 ('+price+')');return;}
+    GOLD-=price; saveGold();
+  }
+  paintHUD();
   const t=targets[Math.floor(Math.random()*targets.length)];
   const el=document.querySelector('.card[data-cid="'+t.id+'"]');
   if(el){el.classList.add('hintglow');setTimeout(()=>el.classList.remove('hintglow'),2500);}
   toast('🔍 힌트!');
 }
-function toggleClaw(){ // 🧲 집게: 구매 후 아무 카드나 클릭해 제거. 재클릭 시 취소·환불
+function toggleClaw(){ // 🧲 집게: 무료 충전 우선. 재클릭 시 취소(충전/골드 원상복구)
   if(S.status!=='play')return;
-  if(S.clawArmed){S.clawArmed=false;GOLD+=S.eco.itemPrices.claw;saveGold();toast('🧲 취소 (환불)');paintHUD();return;}
-  const price=S.eco.itemPrices.claw;
-  if(GOLD<price){toast('🪙 골드 부족 ('+price+')');return;}
-  GOLD-=price; saveGold(); S.clawArmed=true; S.wildArmed=false;
+  if(S.clawArmed){
+    S.clawArmed=false;
+    if(S.clawArmedFree)S.freeClaws++; else {GOLD+=S.eco.itemPrices.claw;saveGold();}
+    toast('🧲 취소'); paintHUD(); return;
+  }
+  if(S.freeClaws>0){S.freeClaws--;S.clawArmedFree=true;}
+  else{
+    const price=S.eco.itemPrices.claw;
+    if(GOLD<price){toast('🪙 골드 부족 ('+price+')');return;}
+    GOLD-=price; saveGold(); S.clawArmedFree=false;
+  }
+  S.clawArmed=true; S.wildArmed=false;
   toast('🧲 아무 카드나 클릭 (덮인 카드 가능)'); paintHUD();
 }
 function wildBtn(){ // 🌟 와일드: 보유분 사용, 없으면 골드로 구매
@@ -418,9 +476,11 @@ function doRemove(c,viaWild){
   S.active=c.symbols.slice();
   S.moves++;
   const cb=document.getElementById('combo');cb.classList.add('pop');setTimeout(()=>cb.classList.remove('pop'),110);
-  if(S.combo>0 && S.combo%S.cgoal===0){toast('🌟 ×'+S.combo+' 콤보 보상!');S.score+=100*S.combo;}
+  checkComboRewards();
+  if(S.combo>0 && S.combo%S.cgoal===0){fxBanner('🌟 ×'+S.combo+' SPECTACULAR!');fxConfetti(14);S.score+=100*S.combo;}
   if(tickBombs())return;
   render();
+  fxBurst(c,S.combo); // 🌟 카니발 버스트 (렌더 후 스폰해야 지워지지 않음)
   checkEnd();
 }
 function drawDeck(){

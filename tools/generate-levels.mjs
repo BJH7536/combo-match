@@ -43,8 +43,8 @@ const economyOf = (levelIndex, diffScore) => ({
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, Math.round(x)));
 
 // 패턴 로테이션 — 연속 레벨은 항상 다른 패턴. 초반이 쉬운 순서로 배열.
-// (1층 스택은 커버리지가 없어 격자와 동급으로 쉬움 — 실측상 가장 순해서 레벨 1에 배치)
-const TOPOS = ['stack', 'grid', 'pyramid', 'tripeaks', 'wave', 'towers', 'diamond', 'composite'];
+// (스택은 전역 레이어 캐스케이드가 되어 순차 개방 — 겹침 전부 개방인 격자가 레벨 1 튜토리얼에 적합)
+const TOPOS = ['grid', 'stack', 'pyramid', 'tripeaks', 'wave', 'towers', 'diamond', 'composite'];
 const STAGE_THEMES = [
   '숲의 입구', '겹겹의 숲', '열쇠의 방', '초읽기 정원', '안개 구역',
   '수집가의 길', '종이의 벽', '폭풍 능선', '미로 심장', '마지막 관문',
@@ -80,8 +80,8 @@ function planFor(id) {
   };
   devicesFor(id, pos, cfg);
 
-  // 막힘률 밴드: 0.06 → 0.40 선형, 브리더는 30% 완화
-  const maxStuck = Math.min(0.4, 0.06 + 0.0035 * (id - 1)) * (breather ? 0.7 : 1);
+  // 막힘률 밴드: 0.06 → 0.40 선형, 브리더는 30% 완화. 최종 레벨(100)은 보스 예외로 0.45 허용
+  const maxStuck = id === 100 ? 0.45 : Math.min(0.4, 0.06 + 0.0035 * (id - 1)) * (breather ? 0.7 : 1);
   return { id, stage, pos, name: `${STAGE_THEMES[stage - 1]} ${pos}`, cfg, maxStuck };
 }
 
@@ -181,7 +181,7 @@ for (let id = 1; id <= 100; id++) {
   const plan = planFor(id);
   let best = null;
   // 시드를 훑어 "해답 보장 + 막힘률 밴드 + 그리디 40시드 클리어"를 만족하는 첫 레벨을 채택
-  for (let seed = 1; seed <= 500; seed++) {
+  for (let seed = 1; seed <= 1200; seed++) {
     const cfg = { ...plan.cfg, seed: id * 1000 + seed };
     const L = designer.generate(cfg);
     if (!L.solvableOrder) continue;

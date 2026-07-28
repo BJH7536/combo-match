@@ -47,15 +47,22 @@ interface CardNode {
   symbolText: Phaser.GameObjects.Text;
   badgeText: Phaser.GameObjects.Text;
   bombText: Phaser.GameObjects.Text; // 임박 시 붉게 — 색을 따로 주려고 분리했다
+  gateText: Phaser.GameObjects.Text; // 하단 플레이트 — "왜 못 집는지"를 카드 위에서 직접 말한다
+  zoneStripe: Phaser.GameObjects.Rectangle; // 상단 구역 색띠 (구역 레벨에서만 표시)
   w: number;
   h: number;
 }
+
+// 구역 색 — 디자이너 툴·기획 시안과 동일 (1구역 파랑 · 2구역 노랑 · 3구역 빨강)
+const ZONE_COLORS = [0x4db6ff, 0xffcf5a, 0xff6b6b];
 
 export class PlayScene extends Phaser.Scene {
   private engine!: ComboMatchEngine;
   private level!: RuntimeLevel;
   private nodes = new Map<number, CardNode>();
   private bombCounters = new Map<number, number>();
+  private keyCards = new Set<number>(); // 다른 카드를 여는 🗝 열쇠 카드들
+  private zonesUsed = false;
   private armed: 'none' | 'wild' | 'claw' = 'none'; // 다음 카드 클릭을 어떤 아이템이 가로챌지
   private tutorial = false; // 레벨 1~3: 매칭 가능 카드를 초록으로 표시 (ADR-001 결정 2)
   private matchable = new Set<number>();
@@ -204,6 +211,10 @@ export class PlayScene extends Phaser.Scene {
     cardTexture(this, w, h, 'covered');
     cardTexture(this, w, h, 'back');
     cardTexture(this, w, h, 'hint'); // 튜토리얼 표시 + 게이트 해제 플래시에 함께 쓴다
+    cardTexture(this, w, h, 'paper'); // 🧻 종이 포장 — 심볼 은닉
+    cardTexture(this, w, h, 'gated'); // 🚧 게이트 잠김 — 회청색
+    this.keyCards = new Set(this.level.cards.flatMap((c) => c.unlockedBy)); // 🗝 열쇠 역인덱스
+    this.zonesUsed = this.level.cards.some((c) => c.zone > 0);
 
     const maxCardY = Math.max(...this.level.cards.map((c) => c.y));
     this.boardBottom = t.offsetY + (maxCardY + DATA_CH) * t.scale;
@@ -233,7 +244,22 @@ export class PlayScene extends Phaser.Scene {
           fontStyle: 'bold',
         })
         .setOrigin(1, 0);
-      root.add([image, symbolText, badgeText, bombText]);
+      // 하단 게이트 플레이트 — 배경색으로 기믹 종류를, 텍스트로 해제 조건을 말한다
+      const gateText = this.add
+        .text(0, h / 2 - 3, '', {
+          fontFamily: FONT,
+          fontSize: `${Math.max(10, Math.round(h * 0.13))}px`,
+          color: '#ffffff',
+          fontStyle: 'bold',
+          padding: { x: 5, y: 2 },
+        })
+        .setOrigin(0.5, 1)
+        .setVisible(false);
+      // 상단 구역 색띠 — 어느 구역 소속인지 항상 보인다
+      const zoneStripe = this.add
+        .rectangle(0, -h / 2 + Math.max(3, h * 0.045), w * 0.78, Math.max(4, h * 0.055), 0xffffff, 0.9)
+        .setVisible(false);
+      root.add([image, zoneStripe, symbolText, badgeText, bombText, gateText]);
 
       root.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
       root.on('pointerdown', () => this.onCardTap(card.id));
@@ -241,7 +267,7 @@ export class PlayScene extends Phaser.Scene {
         if (!this.ended && this.engine.isFree(card.id)) root.setY(cy - 4);
       });
       root.on('pointerout', () => root.setY(cy));
-      this.nodes.set(card.id, { root, image, symbolText, badgeText, bombText, w, h });
+      this.nodes.set(card.id, { root, image, symbolText, badgeText, bombText, gateText, zoneStripe, w, h });
     }
   }
 
@@ -264,14 +290,24 @@ export class PlayScene extends Phaser.Scene {
     return Math.max(10, Math.round(ratio * h));
   }
 
+  /** 정체성 배지(좌상단) — 상태와 무관하게 카드가 "무엇인지"만 말한다: 🧩 조각 · 🗝 열쇠 */
   private badgeOf(card: RuntimeCard): string {
     const parts: string[] = [];
-    if (card.lockReq > 0) parts.push(`🔒${card.lockReq}`);
-    if (card.unlockedBy.length > 0) parts.push('🔑');
-    if (card.paper) parts.push('🧻');
     if (card.piece) parts.push('🧩');
-    if (card.zone > 0) parts.push(`🗺️${card.zone + 1}`);
+    if (this.keyCards.has(card.id)) parts.push('🗝');
     return parts.join(' ');
+  }
+
+  /** 가장 낮은 미소진 구역 — 그보다 높은 구역은 잠겨 있다 */
+  private zoneActive(): number {
+    let az = 99;
+    let found = false;
+    for (const c of this.level.cards) {
+      if (this.engine.isRemoved(c.id)) continue;
+      if (c.zone < az) az = c.zone;
+      found = true;
+    }
+    return found ? az : 0;
   }
 
   private refreshCard(id: number): void {
@@ -280,19 +316,70 @@ export class PlayScene extends Phaser.Scene {
     if (!node || !card || this.engine.isRemoved(id)) return;
     const free = this.engine.isFree(id);
     const revealed = this.engine.isRevealed(id);
+    const s = this.engine.getState();
 
-    const variant = !revealed ? 'back' : !free ? 'covered' : this.matchable.has(id) ? 'hint' : 'face';
+    // 게이트 판정 — 우선순위는 엔진 tryMatch 거절 사유와 동일 (구역 > 종이 > 열쇠 > 콤보 잠금)
+    const paperActive = card.paper && this.level.paperNeed > 0 && s.pieces < this.level.paperNeed;
+    const zoneLocked = this.zonesUsed && card.zone > this.zoneActive();
+    const missingKeys = card.unlockedBy.filter((k) => !this.engine.isRemoved(k)).length;
+    const lockUnmet = card.lockReq > 0 && s.combo < card.lockReq;
+    const gated = zoneLocked || missingKeys > 0 || lockUnmet;
+
+    // 텍스처: 종이(크라프트 줄무늬) > 뒷면 > 덮임 > 게이트(회청색) > 튜토리얼 힌트 > 일반
+    const variant = paperActive
+      ? 'paper'
+      : !revealed
+        ? 'back'
+        : !free
+          ? 'covered'
+          : gated
+            ? 'gated'
+            : this.matchable.has(id)
+              ? 'hint'
+              : 'face';
     node.image.setTexture(cardTexture(this, node.w, node.h, variant));
-    node.symbolText.setText(revealed ? this.symbolLines(card.symbols) : '❔');
-    node.symbolText.setColor(revealed ? '#2b1f12' : PALETTE.cream);
-    node.symbolText.setAlpha(free ? 1 : 0.7);
+
+    // 종이는 심볼 은닉(마스터 §4.2) — 큰 🧻 하나로 "포장됨"을 말한다
+    if (paperActive) {
+      node.symbolText.setText('🧻');
+      node.symbolText.setFontSize(Math.round(node.h * 0.34));
+    } else {
+      node.symbolText.setText(revealed ? this.symbolLines(card.symbols) : '❔');
+      node.symbolText.setFontSize(this.symbolFontSize(card.symbols.length, node.h));
+    }
+    node.symbolText.setColor(revealed && !paperActive ? '#2b1f12' : PALETTE.cream);
+    node.symbolText.setAlpha(free && !gated && !paperActive ? 1 : 0.75);
+
     node.badgeText.setText(this.badgeOf(card));
+    node.badgeText.setStroke('#fff6e2', 3); // 어두운 텍스처 위에서도 배지가 뜬다
+
     const bomb = this.bombCounters.get(id);
     if (bomb === undefined) node.bombText.setText('');
     else {
       node.bombText.setText(`💣${bomb}`);
-      node.bombText.setColor(bomb <= 3 ? '#c62828' : '#2b1f12');
+      node.bombText.setColor('#ffffff');
+      node.bombText.setBackgroundColor(bomb <= 3 ? '#c62828' : '#7a4a20'); // 빨강 = 임박
     }
+
+    // 하단 게이트 플레이트 — 색으로 종류, 텍스트로 해제 조건
+    if (zoneLocked) {
+      node.gateText.setText(`🚧 구역 ${card.zone + 1}`).setBackgroundColor('#4d545e').setVisible(true);
+    } else if (paperActive) {
+      node.gateText.setText(`🧩 ${s.pieces}/${this.level.paperNeed}`).setBackgroundColor('#7a6033').setVisible(true);
+    } else if (missingKeys > 0) {
+      node.gateText.setText(`🔑 ${missingKeys}개 필요`).setBackgroundColor('#5b3a8a').setVisible(true);
+    } else if (card.lockReq > 0) {
+      if (lockUnmet) node.gateText.setText(`🔒 콤보 ${card.lockReq}`).setBackgroundColor('#8a2f2b').setVisible(true);
+      else node.gateText.setText('🔓 해제!').setBackgroundColor('#2e7d32').setVisible(true);
+    } else {
+      node.gateText.setVisible(false);
+    }
+
+    // 상단 구역 색띠 — 구역 레벨에서만, 소속 구역을 항상 표시
+    if (this.zonesUsed) {
+      node.zoneStripe.setFillStyle(ZONE_COLORS[card.zone] ?? 0xffffff, zoneLocked ? 0.55 : 0.95).setVisible(true);
+    }
+
     node.root.setAlpha(free ? 1 : 0.88);
   }
 
@@ -973,6 +1060,7 @@ export class PlayScene extends Phaser.Scene {
     this.engine.events.on('activeChanged', () => this.updateHud());
     this.engine.events.on('comboChanged', ({ combo }) => {
       this.updateHud();
+      this.refreshAllCards(); // 🔒 콤보 잠금 플레이트가 combo 값에 따라 바뀐다
       if (combo > 0) this.comboFeedback(combo); // 0은 덱 드로우로 끊긴 경우 — 소리는 onDraw가 낸다
     });
     this.engine.events.on('scoreChanged', ({ delta }) => {
@@ -1019,6 +1107,7 @@ export class PlayScene extends Phaser.Scene {
       popObjective();
       sfx.collect();
       this.toast(`🧩 조각 ${pieces}/${needed}`);
+      this.refreshAllCards(); // 종이 카드의 🧩 진행 플레이트 갱신
     });
     this.engine.events.on('paperFreed', () => {
       this.toast('종이가 풀렸습니다!');

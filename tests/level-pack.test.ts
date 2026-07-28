@@ -59,6 +59,32 @@ describe('레벨 팩 (public/levels)', () => {
     }
   });
 
+  it('레이어 판정이 항상 명확하다 — 겹치는 카드는 레이어가 다르고, 큰 겹침은 반드시 커버 관계다', () => {
+    const CW = 64;
+    const CH = 80;
+    for (const entry of index.levels) {
+      const lv = readJson(entry.file);
+      const covered = new Map<number, Set<number>>();
+      for (const e of lv.coverage) covered.set(e.id, new Set(e.coveredBy));
+      for (let a = 0; a < lv.cards.length; a++) {
+        for (let b = a + 1; b < lv.cards.length; b++) {
+          const A = lv.cards[a]!;
+          const B = lv.cards[b]!;
+          const ox = Math.min(A.x + CW, B.x + CW) - Math.max(A.x, B.x);
+          const oy = Math.min(A.y + CH, B.y + CH) - Math.max(A.y, B.y);
+          if (ox <= 4 || oy <= 4) continue; // 겹침 없음
+          // ① 겹치면 레이어가 달라야 위아래가 항상 명확하다
+          expect(A.layer, `${entry.file}: 카드 ${A.id}·${B.id} 같은 레이어 겹침`).not.toBe(B.layer);
+          // ② 임계 이상 겹치면 반드시 커버 관계여야 한다 (덮여 보이는데 클릭되는 카드 방지)
+          if (ox > CW * 0.28 && oy > CH * 0.28) {
+            const cov = covered.get(A.id)!.has(B.id) || covered.get(B.id)!.has(A.id);
+            expect(cov, `${entry.file}: 카드 ${A.id}·${B.id} 큰 겹침인데 커버 관계 없음`).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
   it('패턴(레이아웃)이 매 레벨 다르다 — 연속 레벨은 항상 다른 토폴로지', () => {
     for (let i = 1; i < index.levels.length; i++) {
       expect(index.levels[i]!.topology).not.toBe(index.levels[i - 1]!.topology);

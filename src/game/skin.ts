@@ -151,7 +151,7 @@ export function panelTexture(scene: Phaser.Scene, key: string, rawW: number, raw
 }
 
 // 'hint' = 매칭 가능 표시. 상시 표시는 폐기(D-2)이고 튜토리얼 1~3에서만 쓴다(ADR-001 결정 2·O-3).
-export type CardVariant = 'face' | 'covered' | 'back' | 'hint';
+export type CardVariant = 'face' | 'covered' | 'back' | 'hint' | 'paper' | 'gated';
 
 /** 카드 텍스처 — 크기가 레벨마다 다르므로 키에 규격을 포함한다 */
 export function cardTexture(scene: Phaser.Scene, rawW: number, rawH: number, variant: CardVariant): string {
@@ -182,6 +182,14 @@ export function cardTexture(scene: Phaser.Scene, rawW: number, rawH: number, var
   } else if (variant === 'covered') {
     g.addColorStop(0, '#cdbfa4');
     g.addColorStop(1, '#ab9c80');
+  } else if (variant === 'paper') {
+    // 🧻 종이에 싸인 카드 — 확실히 "종이"로 읽히는 밝은 크라프트 톤
+    g.addColorStop(0, '#eee1c4');
+    g.addColorStop(1, '#dccda6');
+  } else if (variant === 'gated') {
+    // 🚧 게이트(구역·열쇠·콤보 잠금)에 막힌 카드 — 차가운 회청색으로 "지금은 못 집음"을 즉시 구분
+    g.addColorStop(0, '#b6bcc6');
+    g.addColorStop(1, '#949ca8');
   } else {
     g.addColorStop(0, PALETTE.woodLightTop);
     g.addColorStop(1, PALETTE.woodLightBottom);
@@ -198,12 +206,35 @@ export function cardTexture(scene: Phaser.Scene, rawW: number, rawH: number, var
     ctx.restore();
   }
 
+  if (variant === 'paper') {
+    // 대각선 줄무늬 — 기획 시안(play-reference)의 repeating-linear-gradient(45deg) 재현
+    ctx.save();
+    roundRect(ctx, PAD, PAD, w, h, radius);
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(122,101,62,0.22)';
+    ctx.lineWidth = Math.max(4, h * 0.07);
+    for (let d = -h; d < w + h; d += Math.max(10, h * 0.17)) {
+      ctx.beginPath();
+      ctx.moveTo(PAD + d, PAD + h);
+      ctx.lineTo(PAD + d + h, PAD);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   if (variant === 'hint') {
     // 시안의 초록 글로우를 튜토리얼 전용으로 되살린다 (ADR-001 O-3 재정의)
     ctx.shadowColor = 'rgba(126,217,87,0.9)';
     ctx.shadowBlur = 16;
     ctx.strokeStyle = PALETTE.hintEdge;
     ctx.lineWidth = edgeW * 1.9;
+  } else if (variant === 'paper') {
+    ctx.strokeStyle = '#b39a63';
+    ctx.lineWidth = edgeW * 1.4;
+    ctx.setLineDash([Math.max(5, h * 0.08), Math.max(4, h * 0.06)]); // 점선 = "뜯을 수 있는 포장"
+  } else if (variant === 'gated') {
+    ctx.strokeStyle = '#6d747f';
+    ctx.lineWidth = edgeW * 1.4;
   } else {
     ctx.strokeStyle = variant === 'back' ? PALETTE.woodDeep : PALETTE.cardEdge;
     ctx.lineWidth = edgeW;

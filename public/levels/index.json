@@ -67,26 +67,26 @@
       "name": "숲의 입구 1",
       "file": "level-001.json",
       "stage": 1,
-      "topology": "stack",
-      "difficulty": 14.3,
+      "topology": "grid",
+      "difficulty": 14.7,
       "tier": "튜토리얼",
       "devices": [],
       "cards": 8,
       "pStuck": 0,
-      "branch": 3.23
+      "branch": 3.06
     },
     {
       "id": 2,
       "name": "숲의 입구 2",
       "file": "level-002.json",
       "stage": 1,
-      "topology": "grid",
-      "difficulty": 14.5,
+      "topology": "stack",
+      "difficulty": 19.8,
       "tier": "튜토리얼",
       "devices": [],
       "cards": 8,
       "pStuck": 0,
-      "branch": 3.15
+      "branch": 1
     },
     {
       "id": 3,
@@ -107,14 +107,14 @@
       "file": "level-004.json",
       "stage": 1,
       "topology": "tripeaks",
-      "difficulty": 20.6,
+      "difficulty": 18.2,
       "tier": "튜토리얼",
       "devices": [
         "key"
       ],
       "cards": 8,
       "pStuck": 0,
-      "branch": 1.14
+      "branch": 2.1
     },
     {
       "id": 5,
@@ -122,14 +122,14 @@
       "file": "level-005.json",
       "stage": 1,
       "topology": "wave",
-      "difficulty": 21.5,
+      "difficulty": 22.3,
       "tier": "튜토리얼",
       "devices": [
         "bomb"
       ],
       "cards": 9,
       "pStuck": 0,
-      "branch": 1.33
+      "branch": 1
     },
     {
       "id": 6,
@@ -167,44 +167,44 @@
       "file": "level-008.json",
       "stage": 1,
       "topology": "composite",
-      "difficulty": 21.3,
+      "difficulty": 20.6,
       "tier": "튜토리얼",
       "devices": [
         "paper"
       ],
       "cards": 11,
       "pStuck": 0,
-      "branch": 1.97
+      "branch": 2.27
     },
     {
       "id": 9,
       "name": "숲의 입구 9",
       "file": "level-009.json",
       "stage": 1,
-      "topology": "stack",
-      "difficulty": 20.5,
+      "topology": "grid",
+      "difficulty": 19.3,
       "tier": "튜토리얼",
       "devices": [
         "lock"
       ],
       "cards": 12,
-      "pStuck": 0.057,
-      "branch": 2.24
+      "pStuck": 0,
+      "branch": 2.72
     },
     {
       "id": 10,
       "name": "숲의 입구 10",
       "file": "level-010.json",
       "stage": 1,
-      "topology": "grid",
-      "difficulty": 16.9,
+      "topology": "stack",
+      "difficulty": 22.9,
       "tier": "튜토리얼",
       "devices": [
         "facedown"
       ],
       "cards": 13,
       "pStuck": 0,
-      "branch": 3.5
+      "branch": 1.09
     },
     {
       "id": 11,
@@ -227,14 +227,14 @@
       "file": "level-012.json",
       "stage": 2,
       "topology": "tripeaks",
-      "difficulty": 17.8,
+      "difficulty": 19.9,
       "tier": "튜토리얼",
       "devices": [
         "bomb"
       ],
       "cards": 9,
       "pStuck": 0,
-      "branch": 2.5
+      "branch": 1.65
     },
     {
       "id": 13,
@@ -249,7 +249,7 @@
       ],
       "cards": 10,
       "pStuck": 0,
-      "branch": 0.93
+      "branch": 1
     },
     {
       "id": 14,
@@ -288,44 +288,44 @@
       "file": "level-016.json",
       "stage": 2,
       "topology": "composite",
-      "difficulty": 21.8,
+      "difficulty": 22.3,
       "tier": "튜토리얼",
       "devices": [
         "lock"
       ],
       "cards": 12,
       "pStuck": 0,
-      "branch": 3.05
+      "branch": 2.84
     },
     {
       "id": 17,
       "name": "겹겹의 숲 7",
       "file": "level-017.json",
       "stage": 2,
-      "topology": "stack",
-      "difficulty": 23.5,
+      "topology": "grid",
+      "difficulty": 23.6,
       "tier": "튜토리얼",
       "devices": [
         "key"
       ],
       "cards": 13,
       "pStuck": 0,
-      "branch": 2.12
+      "branch": 2.06
     },
     {
       "id": 18,
       "name": "겹겹의 숲 8",
       "file": "level-018.json",
       "stage": 2,
-      "topology": "grid",
-      "difficulty": 22.6,
-      "tier": "튜토리얼",
+      "topology": "stack",
+      "difficulty": 26.3,
+      "tier": "쉬움",
       "devices": [
         "bomb"
       ],
       "cards": 14,
       "pStuck": 0,
-      "branch": 3.14
+      "branch": 1.66
     },
     {
       "id": 19,
@@ -348,14 +348,14 @@
       "file": "level-020.json",
       "stage": 2,
       "topology": "tripeaks",
-      "difficulty": 27.6,
-      "tier": "쉬움",
+      "difficulty": 24.8,
+      "tier": "튜토리얼",
       "devices": [
         "paper"
       ],
       "cards": 15,
       "pStuck": 0,
-      "branch": 1.4
+      "branch": 2.54
     },
     {
       "id": 21,
@@ -363,7 +363,7 @@
       "file": "level-021.json",
       "stage": 3,
       "topology": "wave",
-      "difficulty": 26.8,
+      "difficulty": 27.3,
       "tier": "쉬움",
       "devices": [
         "collect",
@@ -371,7 +371,7 @@
       ],
       "cards": 11,
       "pStuck": 0,
-      "branch": 1.19
+      "branch": 1
     },
     {
       "id": 22,
@@ -423,31 +423,31 @@
       "name": "열쇠의 방 5",
       "file": "level-025.json",
       "stage": 3,
-      "topology": "stack",
-      "difficulty": 26,
+      "topology": "grid",
+      "difficulty": 25.1,
       "tier": "쉬움",
       "devices": [
         "zone"
       ],
       "cards": 14,
       "pStuck": 0,
-      "branch": 1.64
+      "branch": 1.97
     },
     {
       "id": 26,
       "name": "열쇠의 방 6",
       "file": "level-026.json",
       "stage": 3,
-      "topology": "grid",
-      "difficulty": 27,
+      "topology": "stack",
+      "difficulty": 28.8,
       "tier": "쉬움",
       "devices": [
         "paper",
         "lock"
       ],
       "cards": 15,
-      "pStuck": 0.067,
-      "branch": 1.73
+      "pStuck": 0.063,
+      "branch": 0.93
     },
     {
       "id": 27,
@@ -471,7 +471,7 @@
       "file": "level-028.json",
       "stage": 3,
       "topology": "tripeaks",
-      "difficulty": 32.8,
+      "difficulty": 31.9,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -480,7 +480,7 @@
       ],
       "cards": 16,
       "pStuck": 0,
-      "branch": 1.26
+      "branch": 1.63
     },
     {
       "id": 29,
@@ -488,15 +488,15 @@
       "file": "level-029.json",
       "stage": 3,
       "topology": "wave",
-      "difficulty": 29.8,
+      "difficulty": 30.2,
       "tier": "쉬움",
       "devices": [
         "key",
         "lock"
       ],
       "cards": 17,
-      "pStuck": 0.01,
-      "branch": 1.16
+      "pStuck": 0,
+      "branch": 1
     },
     {
       "id": 30,
@@ -549,30 +549,30 @@
       "name": "초읽기 정원 3",
       "file": "level-033.json",
       "stage": 4,
-      "topology": "stack",
-      "difficulty": 25.2,
-      "tier": "쉬움",
+      "topology": "grid",
+      "difficulty": 20.7,
+      "tier": "튜토리얼",
       "devices": [
         "facedown"
       ],
       "cards": 15,
       "pStuck": 0,
-      "branch": 2.16
+      "branch": 3.98
     },
     {
       "id": 34,
       "name": "초읽기 정원 4",
       "file": "level-034.json",
       "stage": 4,
-      "topology": "grid",
-      "difficulty": 21.9,
-      "tier": "튜토리얼",
+      "topology": "stack",
+      "difficulty": 28.5,
+      "tier": "쉬움",
       "devices": [
         "lock"
       ],
       "cards": 16,
-      "pStuck": 0.023,
-      "branch": 3.79
+      "pStuck": 0,
+      "branch": 1.12
     },
     {
       "id": 35,
@@ -580,7 +580,7 @@
       "file": "level-035.json",
       "stage": 4,
       "topology": "pyramid",
-      "difficulty": 25.8,
+      "difficulty": 26,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -588,7 +588,7 @@
       ],
       "cards": 16,
       "pStuck": 0,
-      "branch": 2.86
+      "branch": 2.75
     },
     {
       "id": 36,
@@ -596,15 +596,15 @@
       "file": "level-036.json",
       "stage": 4,
       "topology": "tripeaks",
-      "difficulty": 27.3,
+      "difficulty": 28,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "paper"
       ],
       "cards": 17,
-      "pStuck": 0.03,
-      "branch": 2.08
+      "pStuck": 0.097,
+      "branch": 1.81
     },
     {
       "id": 37,
@@ -620,7 +620,7 @@
       ],
       "cards": 18,
       "pStuck": 0,
-      "branch": 0.95
+      "branch": 1
     },
     {
       "id": 38,
@@ -660,46 +660,46 @@
       "file": "level-040.json",
       "stage": 4,
       "topology": "composite",
-      "difficulty": 30.9,
+      "difficulty": 30.4,
       "tier": "쉬움",
       "devices": [
         "zone",
         "lock"
       ],
       "cards": 20,
-      "pStuck": 0.15,
-      "branch": 1.76
+      "pStuck": 0.09,
+      "branch": 1.99
     },
     {
       "id": 41,
       "name": "안개 구역 1",
       "file": "level-041.json",
       "stage": 5,
-      "topology": "stack",
-      "difficulty": 24.5,
-      "tier": "튜토리얼",
+      "topology": "grid",
+      "difficulty": 25.2,
+      "tier": "쉬움",
       "devices": [
         "key"
       ],
       "cards": 16,
-      "pStuck": 0,
-      "branch": 2.43
+      "pStuck": 0.02,
+      "branch": 2.16
     },
     {
       "id": 42,
       "name": "안개 구역 2",
       "file": "level-042.json",
       "stage": 5,
-      "topology": "grid",
-      "difficulty": 26.7,
+      "topology": "stack",
+      "difficulty": 32.3,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "collect"
       ],
       "cards": 16,
-      "pStuck": 0.043,
-      "branch": 3.38
+      "pStuck": 0,
+      "branch": 1.14
     },
     {
       "id": 43,
@@ -722,14 +722,14 @@
       "file": "level-044.json",
       "stage": 5,
       "topology": "tripeaks",
-      "difficulty": 30.3,
+      "difficulty": 29.2,
       "tier": "쉬움",
       "devices": [
         "paper"
       ],
       "cards": 18,
-      "pStuck": 0.193,
-      "branch": 1.44
+      "pStuck": 0.097,
+      "branch": 1.87
     },
     {
       "id": 45,
@@ -737,14 +737,14 @@
       "file": "level-045.json",
       "stage": 5,
       "topology": "wave",
-      "difficulty": 33.8,
+      "difficulty": 34.1,
       "tier": "쉬움",
       "devices": [
         "facedown"
       ],
       "cards": 19,
       "pStuck": 0,
-      "branch": 1.12
+      "branch": 1
     },
     {
       "id": 46,
@@ -784,23 +784,23 @@
       "file": "level-048.json",
       "stage": 5,
       "topology": "composite",
-      "difficulty": 35.6,
+      "difficulty": 35.2,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "paper"
       ],
       "cards": 21,
-      "pStuck": 0.187,
-      "branch": 2.18
+      "pStuck": 0.047,
+      "branch": 2.34
     },
     {
       "id": 49,
       "name": "안개 구역 9",
       "file": "level-049.json",
       "stage": 5,
-      "topology": "stack",
-      "difficulty": 38.7,
+      "topology": "grid",
+      "difficulty": 33.4,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -808,24 +808,24 @@
         "facedown"
       ],
       "cards": 22,
-      "pStuck": 0,
-      "branch": 1.37
+      "pStuck": 0.023,
+      "branch": 3.48
     },
     {
       "id": 50,
       "name": "안개 구역 10",
       "file": "level-050.json",
       "stage": 5,
-      "topology": "grid",
-      "difficulty": 34.8,
+      "topology": "stack",
+      "difficulty": 38.5,
       "tier": "쉬움",
       "devices": [
         "paper",
         "lock"
       ],
       "cards": 22,
-      "pStuck": 0.07,
-      "branch": 2.49
+      "pStuck": 0.047,
+      "branch": 0.99
     },
     {
       "id": 51,
@@ -848,14 +848,14 @@
       "file": "level-052.json",
       "stage": 6,
       "topology": "tripeaks",
-      "difficulty": 35,
+      "difficulty": 34.5,
       "tier": "쉬움",
       "devices": [
         "lock"
       ],
       "cards": 19,
-      "pStuck": 0.233,
-      "branch": 1.57
+      "pStuck": 0.17,
+      "branch": 1.74
     },
     {
       "id": 53,
@@ -863,14 +863,14 @@
       "file": "level-053.json",
       "stage": 6,
       "topology": "wave",
-      "difficulty": 32.8,
+      "difficulty": 35.3,
       "tier": "쉬움",
       "devices": [
         "key"
       ],
       "cards": 20,
       "pStuck": 0,
-      "branch": 1.99
+      "branch": 1
     },
     {
       "id": 54,
@@ -908,7 +908,7 @@
       "file": "level-056.json",
       "stage": 6,
       "topology": "composite",
-      "difficulty": 36.3,
+      "difficulty": 34.7,
       "tier": "쉬움",
       "devices": [
         "collect",
@@ -916,40 +916,40 @@
         "lock"
       ],
       "cards": 22,
-      "pStuck": 0.06,
-      "branch": 2.45
+      "pStuck": 0,
+      "branch": 3.1
     },
     {
       "id": 57,
       "name": "수집가의 길 7",
       "file": "level-057.json",
       "stage": 6,
-      "topology": "stack",
-      "difficulty": 35.4,
+      "topology": "grid",
+      "difficulty": 31,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "facedown"
       ],
       "cards": 23,
-      "pStuck": 0.16,
-      "branch": 1.88
+      "pStuck": 0.207,
+      "branch": 3.64
     },
     {
       "id": 58,
       "name": "수집가의 길 8",
       "file": "level-058.json",
       "stage": 6,
-      "topology": "grid",
-      "difficulty": 36,
+      "topology": "stack",
+      "difficulty": 39.9,
       "tier": "쉬움",
       "devices": [
         "zone",
         "lock"
       ],
       "cards": 23,
-      "pStuck": 0.25,
-      "branch": 2.77
+      "pStuck": 0.177,
+      "branch": 1.2
     },
     {
       "id": 59,
@@ -973,15 +973,15 @@
       "file": "level-060.json",
       "stage": 6,
       "topology": "tripeaks",
-      "difficulty": 38.5,
+      "difficulty": 36.2,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "paper"
       ],
       "cards": 25,
-      "pStuck": 0.113,
-      "branch": 1.66
+      "pStuck": 0.217,
+      "branch": 2.57
     },
     {
       "id": 61,
@@ -989,14 +989,14 @@
       "file": "level-061.json",
       "stage": 7,
       "topology": "wave",
-      "difficulty": 35.6,
+      "difficulty": 36.4,
       "tier": "쉬움",
       "devices": [
         "zone"
       ],
       "cards": 21,
       "pStuck": 0,
-      "branch": 1.3
+      "branch": 1
     },
     {
       "id": 62,
@@ -1035,45 +1035,45 @@
       "file": "level-064.json",
       "stage": 7,
       "topology": "composite",
-      "difficulty": 36,
+      "difficulty": 37.4,
       "tier": "쉬움",
       "devices": [
         "lock"
       ],
       "cards": 23,
-      "pStuck": 0.117,
-      "branch": 1.89
+      "pStuck": 0.05,
+      "branch": 1.31
     },
     {
       "id": 65,
       "name": "종이의 벽 5",
       "file": "level-065.json",
       "stage": 7,
-      "topology": "stack",
-      "difficulty": 34.9,
+      "topology": "grid",
+      "difficulty": 29.7,
       "tier": "쉬움",
       "devices": [
         "key"
       ],
       "cards": 24,
-      "pStuck": 0.08,
-      "branch": 1.88
+      "pStuck": 0,
+      "branch": 4.57
     },
     {
       "id": 66,
       "name": "종이의 벽 6",
       "file": "level-066.json",
       "stage": 7,
-      "topology": "grid",
-      "difficulty": 32,
+      "topology": "stack",
+      "difficulty": 38.7,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "paper"
       ],
       "cards": 24,
-      "pStuck": 0.243,
-      "branch": 4.07
+      "pStuck": 0,
+      "branch": 1.29
     },
     {
       "id": 67,
@@ -1081,15 +1081,15 @@
       "file": "level-067.json",
       "stage": 7,
       "topology": "pyramid",
-      "difficulty": 39.2,
+      "difficulty": 38.7,
       "tier": "쉬움",
       "devices": [
         "zone",
         "facedown"
       ],
       "cards": 25,
-      "pStuck": 0.067,
-      "branch": 1.14
+      "pStuck": 0.01,
+      "branch": 1.36
     },
     {
       "id": 68,
@@ -1097,15 +1097,15 @@
       "file": "level-068.json",
       "stage": 7,
       "topology": "tripeaks",
-      "difficulty": 38.3,
+      "difficulty": 36.4,
       "tier": "쉬움",
       "devices": [
         "paper",
         "lock"
       ],
       "cards": 26,
-      "pStuck": 0.263,
-      "branch": 1.97
+      "pStuck": 0.04,
+      "branch": 2.73
     },
     {
       "id": 69,
@@ -1113,7 +1113,7 @@
       "file": "level-069.json",
       "stage": 7,
       "topology": "wave",
-      "difficulty": 40.8,
+      "difficulty": 42.8,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1122,7 +1122,7 @@
       ],
       "cards": 26,
       "pStuck": 0,
-      "branch": 1.82
+      "branch": 1
     },
     {
       "id": 70,
@@ -1162,44 +1162,44 @@
       "file": "level-072.json",
       "stage": 8,
       "topology": "composite",
-      "difficulty": 38.8,
+      "difficulty": 38.3,
       "tier": "쉬움",
       "devices": [
         "bomb"
       ],
       "cards": 24,
-      "pStuck": 0.213,
-      "branch": 1.73
+      "pStuck": 0.03,
+      "branch": 1.94
     },
     {
       "id": 73,
       "name": "폭풍 능선 3",
       "file": "level-073.json",
       "stage": 8,
-      "topology": "stack",
-      "difficulty": 38.9,
+      "topology": "grid",
+      "difficulty": 38.7,
       "tier": "쉬움",
       "devices": [
         "zone"
       ],
       "cards": 24,
-      "pStuck": 0.303,
-      "branch": 1.54
+      "pStuck": 0.143,
+      "branch": 1.64
     },
     {
       "id": 74,
       "name": "폭풍 능선 4",
       "file": "level-074.json",
       "stage": 8,
-      "topology": "grid",
-      "difficulty": 35,
+      "topology": "stack",
+      "difficulty": 39.5,
       "tier": "쉬움",
       "devices": [
         "paper"
       ],
       "cards": 25,
-      "pStuck": 0.227,
-      "branch": 2.9
+      "pStuck": 0.057,
+      "branch": 1.1
     },
     {
       "id": 75,
@@ -1222,15 +1222,15 @@
       "file": "level-076.json",
       "stage": 8,
       "topology": "tripeaks",
-      "difficulty": 40.1,
+      "difficulty": 41.5,
       "tier": "쉬움",
       "devices": [
         "zone",
         "lock"
       ],
       "cards": 27,
-      "pStuck": 0.297,
-      "branch": 1.78
+      "pStuck": 0.263,
+      "branch": 1.21
     },
     {
       "id": 77,
@@ -1238,7 +1238,7 @@
       "file": "level-077.json",
       "stage": 8,
       "topology": "wave",
-      "difficulty": 41.4,
+      "difficulty": 43,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -1246,8 +1246,8 @@
         "lock"
       ],
       "cards": 27,
-      "pStuck": 0.013,
-      "branch": 1.61
+      "pStuck": 0,
+      "branch": 1
     },
     {
       "id": 78,
@@ -1288,45 +1288,45 @@
       "file": "level-080.json",
       "stage": 8,
       "topology": "composite",
-      "difficulty": 40.8,
+      "difficulty": 41.8,
       "tier": "쉬움",
       "devices": [
         "paper",
         "lock"
       ],
       "cards": 30,
-      "pStuck": 0.253,
-      "branch": 1.88
+      "pStuck": 0.28,
+      "branch": 1.46
     },
     {
       "id": 81,
       "name": "미로 심장 1",
       "file": "level-081.json",
       "stage": 9,
-      "topology": "stack",
-      "difficulty": 37,
+      "topology": "grid",
+      "difficulty": 32.3,
       "tier": "쉬움",
       "devices": [
         "facedown"
       ],
       "cards": 25,
-      "pStuck": 0.063,
-      "branch": 1.44
+      "pStuck": 0,
+      "branch": 3.34
     },
     {
       "id": 82,
       "name": "미로 심장 2",
       "file": "level-082.json",
       "stage": 9,
-      "topology": "grid",
-      "difficulty": 35.4,
+      "topology": "stack",
+      "difficulty": 40.5,
       "tier": "쉬움",
       "devices": [
         "lock"
       ],
       "cards": 26,
-      "pStuck": 0.227,
-      "branch": 3.17
+      "pStuck": 0.193,
+      "branch": 1.08
     },
     {
       "id": 83,
@@ -1349,15 +1349,15 @@
       "file": "level-084.json",
       "stage": 9,
       "topology": "tripeaks",
-      "difficulty": 41,
+      "difficulty": 41.5,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "collect"
       ],
       "cards": 28,
-      "pStuck": 0.1,
-      "branch": 2.09
+      "pStuck": 0.113,
+      "branch": 1.89
     },
     {
       "id": 85,
@@ -1365,14 +1365,14 @@
       "file": "level-085.json",
       "stage": 9,
       "topology": "wave",
-      "difficulty": 41,
+      "difficulty": 41.1,
       "tier": "쉬움",
       "devices": [
         "zone"
       ],
       "cards": 28,
-      "pStuck": 0.037,
-      "branch": 1.05
+      "pStuck": 0,
+      "branch": 1
     },
     {
       "id": 86,
@@ -1412,22 +1412,22 @@
       "file": "level-088.json",
       "stage": 9,
       "topology": "composite",
-      "difficulty": 42.3,
+      "difficulty": 44.5,
       "tier": "쉬움",
       "devices": [
         "zone",
         "lock"
       ],
       "cards": 31,
-      "pStuck": 0.237,
-      "branch": 1.88
+      "pStuck": 0,
+      "branch": 0.94
     },
     {
       "id": 89,
       "name": "미로 심장 9",
       "file": "level-089.json",
       "stage": 9,
-      "topology": "stack",
+      "topology": "grid",
       "difficulty": 38.2,
       "tier": "쉬움",
       "devices": [
@@ -1437,23 +1437,23 @@
       ],
       "cards": 31,
       "pStuck": 0,
-      "branch": 4.37
+      "branch": 14
     },
     {
       "id": 90,
       "name": "미로 심장 10",
       "file": "level-090.json",
       "stage": 9,
-      "topology": "grid",
-      "difficulty": 40.2,
+      "topology": "stack",
+      "difficulty": 44.4,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "paper"
       ],
       "cards": 32,
-      "pStuck": 0.367,
-      "branch": 3.05
+      "pStuck": 0.207,
+      "branch": 1.37
     },
     {
       "id": 91,
@@ -1461,15 +1461,15 @@
       "file": "level-091.json",
       "stage": 10,
       "topology": "pyramid",
-      "difficulty": 41.5,
+      "difficulty": 41.7,
       "tier": "쉬움",
       "devices": [
         "zone",
         "collect"
       ],
       "cards": 28,
-      "pStuck": 0.057,
-      "branch": 1.36
+      "pStuck": 0.21,
+      "branch": 1.29
     },
     {
       "id": 92,
@@ -1477,14 +1477,14 @@
       "file": "level-092.json",
       "stage": 10,
       "topology": "tripeaks",
-      "difficulty": 35.9,
+      "difficulty": 37.3,
       "tier": "쉬움",
       "devices": [
         "paper"
       ],
       "cards": 29,
-      "pStuck": 0.113,
-      "branch": 3.05
+      "pStuck": 0.377,
+      "branch": 2.47
     },
     {
       "id": 93,
@@ -1492,14 +1492,14 @@
       "file": "level-093.json",
       "stage": 10,
       "topology": "wave",
-      "difficulty": 40.4,
+      "difficulty": 40.6,
       "tier": "쉬움",
       "devices": [
         "facedown"
       ],
       "cards": 29,
-      "pStuck": 0.347,
-      "branch": 1.08
+      "pStuck": 0,
+      "branch": 1
     },
     {
       "id": 94,
@@ -1537,39 +1537,39 @@
       "file": "level-096.json",
       "stage": 10,
       "topology": "composite",
-      "difficulty": 39.8,
+      "difficulty": 39,
       "tier": "쉬움",
       "devices": [
         "bomb",
         "paper"
       ],
       "cards": 32,
-      "pStuck": 0.39,
-      "branch": 2.7
+      "pStuck": 0.33,
+      "branch": 3.05
     },
     {
       "id": 97,
       "name": "마지막 관문 7",
       "file": "level-097.json",
       "stage": 10,
-      "topology": "stack",
-      "difficulty": 42.7,
+      "topology": "grid",
+      "difficulty": 40.6,
       "tier": "쉬움",
       "devices": [
         "zone",
         "facedown"
       ],
       "cards": 32,
-      "pStuck": 0.327,
-      "branch": 1.12
+      "pStuck": 0.19,
+      "branch": 1.95
     },
     {
       "id": 98,
       "name": "마지막 관문 8",
       "file": "level-098.json",
       "stage": 10,
-      "topology": "grid",
-      "difficulty": 39,
+      "topology": "stack",
+      "difficulty": 44.7,
       "tier": "쉬움",
       "devices": [
         "collect",
@@ -1577,8 +1577,8 @@
         "lock"
       ],
       "cards": 33,
-      "pStuck": 0,
-      "branch": 4.75
+      "pStuck": 0.06,
+      "branch": 1.72
     },
     {
       "id": 99,
@@ -1603,15 +1603,15 @@
       "file": "level-100.json",
       "stage": 10,
       "topology": "tripeaks",
-      "difficulty": 44.4,
+      "difficulty": 43.2,
       "tier": "쉬움",
       "devices": [
         "zone",
         "lock"
       ],
       "cards": 34,
-      "pStuck": 0.343,
-      "branch": 1.36
+      "pStuck": 0.44,
+      "branch": 1.82
     }
   ]
 }

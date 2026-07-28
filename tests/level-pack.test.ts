@@ -22,6 +22,8 @@ interface IndexEntry {
   id: number;
   name: string;
   file: string;
+  stage: number;
+  topology: string;
   difficulty: number;
   tier: string;
   devices: string[];
@@ -29,7 +31,10 @@ interface IndexEntry {
   pStuck: number;
   branch: number;
 }
-const index = levelIndexJson as { levels: IndexEntry[] };
+const index = levelIndexJson as {
+  stages: { id: number; name: string; from: number; to: number }[];
+  levels: IndexEntry[];
+};
 
 interface TraceEvent {
   t: 'm' | 'w' | 'd';
@@ -41,14 +46,28 @@ interface TraceEvent {
 }
 
 describe('레벨 팩 (public/levels)', () => {
-  it('인덱스에 12개 레벨이 난이도 오름차순으로 등재되어 있다', () => {
-    expect(index.levels).toHaveLength(12);
+  it('인덱스에 100개 레벨이 10스테이지로 등재되어 있다', () => {
+    expect(index.levels).toHaveLength(100);
     const ids = index.levels.map((l) => l.id);
-    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(ids).toEqual(Array.from({ length: 100 }, (_, i) => i + 1));
+    expect(index.stages).toHaveLength(10);
+    for (const s of index.stages) expect(s.to - s.from).toBe(9);
+    for (const l of index.levels) expect(l.stage).toBe(Math.ceil(l.id / 10));
     for (let i = 1; i < index.levels.length; i++) {
       // 난이도는 단조 증가까지는 아니어도 앞 구간이 뒤 구간보다 어려우면 안 된다
       expect(index.levels[i]!.difficulty).toBeGreaterThanOrEqual(index.levels[0]!.difficulty);
     }
+  });
+
+  it('패턴(레이아웃)이 매 레벨 다르다 — 연속 레벨은 항상 다른 토폴로지', () => {
+    for (let i = 1; i < index.levels.length; i++) {
+      expect(index.levels[i]!.topology).not.toBe(index.levels[i - 1]!.topology);
+    }
+    // 8종 토폴로지가 팩 전체에서 모두 사용된다
+    const used = new Set(index.levels.map((l) => l.topology));
+    expect([...used].sort()).toEqual(
+      ['composite', 'diamond', 'grid', 'pyramid', 'stack', 'towers', 'tripeaks', 'wave'].sort(),
+    );
   });
 
   it('장치 7종이 팩 전체에서 최소 한 번씩 등장한다', () => {

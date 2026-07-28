@@ -365,7 +365,7 @@ export class PlayScene extends Phaser.Scene {
     // 좌상단: 레벨 선택에서 왔으면 목록으로, 아니면 재시작
     const backLabel = this.initData.entry ? '≡' : '⟳';
     this.woodButton(48, this.L.headerH / 2, 48, 48, backLabel, 23, () => {
-      if (this.initData.entry) this.scene.start('LevelSelect');
+      if (this.initData.entry) this.scene.start('LevelSelect', { stage: this.initData.entry.stage });
       else this.scene.restart();
     }).setDepth(601);
 
@@ -1163,8 +1163,8 @@ export class PlayScene extends Phaser.Scene {
       { label: '↻ 다시', onClick: () => this.scene.restart() },
     ];
     if (entry) {
-      buttons.push({ label: '≡ 레벨 선택', onClick: () => this.scene.start('LevelSelect') });
-      if (this.engine.status === 'won' && entry.id < 12) {
+      buttons.push({ label: '≡ 레벨 선택', onClick: () => this.scene.start('LevelSelect', { stage: entry.stage }) });
+      if (this.engine.status === 'won' && entry.id < 100) {
         buttons.push({ label: '다음 ▶', onClick: () => void this.goToLevel(entry.id + 1) });
       }
     }

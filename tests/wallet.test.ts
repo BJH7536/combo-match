@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_ECONOMY, normalizeEconomy, payout, type Economy } from '../src/game/wallet';
-import levelOne from '../public/levels/level-01.json';
+import levelOne from '../public/levels/level-001.json';
 
 // 마스터 GDD §7 경제 — 정산 공식과 외부 economy 블록 정규화.
 // localStorage 래퍼(loadGold/earn/spend)는 브라우저 전용이라 여기서는 순수 계산만 다룬다.

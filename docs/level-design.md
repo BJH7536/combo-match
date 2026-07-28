@@ -32,14 +32,14 @@
 
 플레이 테스트로 만족스러운 레벨이 나왔다면 `⬇️ 레벨 JSON`으로 파일을 내려받아 저장소에 넣는다.
 
-1. 파일을 `public/levels/level-13.json` 처럼 번호를 이어 저장한다.
+1. 파일을 `public/levels/level-101.json` 처럼 번호를 이어 저장한다 (팩은 `tools/generate-levels.mjs`가 100개를 자동 생성·검증한다).
 2. `public/levels/index.json`의 `levels` 배열에 항목을 추가한다.
 
 ```jsonc
 {
   "id": 13,
   "name": "레벨 이름",          // 선택 화면에 표시된다
-  "file": "level-13.json",
+  "file": "level-101.json",
   "difficulty": 41,             // 툴이 산출한 종합 난이도
   "tier": "보통",               // 툴의 등급 표기
   "devices": ["key", "bomb"],   // 선택 화면 아이콘용

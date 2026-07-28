@@ -185,10 +185,17 @@
     </div>
     <div class="field"><label>레이아웃</label>
       <select id="topology">
-        <option value="pyramid">피라미드 (트라이픽스식 가림)</option>
+        <option value="pyramid">피라미드 (역방향 가림)</option>
         <option value="stack">스택 겹침 (목업형)</option>
         <option value="grid">격자 (가림 없음·쉬움)</option>
-      </select></div>
+        <option value="tripeaks">트라이픽스 (3봉우리 클래식)</option>
+        <option value="diamond">다이아몬드 (아래→위 개방)</option>
+        <option value="towers">타워 (독립 기둥·외길)</option>
+        <option value="wave">웨이브 (S자 물결 체인)</option>
+        <option value="composite">🧬 복합 (2~3개 패턴 혼합)</option>
+      </select>
+      <div class="hint">패턴 예시는 <a href="patterns.html" target="_blank" style="color:var(--accent)">패턴 갤러리</a> 참고.
+      모든 패턴은 <b>시드 기반 변형</b>(봉우리 수·높이·구멍·진폭 등)이라 같은 패턴도 시드마다 다른 모양이 됩니다 — 🎲 시드를 바꿔보세요.</div></div>
   </div>
 
   <!-- C. Economy -->
@@ -250,6 +257,32 @@
     💣 폭탄은 표시된 수(手) 안에 제거 못하면 즉시 실패 — 카운터는 최단 제거거리+6.
     🗺️ 구역은 왼쪽부터 순서대로 소진해야 다음 구역이 열림(경계 심볼 체인 자동 보장).</div>
     <div id="ruleinfo" class="hint"></div>
+  </div>
+
+  <!-- G. Combo reward track -->
+  <div class="group" style="border-color:#ff8ad4">
+    <div class="gh"><span class="dot" style="background:#ff8ad4"></span>G · 콤보 보상 트랙</div>
+    <div class="row2" style="grid-template-columns:90px 1fr">
+      <div class="field"><label>콤보 ×</label><input type="number" id="rwAt1" min="2" max="15" value="4"></div>
+      <div class="field"><label>보상 1</label><select id="rwIt1">
+        <option value="none">없음</option><option value="hint" selected>🔍 힌트 1회</option><option value="claw">🧲 집게 1회</option>
+        <option value="wild">🌟 와일드 +1</option><option value="deck">🃏 덱 +1</option><option value="gold">🪙 골드 +50</option></select></div>
+    </div>
+    <div class="row2" style="grid-template-columns:90px 1fr">
+      <div class="field"><label>콤보 ×</label><input type="number" id="rwAt2" min="2" max="15" value="7"></div>
+      <div class="field"><label>보상 2</label><select id="rwIt2">
+        <option value="none">없음</option><option value="hint">🔍 힌트 1회</option><option value="claw">🧲 집게 1회</option>
+        <option value="wild" selected>🌟 와일드 +1</option><option value="deck">🃏 덱 +1</option><option value="gold">🪙 골드 +50</option></select></div>
+    </div>
+    <div class="row2" style="grid-template-columns:90px 1fr">
+      <div class="field"><label>콤보 ×</label><input type="number" id="rwAt3" min="2" max="15" value="10"></div>
+      <div class="field"><label>보상 3</label><select id="rwIt3">
+        <option value="none">없음</option><option value="hint">🔍 힌트 1회</option><option value="claw" selected>🧲 집게 1회</option>
+        <option value="wild">🌟 와일드 +1</option><option value="deck">🃏 덱 +1</option><option value="gold">🪙 골드 +50</option></select></div>
+    </div>
+    <div class="hint">콤보가 값에 도달하면 아이템 지급(레벨당 1회) — 스타 카니발 연출로 터집니다.
+    낮은 콤보에 강한 아이템일수록 레벨이 쉬워지며, <b>난이도 점수(C자원)와 봇 시뮬에 자동 반영</b>됩니다
+    (🌟와일드·🧲집게·🃏덱은 봇이 실제 사용, 🔍힌트·🪙골드는 인간 전용 → 정적 보정만).</div>
   </div>
 
   <!-- E. Economy -->
@@ -392,7 +425,9 @@ function cfg(){
     cards:num('cards'),layers:num('layers'),topology:g('topology').value,
     deck:num('deck'),wild:num('wild'),moves:num('moves'),cgoal:num('cgoal'),objective:g('objective').value,
     time:num('time'),obst:num('obst'),fd:num('fd'),shuffle:g('shuffle').checked,
-    keylocks:num('keylocks'),bombs:num('bombs'),zones:num('zones'),paper:num('paper'),seed:num('seed')};
+    keylocks:num('keylocks'),bombs:num('bombs'),zones:num('zones'),paper:num('paper'),seed:num('seed'),
+    rewards:[1,2,3].map(i=>({at:+g('rwAt'+i).value,item:g('rwIt'+i).value}))
+      .filter(r=>r.item!=='none'&&r.at>=2).sort((a,b)=>a.at-b.at)};
   if(c.r>c.k)c.r=c.k; if(c.k>c.N)c.N=c.k;
   return c;
 }
@@ -404,6 +439,10 @@ function applyCfgToUI(c){
   g('bombs').value=c.bombs||0;
   g('zones').value=c.zones||1;
   g('paper').value=c.paper||0;
+  const rw=c.rewards||[];
+  [1,2,3].forEach(i=>{const r=rw[i-1];
+    g('rwAt'+i).value=r?r.at:[4,7,10][i-1];
+    g('rwIt'+i).value=r?r.item:'none';});
   g('topology').value=c.topology; g('objective').value=c.objective; g('shuffle').checked=!!c.shuffle;
   syncLabels(c);
 }
@@ -418,24 +457,97 @@ function buildPool(c){
   else{let round=0;while(pool.length<c.N){for(const g of SYMBOL_GROUPS)if(g[round]&&pool.length<c.N)pool.push(g[round]);round++;if(round>10)break;}}
   return [...new Set(pool)].slice(0,c.N);
 }
-const CW=64, CH=80;
-function buildLayout(c){
-  const cards=[]; const L=Math.max(1,c.layers), target=c.cards;
-  if(c.topology==='grid'){
-    const cols=Math.ceil(Math.sqrt(target));
-    for(let i=0;i<target;i++){const cx=i%cols,cy=Math.floor(i/cols);cards.push({id:i,x:cx*(CW+14),y:cy*(CH+14),layer:0});}
-  } else if(c.topology==='stack'){
-    const perRow=Math.ceil(target/L);
+let CW=64, CH=80;
+/* 카드 치수: 심볼 수(k)에 맞춰 카드를 키워 k=2와 비슷한 여백 유지 (심볼 크기는 고정) */
+function setCardDims(k){
+  // 이모지 실측: 30px 폰트 = 약 41px 박스 → 2열에 41×2+갭3+패딩12+테두리6 = 104 필요
+  if(k<=2){CW=64;CH=80;}
+  else if(k<=4){CW=108;CH=96;}   // 2열×2행 (여백 k=2 수준)
+  else {CW=108;CH=126;}          // 2열×3행
+}
+/* 패턴 세그먼트 빌더 — 모든 패턴이 시드 RNG 파라미터로 변형됨(같은 패턴이라도 시드마다 다른 모양).
+   composite는 2~3개 패턴을 나란히 혼합. 카드 수가 정형 모양에 모자라도 파라미터가 축소 적응한다. */
+function buildSegment(cards,topo,target,L,ox,oy){
+  const push=(x,y,layer)=>cards.push({id:cards.length,x:ox+x,y:oy+y,layer});
+  if(topo==='composite'){
+    const pool=['pyramid','stack','grid','tripeaks','diamond','towers','wave'];
+    const n=target>=24?2+ri(2):2;                       // 2~3개 혼합
+    const subs=shuffle(pool).slice(0,n);
+    let remaining=target;const parts=[];
+    for(let i=0;i<n;i++){const left=n-1-i;
+      const take=i===n-1?remaining:Math.max(4,Math.min(remaining-4*left,Math.round(remaining/(left+1))+ri(5)-2));
+      parts.push(take);remaining-=take;}
+    let cx=0;
+    for(let i=0;i<n;i++){
+      const before=cards.length;
+      buildSegment(cards,subs[i],parts[i],L,cx,ri(30));
+      cx=Math.max(...cards.slice(before).map(cd=>cd.x))+CW*1.6+ri(20);
+    }
+    return;
+  }
+  if(topo==='grid'){
+    const cols=Math.max(2,Math.ceil(Math.sqrt(target))+ri(3)-1);
+    const gapX=6+ri(16),gapY=6+ri(16);
+    const rows=Math.ceil(target/cols)+1,cells=[];
+    for(let r=0;r<rows;r++)for(let col=0;col<cols;col++)cells.push([col,r]);
+    shuffle(cells).slice(0,target).sort((a,b)=>a[1]-b[1]||a[0]-b[0])   // 랜덤 구멍
+      .forEach(([col,r])=>push(col*(CW+gapX),r*(CH+gapY),0));
+  } else if(topo==='stack'){
+    const perRow=Math.ceil(target/L),ovl=0.55+RNG()*0.15,rowH=0.42+RNG()*0.15;
+    const drift=Array.from({length:L},()=>ri(34));
     for(let i=0;i<target;i++){const row=Math.floor(i/perRow),col=i%perRow;
-      cards.push({id:i,x:col*(CW*0.62)+row*18,y:row*(CH*0.5),layer:col%L});}
-  } else {
-    let counts=[];for(let l=0;l<L;l++){const w=Math.max(1,Math.round(target*(l+1)/(L*(L+1)/2)));counts.push(w);}
+      push(col*(CW*ovl)+drift[row],row*(CH*rowH),col%L);}
+  } else if(topo==='tripeaks'){
+    const P=2+ri(3);                                    // 봉우리 2~4개 (Four Peaks 변형 포함)
+    let h=target>=P*6+4?3:target>=P*3+4?2:1;
+    const w=Math.max(3,target-P*(h*(h+1)/2));
+    let id0=cards.length;
+    for(let t=0;t<h;t++)for(let p=0;p<P;p++){
+      const bx=(w-1)*(CW*0.9)*(2*p+1)/(2*P)+ri(13)-6;
+      for(let i2=0;i2<=t;i2++)push(bx-t*(CW*0.9)/2+i2*(CW*0.9),t*(CH*0.56),t);
+    }
+    for(let j=0;j<w&&cards.length-id0<target;j++)push(j*(CW*0.9),h*(CH*0.56),h);
+  } else if(topo==='diamond'){
+    const m=Math.max(2,Math.round(Math.sqrt(target)));
+    const widths=[];for(let r2=0;r2<2*m-1;r2++)widths.push(Math.max(1,(r2<m?r2+1:2*m-1-r2)+(r2!==m-1?ri(3)-1:0)));
+    let s=widths.reduce((a,b)=>a+b,0);widths[m-1]+=target-s;if(widths[m-1]<1)widths[m-1]=1;
+    const maxW=Math.max(...widths),skew=(RNG()*2-1)*7;   // 비대칭 기울기
+    let id0=cards.length;
+    for(let r2=0;r2<widths.length&&cards.length-id0<target;r2++){
+      const off=(maxW-widths[r2])*(CW*0.9)/2+skew*r2;
+      for(let i2=0;i2<widths[r2]&&cards.length-id0<target;i2++)push(off+i2*(CW*0.9),r2*(CH*0.56),r2);
+    }
+  } else if(topo==='towers'){
+    const heights=[];let sum=0;
+    while(sum<target){const hh=Math.min(3+ri(4),target-sum||1);heights.push(hh);sum+=hh;}
+    if(heights[heights.length-1]<2&&heights.length>1){heights[heights.length-2]+=heights.pop();}
+    const spacing=CW*(1.15+RNG()*0.45);
+    let cx=0;
+    heights.forEach(hh=>{const yb=ri(26);
+      for(let p=0;p<hh;p++)push(cx,yb+p*(CH*0.30),p);
+      cx+=spacing;});
+  } else if(topo==='wave'){
+    const rowsN=2+ri(3),perRow=Math.ceil(target/rowsN);
+    const amp=6+ri(13),freq=0.6+RNG()*0.7,phase=RNG()*6.28;
+    for(let i=0;i<target;i++){const row=Math.floor(i/perRow),col=i%perRow;
+      const xcol=row%2?perRow-1-col:col;
+      push(xcol*(CW*0.62)+row*12,row*(CH*0.55)+Math.sin(phase+(xcol+row)*freq)*amp,col);}
+  } else { // pyramid — 줄 폭 재분배 + 줄별 오프셋 지터
+    let counts=[];for(let l=0;l<L;l++)counts.push(Math.max(1,Math.round(target*(l+1)/(L*(L+1)/2))));
     let s=counts.reduce((a,b)=>a+b,0),d=target-s,idx=L-1;
     while(d!==0&&L>0){counts[idx]+=Math.sign(d);d-=Math.sign(d);idx=(idx-1+L)%L;if(counts[idx]<1)counts[idx]=1;}
-    let id=0;const bottomW=counts[L-1];
-    for(let l=0;l<L;l++){const w=counts[l],layer=L-1-l;const rowWpx=w*(CW*0.9),offset=(bottomW*(CW*0.9)-rowWpx)/2;
-      for(let j=0;j<w;j++)cards.push({id:id++,x:offset+j*(CW*0.9),y:l*(CH*0.56),layer});}
+    for(let k2=0;k2<L;k2++){const a=ri(L),b=ri(L);      // 인접 재분배로 실루엣 변형
+      if(a!==b&&counts[a]>1){counts[a]--;counts[b]++;}}
+    const bottomW=Math.max(...counts);
+    let id0=cards.length;
+    for(let l=0;l<L&&cards.length-id0<target;l++){const w=counts[l],layer=L-1-l;
+      const offset=(bottomW-w)*(CW*0.9)/2+ri(21)-10;
+      for(let j=0;j<w&&cards.length-id0<target;j++)push(offset+j*(CW*0.9),l*(CH*0.56),layer);}
   }
+}
+function buildLayout(c){
+  const cards=[]; const L=Math.max(1,c.layers), target=c.cards;
+  buildSegment(cards,c.topology,target,L,0,0);
   const covers=cards.map(()=>[]), coveredBy=cards.map(()=>[]);
   for(let a=0;a<cards.length;a++)for(let b=0;b<cards.length;b++){
     if(a===b)continue;const A=cards[a],B=cards[b];if(A.layer<=B.layer)continue;
@@ -472,6 +584,7 @@ function assignSymbols(c,pool,layout,order){
 }
 function generate(c){
   RNG=mulberry32(c.seed>>>0);
+  setCardDims(c.k); // 심볼 수에 맞는 카드 치수로 레이아웃·커버리지 계산
   const pool=buildPool(c), layout=buildLayout(c);
   // 🗺️ 구역: x좌표 분할 후, 덮는 카드가 아래 구역을 덮으면 그 구역으로 강등(고정점) → 데드락 불가
   const nz=Math.max(1,c.zones||1);
@@ -527,8 +640,9 @@ function generate(c){
     rules={collectGoal:{symbol,count:Math.max(3,Math.ceil(freq[symbol]*0.75)),available:freq[symbol]}};
   }
   if(paperNeed>0)rules=Object.assign(rules||{},{paper:{piecesNeeded:paperNeed,count:nPaper}});
+  if(c.rewards&&c.rewards.length)rules=Object.assign(rules||{},{comboRewards:c.rewards});
   return {config:c,pool,cards,covers:layout.covers,coveredBy:layout.coveredBy,order,active,stock,rules,
-    solvableOrder:order.length===layout.cards.length};
+    cardW:CW,cardH:CH,solvableOrder:order.length===layout.cards.length};
 }
 
 /* ============ 시뮬레이션 코어 (main + worker 공용) ============
@@ -539,8 +653,18 @@ function runOneSim(L,seed,policy){
   const N=L.cards.length;
   const removed=new Array(N).fill(false); let removedCount=0;
   let active=L.active.slice(), deck=L.deckN, wild=L.wildN;
-  let combo=0, moves=0, deckUsed=0, wildUsed=0, maxCombo=0, score=0, collected=0, pieces=0;
+  let combo=0, moves=0, deckUsed=0, wildUsed=0, maxCombo=0, score=0, collected=0, pieces=0, clawCharges=0;
   const goal=L.collectGoal||null, paperNeed=L.paperNeed||0;
+  const rewards=L.rewards||[], rewardGot=rewards.map(()=>false);
+  function checkRewards(){ // 콤보 보상 트랙 (레벨당 1회)
+    for(let i=0;i<rewards.length;i++){
+      if(rewardGot[i]||combo<rewards[i].at)continue;
+      rewardGot[i]=true;
+      if(rewards[i].item==='wild')wild++;
+      else if(rewards[i].item==='deck')deck++;
+      else if(rewards[i].item==='claw')clawCharges++;
+    }
+  }
   const stock=L.stock.map(s=>s.slice());
   const maxMoves=L.moveLimit>0?L.moveLimit:N*6;
   let branchSum=0, branchN=0, safety=0;
@@ -584,7 +708,7 @@ function runOneSim(L,seed,policy){
       removed[pick]=true;removedCount++;zoneCount[L.cards[pick].zone||0]--;
       if(L.cards[pick].piece)pieces++;
       active=L.cards[pick].symbols.slice();
-      combo++;if(combo>maxCombo)maxCombo=combo;moves++;
+      combo++;if(combo>maxCombo)maxCombo=combo;moves++;checkRewards();
       score+=10*combo; if(L.cgoal&&combo%L.cgoal===0)score+=100*combo; // 게임과 동일 점수식
       if(goal&&L.cards[pick].symbols.indexOf(goal.symbol)>=0&&++collected>=goal.count)return fin(true); // 🎯 조기 승리
       if(tickBombs())return fin(false);
@@ -600,8 +724,20 @@ function runOneSim(L,seed,policy){
         removed[pick]=true;removedCount++;zoneCount[L.cards[pick].zone||0]--;
         if(L.cards[pick].piece)pieces++;
         active=L.cards[pick].symbols.slice();
-        combo=Math.max(1,combo);score+=10*combo;moves++;
+        combo=Math.max(1,combo);score+=10*combo;moves++;checkRewards();
         if(goal&&L.cards[pick].symbols.indexOf(goal.symbol)>=0&&++collected>=goal.count)return fin(true);
+        if(tickBombs())return fin(false);
+        continue;
+      }
+    }
+    if(clawCharges>0){ // 🧲 보상 집게: 모든 게이트 무시하고 최적 카드 제거 (최후 수단)
+      clawCharges--;
+      let best=-1,bi=-1;
+      for(let i2=0;i2<N;i2++)if(!removed[i2]&&L.coversCount[i2]>=best){best=L.coversCount[i2];bi=i2;}
+      if(bi>=0){
+        removed[bi]=true;removedCount++;zoneCount[L.cards[bi].zone||0]--;
+        if(L.cards[bi].piece)pieces++;moves++;
+        if(goal&&L.cards[bi].symbols.indexOf(goal.symbol)>=0&&++collected>=goal.count)return fin(true);
         if(tickBombs())return fin(false);
         continue;
       }
@@ -617,6 +753,7 @@ function liteOf(level){
   level.coveredBy.forEach(list=>list.forEach(a=>cc[a]++));
   return {cards:level.cards.map(c=>({symbols:c.symbols,lockReq:c.lockReq||0,unlockedBy:c.unlockedBy||[],bombCounter:c.bombCounter||0,zone:c.zone||0,paper:!!c.paper,piece:!!c.piece})),
     paperNeed:(level.rules&&level.rules.paper)?level.rules.paper.piecesNeeded:0,
+    rewards:(level.rules&&level.rules.comboRewards)?level.rules.comboRewards.filter(r=>['wild','claw','deck'].includes(r.item)):[],
     coveredBy:level.coveredBy, coversCount:cc, pool:level.pool, active:level.active,
     stock:level.stock, r:level.config.r, k:level.config.k, cgoal:level.config.cgoal,
     deckN:level.config.deck, wildN:level.config.wild, moveLimit:level.config.moves,
@@ -635,12 +772,20 @@ function quickValidate(level,runs){
 }
 
 // ---- 난이도 점수 ----
+// 보상 트랙 완화도: 아이템 가치 × 도달 용이성(10/at). 낮은 콤보에 강한 아이템 = ease↑
+function rewardEase(rewards){
+  if(!rewards||!rewards.length)return 0;
+  const val={claw:1.0,wild:0.8,deck:0.6,hint:0.3,gold:0.1};
+  const e=rewards.reduce((a,r)=>a+(val[r.item]||0)*(10/Math.max(2,r.at)),0)/3;
+  return Math.max(0,Math.min(1,e));
+}
 function difficulty(c,val){
   const norm=(x,lo,hi)=>Math.max(0,Math.min(1,(x-lo)/(hi-lo)));
   const A=[[0.15,norm(c.N,4,40)],[0.20,norm(c.k,1,6)],[0.20,norm(c.r,1,4)],[0.15,c.sim/2],[0.10,norm(c.tf,0,60)]];
   const B=[[0.10,norm(c.cards,4,40)],[0.15,norm(c.layers,1,5)],[0.20,1-Math.max(0,Math.min(1,(val.branch-1)/3))],
     [0.10,norm(c.keylocks||0,0,8)],[0.08,(Math.max(1,c.zones||1)-1)/2],[0.08,norm(c.paper||0,0,40)]];
-  const C=[[0.15,1-norm(c.deck,0,30)],[0.10,c.moves>0?1-norm(c.moves,10,60):0],[0.10,1-c.wild/3],[0.10,c.objective!=='clear'?0.6:0]];
+  const C=[[0.15,1-norm(c.deck,0,30)],[0.10,c.moves>0?1-norm(c.moves,10,60):0],[0.10,1-c.wild/3],[0.10,c.objective!=='clear'?0.6:0],
+    [0.10,1-rewardEase(c.rewards)]]; // 보상 트랙이 후하고 이를수록 난이도 완화
   const D=[[0.15,c.time>0?1-norm(c.time,20,180):0],[0.15,norm(c.obst,0,50)],[0.10,norm(c.fd,0,50)],[0.10,c.shuffle?1:0],
     [0.12,norm(c.bombs||0,0,4)]];
   const sum=g=>g.reduce((a,[w,x])=>a+w*x,0), wsum=g=>g.reduce((a,[w])=>a+w,0);
@@ -687,6 +832,20 @@ const ARCHETYPES=[
    fd:t<0.5?0:clampi(Math.round(lerp(10,35,(t-0.5)/0.5)/5)*5,0,50),
    keylocks:t<0.45?0:clampi(1+(t-0.45)*7,1,6),
    bombs:t<0.6?0:clampi((t-0.5)*5,1,3),shuffle:false})},
+ {key:'tripeaks',name:'트라이픽스 클래식',make:(t,J)=>({topology:'tripeaks',
+   N:clampi(lerp(8,28,t)+J(2),4,40),k:clampi(2+t*1.5+J(0.4),1,6),
+   r:clampi(1+(t>0.6?1:0),1,4),sim:t<0.4?0:t<0.75?1:2,tf:clampi(lerp(8,45,t),0,60),
+   cards:clampi(lerp(16,30,t)+J(2),13,40),layers:3,
+   deck:clampi(lerp(14,4,t)+J(2),0,30),wild:t<0.35?2:t<0.7?1:0,
+   moves:0,cgoal:clampi(lerp(5,11,t),3,15),objective:'clear',time:0,obst:0,fd:0,
+   keylocks:0,bombs:0,shuffle:false})},
+ {key:'towers',name:'타워 외길형',make:(t,J)=>({topology:'towers',
+   N:clampi(lerp(8,26,t)+J(2),4,40),k:clampi(2+t*1.4+J(0.3),1,6),
+   r:clampi(1+(t>0.65?1:0),1,4),sim:t<0.45?0:t<0.8?1:2,tf:clampi(lerp(5,40,t),0,60),
+   cards:clampi(lerp(12,30,t)+J(3),6,40),layers:clampi(2+t*3,2,5),
+   deck:clampi(lerp(15,4,t)+J(2),0,30),wild:t<0.35?2:t<0.7?1:0,
+   moves:0,cgoal:clampi(lerp(5,10,t),3,15),objective:'clear',time:0,obst:0,fd:0,
+   keylocks:0,bombs:t<0.7?0:clampi((t-0.6)*4,1,2),shuffle:false})},
 ];
 let MODE='manual', patternSeed=98765, CANDS=[], AUTOBUSY=false;
 function setMode(m){
@@ -709,6 +868,9 @@ async function autoDesign(){
     const J=mag=>(rng()*2-1)*mag;
     let c=arch.make(t,J); c.seed=Math.floor(rng()*99999);
     if(c.r>c.k)c.r=c.k; if(c.k>c.N)c.N=c.k;
+    if(!c.rewards)c.rewards= t<0.4?[{at:4,item:'hint'},{at:6,item:'wild'},{at:9,item:'gold'}]
+      : t<0.7?[{at:5,item:'hint'},{at:8,item:'wild'}]
+      : [{at:6,item:'gold'},{at:10,item:'claw'}];   // 어려울수록 보상 트랙도 인색해짐
     const level=generate(c), val=quickValidate(level,300);
     const diff=difficulty(c,val), comb=combinedScore(diff.score,val.pStuck,val.branch);
     CANDS.push({arch:arch.name,cfg:c,level,val,diff,comb,dist:Math.abs(comb-target)});
@@ -805,6 +967,9 @@ function paintRules(){
     parts.push(`🎯 수집 목표: ${g.symbol} ×${g.count} (보드에 ${g.available}개)`);}
   if(LEVEL.rules&&LEVEL.rules.paper){const p=LEVEL.rules.paper;
     parts.push(`🧻 종이 ${p.count}장 — 🧩 조각 ${p.piecesNeeded}개 수집 시 해방`);}
+  if(LEVEL.rules&&LEVEL.rules.comboRewards){
+    const nm={hint:'🔍',claw:'🧲',wild:'🌟',deck:'🃏',gold:'🪙'};
+    parts.push(`🎁 보상 트랙: ${LEVEL.rules.comboRewards.map(r=>'×'+r.at+nm[r.item]).join(' ')} (완화 ${(rewardEase(LEVEL.config.rewards)*100).toFixed(0)}%)`);}
   document.getElementById('ruleinfo').innerHTML=parts.length?('적용 중: '+parts.join(' · ')):'적용된 규칙 장치 없음';
 }
 function paintEcon(){
@@ -892,6 +1057,7 @@ let LEVEL=null, EDIT_ID=null;
 function render(level){
   const board=document.getElementById('board');
   board.innerHTML='';
+  if(level.cardW){CW=level.cardW;CH=level.cardH;} // 레벨에 기록된 치수로 렌더
   const xs=level.cards.map(c=>c.x),ys=level.cards.map(c=>c.y);
   const W=Math.max(...xs)+CW,H=Math.max(...ys)+CH;
   board.style.width=W+'px';board.style.height=H+'px';
@@ -899,7 +1065,7 @@ function render(level){
   board.style.transform=`scale(${Math.min(1,wrapW/W)})`;
   const removed=new Set();
   const isFree=id=>level.coveredBy[id].every(x=>removed.has(x));
-  const c=level.config, symSize=Math.max(14,34-(c.k-2)*4);
+  const c=level.config, symSize=c.k<=2?32:30; // 심볼 크기 고정 — 카드가 커져 여백 유지
   level.cards.forEach(cd=>{
     const el=document.createElement('div');el.className='card';
     el.style.left=cd.x+'px';el.style.top=cd.y+'px';el.style.width=CW+'px';el.style.height=CH+'px';
@@ -927,7 +1093,7 @@ function render(level){
     board.appendChild(el);
   });
   const dc=document.getElementById('dock-card');dc.innerHTML='';
-  level.active.forEach(s=>{const sp=document.createElement('span');sp.className='sym';sp.textContent=s;sp.style.fontSize='22px';dc.appendChild(sp);});
+  level.active.forEach(s=>{const sp=document.createElement('span');sp.className='sym';sp.textContent=s;sp.style.fontSize=(c.k<=2?22:14)+'px';dc.appendChild(sp);});
   const freeCount=level.cards.filter(cd=>isFree(cd.id)).length;
   document.getElementById('dock-info').innerHTML=
     `보드 <b>${level.cards.length}</b>장 · free <b>${freeCount}</b> · 덱 <b>${c.deck}</b> · 와일드 <b>${c.wild}</b><br>`+
@@ -1021,6 +1187,7 @@ function levelJSON(){
     schema:"combo-match/level@2",
     seed:L.config.seed,difficulty:+L._diff.score.toFixed(1),difficultyTier:tierOf(L._diff.score)[0],
     generator:{mode:MODE,archetype:L._arch||null,patternSeed,targetDifficulty:+document.getElementById('target').value},
+    cardW:L.cardW||64,cardH:L.cardH||80,
     metrics:{pStuck:+L._val.pStuck.toFixed(3),branchFactor:+L._val.branch.toFixed(2),
       avgMoves:+L._val.avgMoves.toFixed(1),solvable:L.solvableOrder&&L._val.everClears},
     evaluation:L._eval||null,
@@ -1052,7 +1219,7 @@ document.getElementById('lvlidx').addEventListener('input',()=>{ // 경제는 �
   paintEcon();
   if(LEVEL&&LEVEL._eval)paintEvalResult(LEVEL._eval); // 골드 기대치 재계산
 });
-document.querySelectorAll('.A input,.A select,.B input,.B select,.C input,.C select,.D input,.D select,#keylocks,#bombs,#zones,#paper,#seed').forEach(el=>{
+document.querySelectorAll('.A input,.A select,.B input,.B select,.C input,.C select,.D input,.D select,#keylocks,#bombs,#zones,#paper,#rwAt1,#rwAt2,#rwAt3,#rwIt1,#rwIt2,#rwIt3,#seed').forEach(el=>{
   el.addEventListener('input',()=>{const c=cfg();syncLabels(c);});
   el.addEventListener('change',()=>{setMode('manual');run();});
 });

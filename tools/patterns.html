@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>콤보 매칭 · 레이아웃 패턴 갤러리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Fredoka',system-ui,sans-serif;background:#171a20;color:#e7e2d6;padding:28px}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:#9aa1ae;font-size:13px;margin-bottom:22px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:18px}
+  .panel{background:#20242c;border:1px solid #3a404d;border-radius:14px;overflow:hidden}
+  .panel h2{font-size:16px;margin:0;padding:12px 14px 4px;display:flex;align-items:center;gap:8px}
+  .panel .desc{font-size:12px;color:#9aa1ae;padding:0 14px 10px;line-height:1.55;min-height:52px}
+  .stage{position:relative;height:250px;overflow:hidden;
+    background:radial-gradient(120% 100% at 50% 12%,#5aad3a,#3c7f2c 68%,#2f6b24)}
+  .board{position:absolute;transform-origin:top left}
+  .mini{position:absolute;border-radius:8px;background:linear-gradient(#fff,#f3ead8);border:2px solid #e7d9bb;
+    box-shadow:0 3px 0 rgba(0,0,0,.18),0 5px 8px rgba(0,0,0,.22);display:flex;flex-wrap:wrap;
+    align-content:center;justify-content:center;gap:1px;padding:3px}
+  .mini.cov{filter:brightness(.6) saturate(.7)}
+  .mini.free{box-shadow:0 0 0 2px #7ed957,0 3px 0 rgba(0,0,0,.18)}
+  .mini span{font-size:15px;line-height:1}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px 13px}
+  .tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;background:#2c323d;border:1px solid #3a404d}
+  .tag.hard{color:#ff9a3c;border-color:#ff9a3c}.tag.easy{color:#7ed957;border-color:#7ed957}
+  .tag.mid{color:#ffcf5a;border-color:#ffcf5a}.tag.new{color:#4db6ff;border-color:#4db6ff}
+  .back{display:inline-block;margin-bottom:16px;color:#ff9a3c;text-decoration:none;font-size:13px}
+</style>
+</head>
+<body>
+<a class="back" href="level-designer.html">← 레벨 디자이너로</a>
+<h1>🗂️ 레이아웃 패턴 갤러리</h1>
+<div class="sub">각 패턴은 실제 생성 알고리즘으로 렌더한 예시입니다 (22장 기준 · <b style="color:#7ed957">초록 테두리</b> = 시작 시 선택 가능한 free 카드). 패턴은 <b>개방 순서(어디부터 열리는가)</b>와 <b>분기(동시에 몇 장이 열려 있는가)</b>를 결정해 난이도의 구조(B) 축을 만듭니다.</div>
+<div class="grid" id="grid"></div>
+
+<script>
+const CW=64,CH=80;
+const POOL=["🍓","🍊","🍋","🍇","🥝","🍒","🍉","🍑"];
+/* ==== 디자이너와 동일한 배치 알고리즘 ==== */
+function layout(topology,target,L){
+  const cards=[];
+  if(topology==='grid'){
+    const cols=Math.ceil(Math.sqrt(target));
+    for(let i=0;i<target;i++)cards.push({id:i,x:(i%cols)*(CW+14),y:Math.floor(i/cols)*(CH+14),layer:0});
+  } else if(topology==='stack'){
+    const perRow=Math.ceil(target/L);
+    for(let i=0;i<target;i++){const row=Math.floor(i/perRow),col=i%perRow;
+      cards.push({id:i,x:col*(CW*0.62)+row*18,y:row*(CH*0.5),layer:col%L});}
+  } else if(topology==='tripeaks'){
+    const h=target>=22?3:target>=13?2:1;
+    const w=Math.max(3,target-3*(h*(h+1)/2));let id=0;
+    for(let t=0;t<h;t++)for(let p=0;p<3;p++){
+      const bx=(w-1)*(CW*0.9)*(2*p+1)/6;
+      for(let i2=0;i2<=t;i2++)cards.push({id:id++,x:bx-t*(CW*0.9)/2+i2*(CW*0.9),y:t*(CH*0.56),layer:t});}
+    for(let j=0;j<w&&id<target;j++)cards.push({id:id++,x:j*(CW*0.9),y:h*(CH*0.56),layer:h});
+  } else if(topology==='diamond'){
+    const m=Math.max(2,Math.round(Math.sqrt(target)));
+    const widths=[];for(let r=0;r<2*m-1;r++)widths.push(r<m?r+1:2*m-1-r);
+    let s=widths.reduce((a,b)=>a+b,0);widths[m-1]+=target-s;if(widths[m-1]<1)widths[m-1]=1;
+    const maxW=Math.max(...widths);let id=0;
+    for(let r=0;r<widths.length&&id<target;r++){
+      const off=(maxW-widths[r])*(CW*0.9)/2;
+      for(let i2=0;i2<widths[r]&&id<target;i2++)cards.push({id:id++,x:off+i2*(CW*0.9),y:r*(CH*0.56),layer:r});}
+  } else if(topology==='towers'){
+    const H=Math.max(3,Math.min(6,L+1));
+    for(let i=0;i<target;i++){const t=Math.floor(i/H),p=i%H;
+      cards.push({id:i,x:t*(CW*1.35),y:p*(CH*0.30),layer:p});}
+  } else if(topology==='wave'){
+    const rowsN=Math.max(2,Math.min(4,L)),perRow=Math.ceil(target/rowsN);
+    for(let i=0;i<target;i++){const row=Math.floor(i/perRow),col=i%perRow;
+      const xcol=row%2?perRow-1-col:col;
+      cards.push({id:i,x:xcol*(CW*0.62)+row*12,y:row*(CH*0.55)+Math.sin((xcol+row)*0.9)*8,layer:col});}
+  } else { // pyramid
+    let counts=[];for(let l=0;l<L;l++)counts.push(Math.max(1,Math.round(target*(l+1)/(L*(L+1)/2))));
+    let s=counts.reduce((a,b)=>a+b,0),d=target-s,idx=L-1;
+    while(d!==0){counts[idx]+=Math.sign(d);d-=Math.sign(d);idx=(idx-1+L)%L;if(counts[idx]<1)counts[idx]=1;}
+    let id=0;const bottomW=counts[L-1];
+    for(let l=0;l<L;l++){const w=counts[l],layer=L-1-l;const off=(bottomW*(CW*0.9)-w*(CW*0.9))/2;
+      for(let j=0;j<w;j++)cards.push({id:id++,x:off+j*(CW*0.9),y:l*(CH*0.56),layer});}
+  }
+  // coverage
+  const coveredBy=cards.map(()=>[]);
+  for(let a=0;a<cards.length;a++)for(let b=0;b<cards.length;b++){
+    if(a===b)continue;const A=cards[a],B=cards[b];if(A.layer<=B.layer)continue;
+    const ox=Math.max(0,Math.min(A.x+CW,B.x+CW)-Math.max(A.x,B.x)),oy=Math.max(0,Math.min(A.y+CH,B.y+CH)-Math.max(A.y,B.y));
+    if(ox>CW*0.28&&oy>CH*0.28)coveredBy[b].push(a);}
+  return {cards,coveredBy};
+}
+
+const PATTERNS=[
+ {t:'pyramid',icon:'🔺',name:'피라미드 (역방향)',tags:[['기본',''],['위→아래 개방','mid'],['분기 중간','mid']],
+  desc:'꼭대기(최상층)부터 개방되어 아래로 내려간다. 층이 깊을수록 커버가 두꺼워져 중반이 조인다.'},
+ {t:'stack',icon:'🂠',name:'스택 겹침 (목업형)',tags:[['기본',''],['좌→우 개방','mid'],['목업 원형','easy']],
+  desc:'가로로 슬라이드 겹침. 오른쪽 끝이 free, 왼쪽으로 갈수록 잠긴다. Wood Console 목업의 원형 배치.'},
+ {t:'grid',icon:'▦',name:'격자',tags:[['기본',''],['전부 개방','easy'],['분기 최대','easy']],
+  desc:'가림이 전혀 없어 모든 카드가 free. 구조 난이도가 0이라 지각(심볼) 난이도 전용 캔버스.'},
+ {t:'tripeaks',icon:'⛰️',name:'트라이픽스 (3봉우리 클래식)',tags:[['NEW','new'],['아래→위 개방','mid'],['장르 표준','mid']],
+  desc:'TriPeaks 원형: 맨아래 가로줄이 free, 위로 갈수록 봉우리 꼭짓점이 잠긴다. 세 갈래 병행 공략이 핵심.'},
+ {t:'diamond',icon:'🔶',name:'다이아몬드',tags:[['NEW','new'],['꼭짓점 개방','hard'],['중반 병목','hard']],
+  desc:'Diamond Solitaire 변형: 아래 꼭짓점 1장부터 열려 폭이 넓어졌다 다시 좁아진다. 시작 분기 1 = 초반 외길.'},
+ {t:'towers',icon:'🏛️',name:'타워 (독립 기둥)',tags:[['NEW','new'],['기둥별 외길','hard'],['분기 = 기둥 수','mid']],
+  desc:'Magic Towers 계열: 각 기둥이 독립 체인. 어느 기둥을 파느냐가 전략이고, 기둥 수가 곧 분기 상한.'},
+ {t:'wave',icon:'🌊',name:'웨이브 (S자 물결)',tags:[['NEW','new'],['서펜타인 개방','mid'],['방향 교차','mid']],
+  desc:'줄마다 진행 방향이 뒤집히는 S자 흐름. 물결을 따라 개방 전선이 좌우로 오가며 리듬을 만든다.'},
+];
+
+const grid=document.getElementById('grid');
+PATTERNS.forEach((p,pi)=>{
+  const {cards,coveredBy}=layout(p.t,22,3);
+  const panel=document.createElement('div');panel.className='panel';
+  panel.innerHTML=`<h2>${p.icon} ${p.name}</h2><div class="desc">${p.desc}</div>`;
+  const stage=document.createElement('div');stage.className='stage';
+  const board=document.createElement('div');board.className='board';
+  const W=Math.max(...cards.map(c=>c.x))+CW, H=Math.max(...cards.map(c=>c.y))+CH;
+  cards.forEach((c,i)=>{
+    const el=document.createElement('div');el.className='mini';
+    el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${CW}px;height:${CH}px;z-index:${100+c.layer*10}`;
+    el.classList.add(coveredBy[c.id].length?'cov':'free');
+    const s1=POOL[(i*3+pi)%POOL.length], s2=POOL[(i*5+pi+3)%POOL.length];
+    el.innerHTML=`<span>${s1}</span><span>${s2}</span>`;
+    board.appendChild(el);
+  });
+  stage.appendChild(board);panel.appendChild(stage);
+  const tags=document.createElement('div');tags.className='tags';
+  tags.innerHTML=p.tags.map(([txt,cls])=>`<span class="tag ${cls}">${txt}</span>`).join('');
+  panel.appendChild(tags);
+  grid.appendChild(panel);
+  // fit
+  requestAnimationFrame(()=>{
+    const sw=stage.clientWidth-24, sh=stage.clientHeight-24;
+    const sc=Math.min(sw/W,sh/H,1);
+    board.style.transform=`scale(${sc})`;
+    board.style.left=(stage.clientWidth-W*sc)/2+'px';
+    board.style.top=(stage.clientHeight-H*sc)/2+'px';
+  });
+});
+</script>
+</body>
+</html>

@@ -20,3 +20,9 @@ if (!html.includes(FROM)) {
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, html.replace(FROM, TO), 'utf8');
 console.log('public/designer.html 갱신 (GAME_URL → ./index.html)');
+
+// 패턴 갤러리도 함께 배포 — 디자이너의 "패턴 갤러리" 링크(patterns.html)가 배포본에서도 열리게 한다
+const PSRC = resolve(ROOT, 'tools/patterns.html');
+const POUT = resolve(ROOT, 'public/patterns.html');
+writeFileSync(POUT, readFileSync(PSRC, 'utf8'), 'utf8');
+console.log('public/patterns.html 갱신');

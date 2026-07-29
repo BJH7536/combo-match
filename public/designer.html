@@ -49,6 +49,7 @@
   #modebadge.auto{color:var(--accent);border-color:var(--accent)}
   #modebadge.manual{color:var(--blue);border-color:var(--blue)}
   #modebadge.edited{color:var(--warn);border-color:var(--warn)}
+  #modebadge.pack{color:var(--good);border-color:var(--good)}
   #autoresult{font-size:11px;line-height:1.6;margin-top:7px;color:var(--txt)}
   #autoresult b{color:var(--accent)}
   #candlist{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -154,7 +155,24 @@
     <div id="evalout" class="hint">현재 레벨을 대량 플레이하여 <b>클리어율·예상 시행횟수·사용 아이템 수</b>를 실측합니다.</div>
   </div>
 
-  <div class="hint" style="margin:2px 0 10px">▼ 아래 노브를 직접 조정하면 <b>수동 모드</b>로 전환됩니다 (자동 설계 결과에서 이어서 조정 가능).</div>
+  <!-- PACK EDIT -->
+  <div class="group" style="border-color:#7ed957">
+    <div class="gh"><span class="dot" style="background:#7ed957"></span>📦 기존 레벨 편집</div>
+    <div class="row2" style="grid-template-columns:1fr 92px">
+      <div class="field"><label>레벨 팩</label>
+        <select id="packsel"><option value="">인덱스 로딩 중…</option></select></div>
+      <div class="field" style="align-self:end"><button class="ghost" id="packload" style="width:100%">불러오기</button></div>
+    </div>
+    <div class="btns">
+      <button class="ghost" id="importfile" style="flex:1">📂 JSON 파일 열기</button>
+      <button class="ghost" id="packsave" style="flex:1">⬇️ 팩 레벨로 저장</button>
+    </div>
+    <input type="file" id="importfileinput" accept="application/json,.json" style="display:none">
+    <div id="packinfo" class="hint">팩 레벨을 불러오면 보드·노브가 그대로 복원됩니다. 카드 클릭으로 심볼·잠금·폭탄·구역을 수정하고,
+    저장하면 원래 파일명(level-NNN.json)과 메타(스테이지·경제)를 유지한 채 갱신된 검증 지표로 내려받습니다.</div>
+  </div>
+
+  <div class="hint" style="margin:2px 0 10px">▼ 아래 노브를 직접 조정하면 <b>수동 모드</b>로 전환됩니다 (팩 레벨에서 노브를 바꾸면 같은 시드로 보드가 재생성됩니다 — 카드 단위 수정은 보드 클릭).</div>
 
   <!-- A. Perception -->
   <div class="group A">
@@ -360,6 +378,12 @@
       <select id="ce-lock" style="width:60px;background:#161a20;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px">
         <option value="0">없음</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
       <label class="chk"><input type="checkbox" id="ce-fd"> ❔ 뒤집힘</label>
+    </div>
+    <div class="ce-row">💣 폭탄(수, 0=없음)
+      <input type="number" id="ce-bomb" min="0" max="40" value="0" style="width:64px;background:#161a20;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px">
+      🗺️ 구역
+      <select id="ce-zone" style="width:56px;background:#161a20;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px">
+        <option value="0">1</option><option value="1">2</option><option value="2">3</option></select>
     </div>
     <div class="ce-row"><button class="primary" id="ce-apply">적용 & 재검증</button></div>
     <div class="hint">적용 시 자동으로 재검증(300회)됩니다. 대량 평가 결과는 무효화되니 다시 실행하세요.</div>
@@ -861,7 +885,7 @@ let MODE='manual', patternSeed=98765, CANDS=[], AUTOBUSY=false;
 function setMode(m){
   MODE=m;const b=document.getElementById('modebadge');
   b.className=m;
-  b.textContent=m==='auto'?'⚡ 자동':m==='edited'?'✏️ 편집됨':'🎛 수동';
+  b.textContent=m==='auto'?'⚡ 자동':m==='edited'?'✏️ 편집됨':m==='pack'?'📦 팩 편집':'🎛 수동';
 }
 const tick=()=>new Promise(r=>setTimeout(r,0));
 
@@ -895,6 +919,7 @@ async function autoDesign(){
 function applyCandidate(idx,target){
   target=target!=null?target:+document.getElementById('target').value;
   const pick=CANDS[idx];if(!pick)return;
+  if(typeof PACKMETA!=='undefined')PACKMETA=null; // 자동 설계는 새 레벨 — 팩 정체성 해제
   setMode('auto');
   applyCfgToUI(pick.cfg);
   LEVEL=pick.level;LEVEL._val=pick.val;LEVEL._diff=pick.diff;LEVEL._arch=pick.arch;LEVEL._eval=null;
@@ -1154,12 +1179,16 @@ function openCardEditor(id){
   });
   document.getElementById('ce-lock').value=String(card.lockReq||0);
   document.getElementById('ce-fd').checked=!!card.faceDown;
+  document.getElementById('ce-bomb').value=String(card.bombCounter||0);
+  document.getElementById('ce-zone').value=String(card.zone||0);
   document.getElementById('cardeditor').style.display='block';
   document.getElementById('ce-apply').onclick=()=>{
     card.symbols=[...sel];
     card.lockReq=+document.getElementById('ce-lock').value;
     card.faceDown=document.getElementById('ce-fd').checked;
-    LEVEL._eval=null;setMode('edited');
+    card.bombCounter=Math.max(0,+document.getElementById('ce-bomb').value||0);
+    card.zone=+document.getElementById('ce-zone').value||0;
+    LEVEL._eval=null;setMode(PACKMETA?'pack':'edited');
     const val=quickValidate(LEVEL), diff=difficulty(LEVEL.config,val);
     LEVEL._val=val;LEVEL._diff=diff;
     closeCardEditor();render(LEVEL);paintMetrics(LEVEL.config,val,diff,LEVEL);paintEvalMeter(null);paintEcon();
@@ -1175,6 +1204,7 @@ function run(){
   LEVEL=generate(c);
   const val=quickValidate(LEVEL), diff=difficulty(c,val);
   LEVEL._val=val;LEVEL._diff=diff;LEVEL._eval=null;
+  if(typeof PACKMETA!=='undefined'&&PACKMETA)LEVEL._pack=PACKMETA; // 팩 레벨 노브 재생성 시 파일 정체성 유지
   render(LEVEL);paintMetrics(c,val,diff,LEVEL);paintEvalMeter(null);paintEcon();paintRules();
 }
 function syncLabels(c){
@@ -1216,6 +1246,123 @@ function handoff(){
   return GAME_URL+'#level='+encodeURIComponent(strToB64(json));
 }
 
+/* ============ 📦 팩 레벨 편집: 불러오기 → 수정 → 재검증 → 저장 ============ */
+let PACKMETA=null, PACKBASE=null, PACKINDEX=null;
+
+// 배포본(designer.html 옆 levels/)·저장소(tools/에서 ../public/levels/)·기획자 폴더(../levels/) 순서로 탐색
+async function fetchPackIndex(){
+  for(const base of ['levels/','../public/levels/','../levels/']){
+    try{const r=await fetch(base+'index.json');
+      if(r.ok){const j=await r.json();if(j&&Array.isArray(j.levels))return {base,index:j};}}catch(e){}
+  }
+  return null;
+}
+async function initPackSelect(){
+  const sel=document.getElementById('packsel');
+  const found=await fetchPackIndex();
+  if(!found){sel.innerHTML='<option value="">팩 인덱스 없음 — 파일 열기 사용</option>';return;}
+  PACKBASE=found.base;PACKINDEX=found.index;
+  sel.innerHTML=found.index.levels.map(l=>
+    `<option value="${l.file}">${l.id} · ${l.name} — ${l.tier}${l.devices.length?' ('+l.devices.join('+')+')':''}</option>`).join('');
+}
+// 구조적 제거 가능성(커버리지 순환 없음) — 불러온 레벨엔 생성 순서가 없으므로 필링으로 판정
+function peelable(cards,coveredBy){
+  const removed=new Set();let progress=true;
+  while(progress&&removed.size<cards.length){progress=false;
+    for(const c of cards){if(removed.has(c.id))continue;
+      if((coveredBy[c.id]||[]).every(x=>removed.has(x))){removed.add(c.id);progress=true;}}}
+  return removed.size===cards.length;
+}
+// 팩 품질 게이트와 동일: 그리디 봇이 시드 1~40 안에 클리어하는가 (tests/level-pack.test.ts)
+function greedyClears40(level){
+  const lite=liteOf(level);
+  for(let s=1;s<=40;s++)if(runOneSim(lite,s,'greedy').cleared)return true;
+  return false;
+}
+function importLevel(json,sourceLabel){
+  const coveredBy=json.cards.map(()=>[]);
+  (json.coverage||[]).forEach(e=>{coveredBy[e.id]=e.coveredBy||[];});
+  const cfg={...json.config};
+  if(!cfg.rewards)cfg.rewards=(json.rules&&json.rules.comboRewards)||[];
+  LEVEL={config:cfg,pool:json.pool,active:json.active,stock:json.deckStock||[],
+    cards:json.cards.map(c=>({...c,unlockedBy:c.unlockedBy||[],bombCounter:c.bombCounter||0,
+      zone:c.zone||0,paper:!!c.paper,piece:!!c.piece})),
+    coveredBy,covers:[],rules:json.rules||null,order:[],
+    cardW:json.cardW||64,cardH:json.cardH||80,
+    solvableOrder:peelable(json.cards,coveredBy)};
+  PACKMETA=(json.generator&&json.generator.mode==='levelpack')?{
+    id:json.generator.plan,name:json.generator.name,stage:json.generator.stage,
+    topology:json.generator.topology,generator:json.generator,economy:json.economy,
+    file:'level-'+String(json.generator.plan).padStart(3,'0')+'.json'}:null;
+  applyCfgToUI(cfg);
+  if(json.economy&&json.economy.levelIndex){document.getElementById('lvlidx').value=json.economy.levelIndex;
+    document.getElementById('v-lvlidx').textContent=json.economy.levelIndex;}
+  const val=quickValidate(LEVEL), diff=difficulty(cfg,val);
+  LEVEL._val=val;LEVEL._diff=diff;LEVEL._eval=null;LEVEL._arch=null;
+  if(PACKMETA)LEVEL._pack=PACKMETA;
+  setMode(PACKMETA?'pack':'edited');
+  render(LEVEL);paintMetrics(cfg,val,diff,LEVEL);paintEvalMeter(null);paintEcon();paintRules();
+  const gate=greedyClears40(LEVEL);
+  document.getElementById('packinfo').innerHTML=
+    `<b>${sourceLabel}</b> 불러옴 — 카드 ${LEVEL.cards.length}장 · 난이도 ${diff.score.toFixed(0)} · 막힘 ${(val.pStuck*100).toFixed(0)}%<br>`+
+    `팩 게이트(그리디 40시드 클리어): ${gate?'<b style="color:var(--good)">✅ 통과</b>':'<b style="color:var(--bad)">❌ 실패 — 이대로 저장하면 팩 테스트가 깨집니다</b>'}`+
+    (PACKMETA?`<br>저장 시 <code>${PACKMETA.file}</code> · 스테이지 ${PACKMETA.stage} 메타 유지`:'');
+}
+function deviceLabelsOf(c,rules){
+  const d=[];
+  if((c.keylocks||0)>0)d.push('key');
+  if((c.bombs||0)>0||LEVEL.cards.some(x=>x.bombCounter>0))d.push('bomb');
+  if((c.zones||1)>1||LEVEL.cards.some(x=>(x.zone||0)>0))d.push('zone');
+  if(c.objective==='collect')d.push('collect');
+  if((c.paper||0)>0||LEVEL.cards.some(x=>x.paper))d.push('paper');
+  if((c.obst||0)>0||LEVEL.cards.some(x=>x.lockReq>0))d.push('lock');
+  if((c.fd||0)>0||LEVEL.cards.some(x=>x.faceDown))d.push('facedown');
+  if(c.r>=2)d.push('r2');
+  return [...new Set(d)];
+}
+function packLevelJSON(){
+  const j=JSON.parse(levelJSON());          // 최신 지표·카드 상태 반영
+  if(PACKMETA){
+    j.generator={...PACKMETA.generator,edited:true};
+    j.economy=PACKMETA.economy||j.economy;
+  }
+  return j;
+}
+document.getElementById('packload').onclick=async()=>{
+  const file=document.getElementById('packsel').value;
+  if(!file||!PACKBASE)return;
+  try{
+    const j=await (await fetch(PACKBASE+file)).json();
+    importLevel(j,file);
+  }catch(e){document.getElementById('packinfo').textContent='로드 실패: '+e;}
+};
+document.getElementById('importfile').onclick=()=>document.getElementById('importfileinput').click();
+document.getElementById('importfileinput').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{try{importLevel(JSON.parse(rd.result),f.name);}catch(err){alert('JSON 파싱 실패: '+err.message);}};
+  rd.readAsText(f);
+};
+document.getElementById('packsave').onclick=()=>{
+  if(!LEVEL)return;
+  const j=packLevelJSON();
+  const fname=PACKMETA?PACKMETA.file:`level_seed${LEVEL.config.seed}.json`;
+  const blob=new Blob([JSON.stringify(j)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
+  // index.json 항목도 함께 — public/levels/index.json의 해당 레벨을 이 값으로 교체
+  const entry={id:PACKMETA?PACKMETA.id:0,name:PACKMETA?PACKMETA.name:'커스텀',file:fname,
+    stage:PACKMETA?PACKMETA.stage:0,topology:LEVEL.config.topology,
+    difficulty:j.difficulty,tier:j.difficultyTier,
+    devices:deviceLabelsOf(LEVEL.config,LEVEL.rules),cards:LEVEL.cards.length,
+    pStuck:j.metrics.pStuck,branch:j.metrics.branchFactor};
+  navigator.clipboard&&navigator.clipboard.writeText(JSON.stringify(entry,null,2)).catch(()=>{});
+  document.getElementById('packinfo').innerHTML=
+    `<b>${fname}</b> 저장됨. 파일을 <code>public/levels/</code>에 덮어쓰고, 아래 인덱스 항목(클립보드에 복사됨)으로 `+
+    `<code>index.json</code>의 해당 레벨을 교체하세요:<br><code style="font-size:10px">${JSON.stringify(entry)}</code>`+
+    (greedyClears40(LEVEL)?'':'<br><b style="color:var(--bad)">⚠️ 팩 게이트(그리디 40시드) 실패 상태 — 저장 전 수정 권장</b>');
+};
+void initPackSelect();
+
 /* ============ 이벤트 ============ */
 document.getElementById('gen').onclick=()=>{setMode('manual');run();};
 document.getElementById('reseed').onclick=()=>{document.getElementById('seed').value=Math.floor(Math.random()*99999);setMode('manual');run();};
@@ -1231,7 +1378,7 @@ document.getElementById('lvlidx').addEventListener('input',()=>{ // 경제는 �
 });
 document.querySelectorAll('.A input,.A select,.B input,.B select,.C input,.C select,.D input,.D select,#keylocks,#bombs,#zones,#paper,#rwAt1,#rwAt2,#rwAt3,#rwIt1,#rwIt2,#rwIt3,#seed').forEach(el=>{
   el.addEventListener('input',()=>{const c=cfg();syncLabels(c);});
-  el.addEventListener('change',()=>{setMode('manual');run();});
+  el.addEventListener('change',()=>{setMode(typeof PACKMETA!=='undefined'&&PACKMETA?'pack':'manual');run();});
 });
 document.getElementById('export').onclick=()=>{
   const blob=new Blob([levelJSON()],{type:'application/json'});

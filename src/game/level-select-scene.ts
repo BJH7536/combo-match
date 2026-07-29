@@ -13,6 +13,7 @@ import { sfx } from './audio';
 const FONT = "'Segoe UI', 'Malgun Gothic', sans-serif";
 
 const DEVICE_ICON: Record<string, string> = {
+  draw: '↺', // 드로우 제한 레벨 (덱 ≤ 4)
   key: '🔑',
   bomb: '💣',
   zone: '🗺️',

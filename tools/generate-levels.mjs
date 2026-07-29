@@ -85,7 +85,9 @@ function planFor(id) {
   return { id, stage, pos, name: `${STAGE_THEMES[stage - 1]} ${pos}`, cfg, maxStuck };
 }
 
-// 장치 도입 계획 — 4~10번 단일 도입(학습), 11번부터 주 장치 로테이션 + 후반 보조
+// 장치 도입 계획 — 4~10번 단일 도입(학습), 11번부터 주 장치 로테이션 + 후반 보조.
+// 드로우 절제(↺): 12번에서 단독 학습 후, 매 스테이지 4번째 레벨(14·24·…·94)이
+// 덱 4→2 점감으로 "드로우가 귀한" 레벨이 된다 — C자원 축을 주 레버로 쓰는 스테이지 확대.
 function devicesFor(id, pos, cfg) {
   if (id <= 3) return;
   if (id === 4) { cfg.keylocks = 2; return; }
@@ -95,6 +97,13 @@ function devicesFor(id, pos, cfg) {
   if (id === 8) { cfg.paper = 25; return; }
   if (id === 9) { cfg.obst = 15; return; }
   if (id === 10) { cfg.fd = 15; return; }
+  if (id === 12) { cfg.deck = 3; return; }  // ↺ 드로우 절제 단독 학습 (다른 장치 없음)
+  if (pos === 4 && id >= 14) {              // ↺ 매 스테이지 4번째 = 드로우 제한 레벨
+    const t = (id - 1) / 99;
+    cfg.deck = Math.max(2, 4 - Math.floor(t * 2)); // 4 → 3 → 2 점감
+    cfg.wild = Math.max(cfg.wild, 1);              // 최소한의 구제 수단은 유지
+    return;                                        // 주 장치 없이 드로우 압박이 단독 레버
+  }
   const main = (id - 11) % 6;
   if (main === 0) cfg.keylocks = id < 40 ? 2 : id < 70 ? 3 : 4;
   else if (main === 1) cfg.bombs = id < 40 ? 1 : id < 70 ? 2 : 3;
@@ -116,6 +125,7 @@ function devicesFor(id, pos, cfg) {
 
 function deviceLabels(cfg) {
   const d = [];
+  if (cfg.deck <= 4) d.push('draw'); // ↺ 드로우 제한 — 선택 화면 아이콘용
   if (cfg.keylocks > 0) d.push('key');
   if (cfg.bombs > 0) d.push('bomb');
   if (cfg.zones > 1) d.push('zone');

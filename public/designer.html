@@ -1310,6 +1310,7 @@ function importLevel(json,sourceLabel){
 }
 function deviceLabelsOf(c,rules){
   const d=[];
+  if((c.deck||0)<=4)d.push('draw'); // ↺ 드로우 제한
   if((c.keylocks||0)>0)d.push('key');
   if((c.bombs||0)>0||LEVEL.cards.some(x=>x.bombCounter>0))d.push('bomb');
   if((c.zones||1)>1||LEVEL.cards.some(x=>(x.zone||0)>0))d.push('zone');

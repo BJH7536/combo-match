@@ -1238,62 +1238,16 @@ export class PlayScene extends Phaser.Scene {
     if (this.ended) return;
     this.ended = true;
     const s = this.engine.getState();
-    const dim = this.add.rectangle(this.L.W / 2, this.L.H / 2, this.L.W, this.L.H, 0x120c06, 0.78).setDepth(1000);
-    const panel = this.add
-      .image(
-        this.L.W / 2,
-        this.L.H / 2,
-        panelTexture(this, 'result-panel', Math.round(Math.min(540, this.L.W * 0.92)), 330, {
-          top: PALETTE.woodBarTop,
-          bottom: PALETTE.woodBarBottom,
-          shadow: PALETTE.woodDeep,
-          shadowDepth: 6,
-          radius: 22,
-          grain: true,
-          gloss: 0.18,
-        }),
-      )
-      .setDepth(1001);
-    this.add
-      .text(this.L.W / 2, this.L.H / 2 - 96, title, {
-        fontFamily: FONT,
-        fontSize: this.fs(56),
-        color: PALETTE.cream,
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setDepth(1002);
-    this.add
-      .text(this.L.W / 2, this.L.H / 2 - 38, subtitle, { fontFamily: FONT, fontSize: this.fs(24), color: '#f0d9ad' })
-      .setOrigin(0.5)
-      .setDepth(1002);
-    this.add
-      .text(this.L.W / 2, this.L.H / 2 + 6, `SCORE ${s.score.toLocaleString()}`, {
-        fontFamily: FONT,
-        fontSize: this.fs(30),
-        color: '#ffd76a',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setDepth(1002);
+    const u = this.L.ui;
+    this.add.rectangle(this.L.W / 2, this.L.H / 2, this.L.W, this.L.H, 0x120c06, 0.78).setDepth(1000);
 
-    // 골드 정산 — 패배도 위로보상이 남는다 (마스터 §7 · D-5)
+    // 골드 정산 — 패배도 위로보상이 남는다 (마스터 §7 · D-5). 보유액을 줄에 찍으므로 먼저 확정한다.
     const gained = payout(this.eco, this.engine.status === 'won', s.score);
     if (!this.settled) {
       this.settled = true;
       this.gold = earn(gained);
       this.goldText.setText(this.gold.toLocaleString());
     }
-    this.add
-      .text(this.L.W / 2, this.L.H / 2 + 44, `🪙 +${gained}   (보유 ${this.gold.toLocaleString()})`, {
-        fontFamily: FONT,
-        fontSize: this.fs(18),
-        color: '#f0d9ad',
-      })
-      .setOrigin(0.5)
-      .setDepth(1002);
-    void panel;
-    void dim;
 
     // 진행 저장 — 레벨 선택에서 들어온 경우에만 기록한다 (데모·디자이너 해시는 제외)
     const entry = this.initData.entry;
@@ -1308,12 +1262,55 @@ export class PlayScene extends Phaser.Scene {
         buttons.push({ label: '다음 ▶', onClick: () => void this.goToLevel(entry.id + 1) });
       }
     }
-    const bw = 168;
-    const gap = 18;
-    const totalW = buttons.length * bw + (buttons.length - 1) * gap;
+
+    // 글자는 ui 배율로 커지는데 y를 고정하면 배율이 큰 화면에서 줄끼리 붙다가 겹친다
+    // (1366폭 + 윈도우 배율 150% = ui 1.6에서 제목과 부제가 포개졌다).
+    // 그래서 실측 높이를 아래로 쌓고, 패널은 쌓인 결과에 맞춰 그린다.
+    const line = (content: string, size: number, color: string, bold = false): Phaser.GameObjects.Text =>
+      this.add
+        .text(0, 0, content, { fontFamily: FONT, fontSize: this.fs(size), color, fontStyle: bold ? 'bold' : '' })
+        .setOrigin(0.5)
+        .setDepth(1002);
+    const rows = [
+      { obj: line(title, 56, PALETTE.cream, true), gap: 12 },
+      { obj: line(subtitle, 24, '#f0d9ad'), gap: 14 },
+      { obj: line(`SCORE ${s.score.toLocaleString()}`, 30, '#ffd76a', true), gap: 10 },
+      { obj: line(`🪙 +${gained}   (보유 ${this.gold.toLocaleString()})`, 18, '#f0d9ad'), gap: 24 },
+    ];
+
+    const bw = Math.round(168 * u);
+    const bh = Math.round(56 * u);
+    const bgap = Math.round(18 * u);
+    const rowW = buttons.length * bw + (buttons.length - 1) * bgap;
+
+    const contentH = rows.reduce((sum, r) => sum + r.obj.height + Math.round(r.gap * u), 0) + bh;
+    const contentW = Math.max(rowW, ...rows.map((r) => r.obj.width));
+    const padX = Math.round(28 * u);
+    const padY = Math.round(26 * u);
+    this.add
+      .image(
+        this.L.W / 2,
+        this.L.H / 2,
+        panelTexture(this, 'result-panel', Math.min(contentW + padX * 2, this.L.W * 0.92), contentH + padY * 2, {
+          top: PALETTE.woodBarTop,
+          bottom: PALETTE.woodBarBottom,
+          shadow: PALETTE.woodDeep,
+          shadowDepth: 6,
+          radius: 22,
+          grain: true,
+          gloss: 0.18,
+        }),
+      )
+      .setDepth(1001);
+
+    let y = this.L.H / 2 - contentH / 2;
+    for (const r of rows) {
+      r.obj.setPosition(this.L.W / 2, y + r.obj.height / 2);
+      y += r.obj.height + Math.round(r.gap * u);
+    }
     buttons.forEach((b, i) => {
-      const bx = this.L.W / 2 - totalW / 2 + bw / 2 + i * (bw + gap);
-      this.woodButton(bx, this.L.H / 2 + 100, bw, 56, b.label, 20, b.onClick).setDepth(1003);
+      const bx = this.L.W / 2 - rowW / 2 + bw / 2 + i * (bw + bgap);
+      this.woodButton(bx, y + bh / 2, bw, bh, b.label, Math.round(20 * u), b.onClick).setDepth(1003);
     });
   }
 

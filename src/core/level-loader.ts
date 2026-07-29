@@ -141,6 +141,19 @@ export function loadLevel(data: LevelData): RuntimeLevel {
   if (scoreGoalRule && (!Number.isInteger(scoreGoalRule.score) || scoreGoalRule.score < 1)) {
     throw new LevelLoadError(`scoreGoal.score 무효: ${scoreGoalRule.score} (1 이상 정수)`);
   }
+  // G계층 콤보 보상 트랙 — 형태는 엄격 검증, 엔진이 지급 못 하는 항목(hint/claw)은 걸러낸다(엔진 갭)
+  const KNOWN_REWARDS = ['wild', 'gold', 'deck', 'hint', 'claw'];
+  const comboRewards: { at: number; item: 'wild' | 'gold' | 'deck' }[] = [];
+  const rawRewards = rules?.comboRewards ?? [];
+  if (!Array.isArray(rawRewards)) throw new LevelLoadError('rules.comboRewards가 배열이 아님');
+  for (const r of rawRewards) {
+    if (typeof r !== 'object' || r === null) throw new LevelLoadError('comboRewards 항목이 객체가 아님');
+    if (!Number.isInteger(r.at) || r.at < 2) throw new LevelLoadError(`comboRewards.at 무효: ${r.at} (2 이상 정수)`);
+    if (typeof r.item !== 'string' || !KNOWN_REWARDS.includes(r.item)) {
+      throw new LevelLoadError(`comboRewards.item 무효: ${String(r.item)}`);
+    }
+    if (r.item === 'wild' || r.item === 'gold' || r.item === 'deck') comboRewards.push({ at: r.at, item: r.item });
+  }
 
   return {
     // 방어 복사 + F계층 정규화 — 부재 필드에 레퍼런스와 동일한 기본값을 채워 엔진에 넘긴다
@@ -171,6 +184,7 @@ export function loadLevel(data: LevelData): RuntimeLevel {
     collectGoal: collectGoal ? { symbol: collectGoal.symbol, count: collectGoal.count } : null,
     paperNeed,
     scoreGoal: scoreGoalRule?.score ?? null,
+    comboRewards,
     seed: data.seed,
   };
 }

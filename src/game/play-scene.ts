@@ -78,6 +78,7 @@ export class PlayScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private gaugeFill: Phaser.GameObjects.Rectangle | null = null; // 세로 화면에서는 만들지 않는다
   private gaugeText: Phaser.GameObjects.Text | null = null;
+  private rewardTrackText: Phaser.GameObjects.Text | null = null; // 🎁 보상 트랙 상태 표시
   private comboBadge!: Phaser.GameObjects.Container;
   private comboValue!: Phaser.GameObjects.Text;
   private comboFlames!: Phaser.GameObjects.Text;
@@ -116,6 +117,7 @@ export class PlayScene extends Phaser.Scene {
     this.gateBlocked.clear();
     this.gaugeFill = null;
     this.gaugeText = null;
+    this.rewardTrackText = null;
     this.objectiveText = null;
     this.tutorial = (this.initData.entry?.id ?? 99) <= 3;
     this.settled = false;
@@ -514,6 +516,11 @@ export class PlayScene extends Phaser.Scene {
         .text(gx + 100, this.L.headerH / 2 + 10, '0/0', { fontFamily: FONT, fontSize: this.fs(11), color: '#3a2408' })
         .setOrigin(0, 0.5)
         .setDepth(603);
+      // 🎁 보상 트랙 상태 — 어느 콤보에서 무엇을 받는지/받았는지 (게이지 아래)
+      this.rewardTrackText = this.add
+        .text(gx - 20, this.L.headerH / 2 + 24, '', { fontFamily: FONT, fontSize: this.fs(10), color: '#5c4318' })
+        .setOrigin(0, 0.5)
+        .setDepth(603);
     }
 
     // 🪙 지갑 (시안의 골드 칩)
@@ -882,6 +889,14 @@ export class PlayScene extends Phaser.Scene {
     this.refreshMatchable();
     this.refreshGates();
 
+    // 🎁 보상 트랙 상태 — 받은 것은 ✅, 남은 것은 도달 콤보와 아이템을 표시
+    if (this.rewardTrackText) {
+      const icon: Record<string, string> = { wild: '🌟', gold: '🪙', deck: '↺' };
+      this.rewardTrackText.setText(
+        s.rewards.map((r) => `${r.got ? '✅' : `×${r.at}`}${icon[r.item] ?? ''}`).join('  '),
+      );
+    }
+
     if (this.gaugeFill && this.gaugeText && this.level.cgoal > 0) {
       const progress = s.combo % this.level.cgoal;
       this.gaugeFill.setSize((110 * progress) / this.level.cgoal, 9);
@@ -1070,6 +1085,32 @@ export class PlayScene extends Phaser.Scene {
         sfx.sparkle();
       }
     });
+    // 🎁 콤보 보상 도달 — 지급 즉시 화면의 보유 상태값을 갱신하고, 받은 곳(와일드 슬롯·골드 칩)을 튕겨서 알린다
+    this.engine.events.on('rewardEarned', ({ at, item, amount, wildLeft }) => {
+      sfx.sparkle();
+      if (item === 'gold') {
+        this.gold = earn(amount); // 지금 바로 지갑에 — 아이템 구매에 즉시 사용 가능
+        this.toast(`🎁 콤보 ×${at} 보상! 🪙 +${amount} (보유 ${this.gold.toLocaleString()})`);
+        this.floatText(this.goldText.x + 30, this.L.headerH / 2, `+${amount}`, PALETTE.goldText);
+        this.goldText.setScale(1.5);
+        this.tweens.add({ targets: this.goldText, scale: 1, duration: 320, ease: 'Back.easeOut' });
+      } else if (item === 'wild') {
+        this.toast(`🎁 콤보 ×${at} 보상! 🌟 와일드 +1 (보유 ×${wildLeft})`);
+        this.floatText(this.wildSlot.parentContainer?.x ?? this.wildSlot.x, this.wildSlot.parentContainer?.y ?? this.wildSlot.y, '+1', '#ffd76a');
+        this.wildCount.setScale(1.6);
+        this.tweens.add({ targets: this.wildCount, scale: 1, duration: 320, ease: 'Back.easeOut' });
+        const slot = this.wildSlot.parentContainer;
+        if (slot) {
+          slot.setScale(1.15);
+          this.tweens.add({ targets: slot, scale: 1, duration: 300, ease: 'Back.easeOut' });
+        }
+      } else {
+        this.toast(`🎁 콤보 ×${at} 보상! ↺ 드로우 +1`);
+        this.deckCount.setScale(1.6);
+        this.tweens.add({ targets: this.deckCount, scale: 1, duration: 320, ease: 'Back.easeOut' });
+      }
+      this.updateHud();
+    });
     this.engine.events.on('deckChanged', () => this.updateHud());
     this.engine.events.on('bombTicked', ({ id, counter }) => {
       this.bombCounters.set(id, counter);
@@ -1136,6 +1177,16 @@ export class PlayScene extends Phaser.Scene {
   private popSpotlight(): void {
     this.spotSymbols.setScale(0.78);
     this.tweens.add({ targets: this.spotSymbols, scale: 1, duration: 220, ease: 'Back.easeOut' });
+  }
+
+  /** 🎁 획득 지점에서 떠오르는 상태값 팝업 (+50, +1 등) */
+  private floatText(x: number, y: number, msg: string, color: string): void {
+    const t = this.add
+      .text(x, y, msg, { fontFamily: FONT, fontSize: this.fs(20), color, fontStyle: 'bold' })
+      .setOrigin(0.5)
+      .setDepth(1500)
+      .setStroke('#2b1f12', 4);
+    this.tweens.add({ targets: t, y: y - 46, alpha: 0, duration: 900, ease: 'Cubic.easeOut', onComplete: () => t.destroy() });
   }
 
   private toast(msg: string): void {

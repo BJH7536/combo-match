@@ -65,6 +65,9 @@ export interface LevelRules {
   paper?: { piecesNeeded: number; count: number };
   // C2 확장 (ADR-001): objective 'score'의 목표값 — 레퍼런스 스키마에는 없어 optional
   scoreGoal?: { score: number };
+  // G계층 콤보 보상 트랙 (마스터 §4.4·§5.1-G) — 콤보가 at에 도달하면 레벨당 1회 지급.
+  // 디자이너 스키마는 hint/claw도 허용하나 엔진은 즉시 사용형(wild/gold/deck)만 지급한다.
+  comboRewards?: { at: number; item: string }[];
 }
 
 export interface LevelData {
@@ -96,5 +99,7 @@ export interface RuntimeLevel {
   collectGoal: { symbol: SymbolId; count: number } | null;
   paperNeed: number;
   scoreGoal: number | null;
+  // 엔진이 지급 가능한 즉시 사용형 보상만 남긴다 (hint/claw는 로더가 걸러냄 — 엔진 갭)
+  comboRewards: { at: number; item: 'wild' | 'gold' | 'deck' }[];
   seed: number;
 }

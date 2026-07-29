@@ -40,6 +40,18 @@ export function runOneSimTraced(L, seed, policy) {
     pieces = 0;
   const goal = L.collectGoal || null,
     paperNeed = L.paperNeed || 0;
+  // 🎁 콤보 보상 트랙 (원본 checkRewards 사본 — 엔진과 동치인 wild/deck만 반영.
+  // 원본의 claw 충전은 트레이스로 재생 불가한 행동이라 제외 — 팩·픽스처에는 claw 보상 없음)
+  const rewards = L.rewards || [],
+    rewardGot = rewards.map(() => false);
+  function checkRewards() {
+    for (let i = 0; i < rewards.length; i++) {
+      if (rewardGot[i] || combo < rewards[i].at) continue;
+      rewardGot[i] = true;
+      if (rewards[i].item === 'wild') wild++;
+      else if (rewards[i].item === 'deck') deck++;
+    }
+  }
   const stock = L.stock.map((s) => s.slice());
   const maxMoves = L.moveLimit > 0 ? L.moveLimit : N * 6;
   let branchSum = 0,
@@ -145,6 +157,7 @@ export function runOneSimTraced(L, seed, policy) {
       combo++;
       if (combo > maxCombo) maxCombo = combo;
       moves++;
+      checkRewards(); // 🎁 콤보 증가 직후 지급 (원본 동일)
       score += 10 * combo;
       if (L.cgoal && combo % L.cgoal === 0) score += 100 * combo;
       trace.push({ t: 'm', id: pick, combo, score, removedCount }); // 계측
@@ -175,6 +188,7 @@ export function runOneSimTraced(L, seed, policy) {
         if (L.cards[pick].piece) pieces++;
         active = L.cards[pick].symbols.slice();
         combo = Math.max(1, combo);
+        checkRewards(); // 🎁 와일드 경로도 지급 검사 (원본 동일)
         score += 10 * combo;
         moves++;
         trace.push({ t: 'w', id: pick, combo, score, removedCount }); // 계측
@@ -222,5 +236,7 @@ export function liteFromLevelJson(level) {
     collectGoal: rules.collectGoal
       ? { symbol: rules.collectGoal.symbol, count: rules.collectGoal.count }
       : null,
+    // 🎁 엔진과 동치인 즉시 사용형만 (로더의 필터와 동일 — gold는 게임플레이 무영향이라 생략)
+    rewards: (rules.comboRewards || []).filter((r) => ['wild', 'deck'].includes(r.item)),
   };
 }

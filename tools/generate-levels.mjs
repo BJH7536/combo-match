@@ -76,9 +76,15 @@ function planFor(id) {
     // D/F 장치 — devicesFor에서 채움
     time: 0, obst: 0, fd: 0, shuffle: false,
     keylocks: 0, bombs: 0, zones: 1, paper: 0,
-    rewards: [],                              // 보상 트랙은 엔진 지원 전까지 팩 제외
+    rewards: [],
   };
   devicesFor(id, pos, cfg);
+  // 🎁 콤보 보상 트랙 (엔진 지급 지원됨): 중간 문턱 = 즉시 골드, 게이지 완성(cgoal) = 와일드 +1.
+  // 디자이너 시뮬 봇이 와일드 지급을 실사용하므로 검증 밴드에 그대로 반영된다.
+  cfg.rewards = [
+    { at: Math.max(3, cfg.cgoal - 2), item: 'gold' },
+    { at: cfg.cgoal, item: 'wild' },
+  ];
 
   // 막힘률 밴드: 0.06 → 0.40 선형, 브리더는 30% 완화. 최종 레벨(100)은 보스 예외로 0.45 허용
   const maxStuck = id === 100 ? 0.45 : Math.min(0.4, 0.06 + 0.0035 * (id - 1)) * (breather ? 0.7 : 1);

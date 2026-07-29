@@ -43,8 +43,12 @@ export interface EngineEvents extends Record<string, unknown> {
   pieceCollected: { pieces: number; needed: number };
   paperFreed: { pieces: number };
   collectProgress: { collected: number; count: number };
+  // 🎁 콤보 보상 트랙 도달 (레벨당 1회) — wild/deck는 엔진 상태에 즉시 반영, gold는 세션 계층(지갑)이 지급
+  rewardEarned: { at: number; item: 'wild' | 'gold' | 'deck'; amount: number; wildLeft: number; deckLeft: number };
   gameEnded: { result: 'won' | 'lost'; reason: EndReason };
 }
+
+export const GOLD_REWARD_AMOUNT = 50; // 마스터 §5.1-G: 🪙 골드 +50
 
 export interface EngineOpts {
   rng?: Rng;
@@ -77,6 +81,8 @@ export class ComboMatchEngine {
   private collectedV = 0;
   private piecesV = 0;
   private readonly bombs: { id: number; counter: number }[];
+  private readonly rewards: { at: number; item: 'wild' | 'gold' | 'deck' }[];
+  private readonly rewardGot: boolean[];
   private readonly zoneRemaining: number[] = [0, 0, 0, 0];
   private maxZone = 0;
   private statusV: EngineStatus = 'playing';
@@ -95,6 +101,8 @@ export class ComboMatchEngine {
     this.bombs = level.cards
       .filter((c) => c.bombCounter > 0)
       .map((c) => ({ id: c.id, counter: c.bombCounter }));
+    this.rewards = level.comboRewards.map((r) => ({ ...r }));
+    this.rewardGot = this.rewards.map(() => false);
     for (const c of level.cards) {
       this.zoneRemaining[c.zone] = (this.zoneRemaining[c.zone] ?? 0) + 1;
       if (c.zone > this.maxZone) this.maxZone = c.zone;
@@ -123,6 +131,8 @@ export class ComboMatchEngine {
       pieces: this.piecesV,
       removedCount: this.removedCount,
       total: this.L.cards.length,
+      // 🎁 보상 트랙 상태 — HUD가 "무엇을 언제 받는지/받았는지"를 그대로 그린다
+      rewards: this.rewards.map((r, i) => ({ at: r.at, item: r.item, got: this.rewardGot[i] === true })),
     };
   }
 
@@ -304,13 +314,15 @@ export class ComboMatchEngine {
     if (via === 'match') {
       this.comboV++;
       this.events.emit('comboChanged', { combo: this.comboV });
+      this.checkComboRewards(); // 레퍼런스 준거: 콤보 증가 직후 지급 (match 경로)
       delta = 10 * this.comboV;
-      // cgoal 보너스 = 점수만 (ADR-001 O-1). 가드는 레퍼런스와 동일한 truthy — `> 0`이 아님 (음수 입력 동치)
+      // cgoal 보너스 = 점수만 (ADR-001 O-1 — 아이템 지급은 별도 보상 트랙 §5.1-G가 담당하도록 개정)
       if (this.L.cgoal && this.comboV % this.L.cgoal === 0) delta += 100 * this.comboV;
     } else {
       const prev = this.comboV;
       this.comboV = Math.max(1, this.comboV); // 와일드는 콤보 유지 (최소 1)
       if (this.comboV !== prev) this.events.emit('comboChanged', { combo: this.comboV });
+      this.checkComboRewards(); // 레퍼런스 준거: 와일드 경로도 지급 검사
       delta = 10 * this.comboV; // 레퍼런스: 와일드 경로는 cgoal 보너스 없음
     }
     this.scoreV += delta;
@@ -334,6 +346,32 @@ export class ComboMatchEngine {
       return;
     }
     this.checkClearedAfterRemoval();
+  }
+
+  // 🎁 콤보 보상 트랙 — 레퍼런스 checkRewards와 동일: combo ≥ at인 미지급 항목을 순서대로 지급(레벨당 1회).
+  // wild/deck는 엔진 재고에 즉시 반영(봇·플레이 모두 바로 사용 가능), gold는 이벤트만 — 지갑은 세션 계층 소유.
+  private checkComboRewards(): void {
+    for (let i = 0; i < this.rewards.length; i++) {
+      if (this.rewardGot[i] || this.comboV < this.rewards[i]!.at) continue;
+      this.rewardGot[i] = true;
+      const r = this.rewards[i]!;
+      let amount = GOLD_REWARD_AMOUNT;
+      if (r.item === 'wild') {
+        this.wildLeft++;
+        amount = 1;
+      } else if (r.item === 'deck') {
+        this.deckLeft++;
+        amount = 1;
+        this.events.emit('deckChanged', { remaining: this.deckLeft });
+      }
+      this.events.emit('rewardEarned', {
+        at: r.at,
+        item: r.item,
+        amount,
+        wildLeft: this.wildLeft,
+        deckLeft: this.deckLeft,
+      });
+    }
   }
 
   // 레퍼런스 동일: id 오름차순 틱, 첫 폭발에서 즉시 중단 (잔여 폭탄은 이번 행동에 틱되지 않음)

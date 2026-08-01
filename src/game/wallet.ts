@@ -4,6 +4,8 @@
 export interface Economy {
   baseGold: number;
   scoreRate: number;
+  entryFee: number; // 💰 시도당 입장료 (0 = 무료 — 구버전 레벨·데모)
+  drawCost: number; // 💰 드로우 1회 골드 비용 (0 = 무료)
   winMult: number;
   loseMult: number;
   itemPrices: { hint: number; claw: number; wild: number };
@@ -15,6 +17,8 @@ export const STARTING_GOLD = 200;
 export const DEFAULT_ECONOMY: Economy = {
   baseGold: 18,
   scoreRate: 0.0175,
+  entryFee: 0,
+  drawCost: 0,
   winMult: 1,
   loseMult: 0.25,
   itemPrices: { hint: 120, claw: 350, wild: 500 },
@@ -29,6 +33,8 @@ export function normalizeEconomy(raw: unknown): Economy {
   return {
     baseGold: num(e.baseGold, DEFAULT_ECONOMY.baseGold),
     scoreRate: num(e.scoreRate, DEFAULT_ECONOMY.scoreRate),
+    entryFee: num(e.entryFee, DEFAULT_ECONOMY.entryFee),
+    drawCost: num(e.drawCost, DEFAULT_ECONOMY.drawCost),
     winMult: num(e.winMult, DEFAULT_ECONOMY.winMult),
     loseMult: num(e.loseMult, DEFAULT_ECONOMY.loseMult),
     itemPrices: {
@@ -71,6 +77,13 @@ function writeGold(n: number): number {
 
 export function earn(amount: number): number {
   return writeGold(loadGold() + Math.max(0, Math.round(amount)));
+}
+
+/** 있는 만큼만 차감 (입장료용 — 골드가 없어도 플레이는 막지 않는다). 반환: 실제 차감액 */
+export function spendUpTo(cost: number): { paid: number; gold: number } {
+  const gold = loadGold();
+  const paid = Math.min(gold, Math.max(0, Math.round(cost)));
+  return { paid, gold: writeGold(gold - paid) };
 }
 
 /** 잔액이 충분할 때만 차감. 반환: 성공 여부와 차감 후 잔액 */

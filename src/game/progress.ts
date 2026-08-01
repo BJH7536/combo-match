@@ -2,6 +2,7 @@
 // 게임이 죽지 않도록 전부 안전 실패시킨다.
 
 export interface LevelRecord {
+  bestStars?: number; // ⭐ 0~3 (구버전 기록엔 없음)
   cleared: boolean;
   bestScore: number;
 }
@@ -10,10 +11,16 @@ export type Progress = Record<string, LevelRecord>;
 const KEY = 'combo-match:progress';
 
 /** 기존 기록에 새 결과를 반영한 값 (클리어는 한 번이라도 하면 유지, 점수는 최고 기록) */
-export function mergeRecord(prev: LevelRecord | undefined, cleared: boolean, score: number): LevelRecord {
+export function mergeRecord(
+  prev: LevelRecord | undefined,
+  cleared: boolean,
+  score: number,
+  stars = 0,
+): LevelRecord {
   return {
     cleared: (prev?.cleared ?? false) || cleared,
     bestScore: Math.max(prev?.bestScore ?? 0, score),
+    bestStars: Math.max(prev?.bestStars ?? 0, stars),
   };
 }
 
@@ -29,9 +36,9 @@ export function loadProgress(): Progress {
   }
 }
 
-export function saveResult(levelId: number, cleared: boolean, score: number): Progress {
+export function saveResult(levelId: number, cleared: boolean, score: number, stars = 0): Progress {
   const all = loadProgress();
-  all[String(levelId)] = mergeRecord(all[String(levelId)], cleared, score);
+  all[String(levelId)] = mergeRecord(all[String(levelId)], cleared, score, stars);
   try {
     localStorage.setItem(KEY, JSON.stringify(all));
   } catch {

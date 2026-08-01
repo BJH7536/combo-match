@@ -14,6 +14,8 @@ const FONT = "'Segoe UI', 'Malgun Gothic', sans-serif";
 
 const DEVICE_ICON: Record<string, string> = {
   draw: '↺', // 드로우 제한 레벨 (덱 ≤ 4)
+  norepeat: '🚫', // 노-리피트 허들
+  hurdle: '⚔️', // 아이템 압박 허들 구간
   key: '🔑',
   bomb: '💣',
   zone: '🗺️',
@@ -281,6 +283,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.stages.forEach((st, i) => {
       const lvs = this.levels.filter((l) => l.stage === st.id);
       const clearedN = lvs.filter((l) => this.progress[String(l.id)]?.cleared === true).length;
+      const starSum = lvs.reduce((a, l) => a + (this.progress[String(l.id)]?.bestStars ?? 0), 0);
       const allDone = clearedN === lvs.length && lvs.length > 0;
       // 티어는 팩 전체가 튜토리얼~쉬움 대역이라 스테이지를 구분하지 못한다. 실제로 오르는
       // 난이도 점수를 함께 적어 진행감을 드러낸다 (같은 티어면 물결표 없이 하나만).
@@ -330,7 +333,7 @@ export class LevelSelectScene extends Phaser.Scene {
           .text(-g.cw / 2 + g.ch * 0.12, g.ch * 0.1, icons.join(' '), { fontFamily: FONT, fontSize: fs(0.14) })
           .setOrigin(0, 0),
         this.add
-          .text(g.cw / 2 - g.ch * 0.1, g.ch / 2 - g.ch * 0.09, allDone ? '★ 완료' : `✔ ${clearedN}/${lvs.length}`, {
+          .text(g.cw / 2 - g.ch * 0.1, g.ch / 2 - g.ch * 0.09, `✔ ${clearedN}/${lvs.length}  ★${starSum}/${lvs.length * 3}`, {
             fontFamily: FONT,
             fontSize: fs(0.105),
             color: allDone ? '#1f4a12' : '#402c0c',
@@ -431,7 +434,11 @@ export class LevelSelectScene extends Phaser.Scene {
           })
           .setOrigin(0, 0),
         this.add
-          .text(g.cw / 2 - g.ch * 0.1, g.ch / 2 - g.ch * 0.09, cleared ? `✔ ${rec!.bestScore.toLocaleString()}` : '▶ 플레이', {
+          .text(
+            g.cw / 2 - g.ch * 0.1,
+            g.ch / 2 - g.ch * 0.09,
+            cleared ? `${'★'.repeat(rec!.bestStars ?? 0) || '✔'} ${rec!.bestScore.toLocaleString()}` : '▶ 플레이',
+            {
             fontFamily: FONT,
             fontSize: fs(0.105),
             color: cleared ? '#1f4a12' : '#402c0c',

@@ -68,7 +68,7 @@
       "file": "level-001.json",
       "stage": 1,
       "topology": "grid",
-      "difficulty": 12.3,
+      "difficulty": 11.8,
       "tier": "튜토리얼",
       "devices": [],
       "cards": 8,
@@ -81,7 +81,7 @@
       "file": "level-002.json",
       "stage": 1,
       "topology": "stack",
-      "difficulty": 17.4,
+      "difficulty": 16.7,
       "tier": "튜토리얼",
       "devices": [],
       "cards": 8,
@@ -94,7 +94,7 @@
       "file": "level-003.json",
       "stage": 1,
       "topology": "pyramid",
-      "difficulty": 13.6,
+      "difficulty": 13,
       "tier": "튜토리얼",
       "devices": [],
       "cards": 8,
@@ -107,7 +107,7 @@
       "file": "level-004.json",
       "stage": 1,
       "topology": "tripeaks",
-      "difficulty": 15.8,
+      "difficulty": 15.1,
       "tier": "튜토리얼",
       "devices": [
         "key"
@@ -122,7 +122,7 @@
       "file": "level-005.json",
       "stage": 1,
       "topology": "wave",
-      "difficulty": 19.9,
+      "difficulty": 19.1,
       "tier": "튜토리얼",
       "devices": [
         "bomb"
@@ -137,7 +137,7 @@
       "file": "level-006.json",
       "stage": 1,
       "topology": "towers",
-      "difficulty": 18.9,
+      "difficulty": 18.1,
       "tier": "튜토리얼",
       "devices": [
         "zone"
@@ -152,7 +152,7 @@
       "file": "level-007.json",
       "stage": 1,
       "topology": "diamond",
-      "difficulty": 18.1,
+      "difficulty": 17.3,
       "tier": "튜토리얼",
       "devices": [
         "collect"
@@ -167,7 +167,7 @@
       "file": "level-008.json",
       "stage": 1,
       "topology": "composite",
-      "difficulty": 18.1,
+      "difficulty": 17.4,
       "tier": "튜토리얼",
       "devices": [
         "paper"
@@ -182,7 +182,7 @@
       "file": "level-009.json",
       "stage": 1,
       "topology": "grid",
-      "difficulty": 16.9,
+      "difficulty": 16.2,
       "tier": "튜토리얼",
       "devices": [
         "lock"
@@ -197,7 +197,7 @@
       "file": "level-010.json",
       "stage": 1,
       "topology": "stack",
-      "difficulty": 21,
+      "difficulty": 20.1,
       "tier": "튜토리얼",
       "devices": [
         "facedown"
@@ -212,7 +212,7 @@
       "file": "level-011.json",
       "stage": 2,
       "topology": "pyramid",
-      "difficulty": 13.9,
+      "difficulty": 13.3,
       "tier": "튜토리얼",
       "devices": [
         "key"
@@ -227,7 +227,7 @@
       "file": "level-012.json",
       "stage": 2,
       "topology": "tripeaks",
-      "difficulty": 16.9,
+      "difficulty": 16.2,
       "tier": "튜토리얼",
       "devices": [
         "draw"
@@ -242,7 +242,7 @@
       "file": "level-013.json",
       "stage": 2,
       "topology": "wave",
-      "difficulty": 20,
+      "difficulty": 19.2,
       "tier": "튜토리얼",
       "devices": [
         "zone"
@@ -257,7 +257,7 @@
       "file": "level-014.json",
       "stage": 2,
       "topology": "towers",
-      "difficulty": 17.9,
+      "difficulty": 17.2,
       "tier": "튜토리얼",
       "devices": [
         "draw"
@@ -272,14 +272,15 @@
       "file": "level-015.json",
       "stage": 2,
       "topology": "diamond",
-      "difficulty": 20.7,
+      "difficulty": 22.2,
       "tier": "튜토리얼",
       "devices": [
+        "hurdle",
         "facedown"
       ],
       "cards": 11,
-      "pStuck": 0,
-      "branch": 1.83
+      "pStuck": 0.25,
+      "branch": 1
     },
     {
       "id": 16,
@@ -287,7 +288,7 @@
       "file": "level-016.json",
       "stage": 2,
       "topology": "composite",
-      "difficulty": 20.4,
+      "difficulty": 19.5,
       "tier": "튜토리얼",
       "devices": [
         "lock"
@@ -302,7 +303,7 @@
       "file": "level-017.json",
       "stage": 2,
       "topology": "grid",
-      "difficulty": 21.7,
+      "difficulty": 20.7,
       "tier": "튜토리얼",
       "devices": [
         "key"
@@ -317,7 +318,7 @@
       "file": "level-018.json",
       "stage": 2,
       "topology": "stack",
-      "difficulty": 24.4,
+      "difficulty": 23.3,
       "tier": "튜토리얼",
       "devices": [
         "bomb"
@@ -332,7 +333,7 @@
       "file": "level-019.json",
       "stage": 2,
       "topology": "pyramid",
-      "difficulty": 26.4,
+      "difficulty": 25.2,
       "tier": "쉬움",
       "devices": [
         "zone"
@@ -347,7 +348,7 @@
       "file": "level-020.json",
       "stage": 2,
       "topology": "tripeaks",
-      "difficulty": 22.8,
+      "difficulty": 21.8,
       "tier": "튜토리얼",
       "devices": [
         "paper"
@@ -362,8 +363,8 @@
       "file": "level-021.json",
       "stage": 3,
       "topology": "wave",
-      "difficulty": 25.3,
-      "tier": "쉬움",
+      "difficulty": 24.2,
+      "tier": "튜토리얼",
       "devices": [
         "collect",
         "facedown"
@@ -378,7 +379,7 @@
       "file": "level-022.json",
       "stage": 3,
       "topology": "towers",
-      "difficulty": 24.9,
+      "difficulty": 23.8,
       "tier": "튜토리얼",
       "devices": [
         "lock"
@@ -393,7 +394,7 @@
       "file": "level-023.json",
       "stage": 3,
       "topology": "diamond",
-      "difficulty": 22.2,
+      "difficulty": 21.3,
       "tier": "튜토리얼",
       "devices": [
         "key"
@@ -408,7 +409,7 @@
       "file": "level-024.json",
       "stage": 3,
       "topology": "composite",
-      "difficulty": 22.9,
+      "difficulty": 21.9,
       "tier": "튜토리얼",
       "devices": [
         "draw"
@@ -423,14 +424,16 @@
       "file": "level-025.json",
       "stage": 3,
       "topology": "grid",
-      "difficulty": 23.2,
-      "tier": "튜토리얼",
+      "difficulty": 28.9,
+      "tier": "쉬움",
       "devices": [
+        "hurdle",
+        "norepeat",
         "zone"
       ],
       "cards": 14,
-      "pStuck": 0,
-      "branch": 1.97
+      "pStuck": 0.31,
+      "branch": 1.16
     },
     {
       "id": 26,
@@ -438,7 +441,7 @@
       "file": "level-026.json",
       "stage": 3,
       "topology": "stack",
-      "difficulty": 27.2,
+      "difficulty": 26,
       "tier": "쉬움",
       "devices": [
         "paper",
@@ -454,7 +457,7 @@
       "file": "level-027.json",
       "stage": 3,
       "topology": "pyramid",
-      "difficulty": 21.7,
+      "difficulty": 20.7,
       "tier": "튜토리얼",
       "devices": [
         "bomb",
@@ -470,7 +473,7 @@
       "file": "level-028.json",
       "stage": 3,
       "topology": "tripeaks",
-      "difficulty": 30.2,
+      "difficulty": 28.9,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -487,7 +490,7 @@
       "file": "level-029.json",
       "stage": 3,
       "topology": "wave",
-      "difficulty": 28.6,
+      "difficulty": 27.3,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -503,7 +506,7 @@
       "file": "level-030.json",
       "stage": 3,
       "topology": "towers",
-      "difficulty": 29.3,
+      "difficulty": 28,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -519,7 +522,7 @@
       "file": "level-031.json",
       "stage": 4,
       "topology": "diamond",
-      "difficulty": 24.5,
+      "difficulty": 23.5,
       "tier": "튜토리얼",
       "devices": [
         "zone"
@@ -534,8 +537,8 @@
       "file": "level-032.json",
       "stage": 4,
       "topology": "composite",
-      "difficulty": 25.5,
-      "tier": "쉬움",
+      "difficulty": 24.4,
+      "tier": "튜토리얼",
       "devices": [
         "paper"
       ],
@@ -549,7 +552,7 @@
       "file": "level-033.json",
       "stage": 4,
       "topology": "grid",
-      "difficulty": 19,
+      "difficulty": 18.2,
       "tier": "튜토리얼",
       "devices": [
         "facedown"
@@ -564,7 +567,7 @@
       "file": "level-034.json",
       "stage": 4,
       "topology": "stack",
-      "difficulty": 26.2,
+      "difficulty": 25.1,
       "tier": "쉬움",
       "devices": [
         "draw"
@@ -579,15 +582,16 @@
       "file": "level-035.json",
       "stage": 4,
       "topology": "pyramid",
-      "difficulty": 24.3,
-      "tier": "튜토리얼",
+      "difficulty": 26,
+      "tier": "쉬움",
       "devices": [
+        "hurdle",
         "key",
         "collect"
       ],
       "cards": 16,
-      "pStuck": 0,
-      "branch": 2.75
+      "pStuck": 0.07,
+      "branch": 1.81
     },
     {
       "id": 36,
@@ -595,7 +599,7 @@
       "file": "level-036.json",
       "stage": 4,
       "topology": "tripeaks",
-      "difficulty": 26.3,
+      "difficulty": 25.2,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -611,7 +615,7 @@
       "file": "level-037.json",
       "stage": 4,
       "topology": "wave",
-      "difficulty": 28.3,
+      "difficulty": 27.1,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -627,7 +631,7 @@
       "file": "level-038.json",
       "stage": 4,
       "topology": "towers",
-      "difficulty": 29.4,
+      "difficulty": 28.2,
       "tier": "쉬움",
       "devices": [
         "paper",
@@ -643,7 +647,7 @@
       "file": "level-039.json",
       "stage": 4,
       "topology": "diamond",
-      "difficulty": 29.2,
+      "difficulty": 27.9,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -659,7 +663,7 @@
       "file": "level-040.json",
       "stage": 4,
       "topology": "composite",
-      "difficulty": 30.9,
+      "difficulty": 29.5,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -675,7 +679,7 @@
       "file": "level-041.json",
       "stage": 5,
       "topology": "grid",
-      "difficulty": 23.5,
+      "difficulty": 22.5,
       "tier": "튜토리얼",
       "devices": [
         "key"
@@ -690,7 +694,7 @@
       "file": "level-042.json",
       "stage": 5,
       "topology": "stack",
-      "difficulty": 30.6,
+      "difficulty": 29.3,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -706,7 +710,7 @@
       "file": "level-043.json",
       "stage": 5,
       "topology": "pyramid",
-      "difficulty": 27.3,
+      "difficulty": 26.2,
       "tier": "쉬움",
       "devices": [
         "zone"
@@ -721,7 +725,7 @@
       "file": "level-044.json",
       "stage": 5,
       "topology": "tripeaks",
-      "difficulty": 24.9,
+      "difficulty": 23.8,
       "tier": "튜토리얼",
       "devices": [
         "draw"
@@ -736,14 +740,16 @@
       "file": "level-045.json",
       "stage": 5,
       "topology": "wave",
-      "difficulty": 32.7,
+      "difficulty": 36,
       "tier": "쉬움",
       "devices": [
+        "hurdle",
+        "norepeat",
         "facedown"
       ],
       "cards": 19,
-      "pStuck": 0,
-      "branch": 1
+      "pStuck": 0.287,
+      "branch": 0.76
     },
     {
       "id": 46,
@@ -751,7 +757,7 @@
       "file": "level-046.json",
       "stage": 5,
       "topology": "towers",
-      "difficulty": 34.2,
+      "difficulty": 32.7,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -767,7 +773,7 @@
       "file": "level-047.json",
       "stage": 5,
       "topology": "diamond",
-      "difficulty": 33.4,
+      "difficulty": 32,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -783,7 +789,7 @@
       "file": "level-048.json",
       "stage": 5,
       "topology": "composite",
-      "difficulty": 33.7,
+      "difficulty": 32.3,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -799,7 +805,7 @@
       "file": "level-049.json",
       "stage": 5,
       "topology": "grid",
-      "difficulty": 31.9,
+      "difficulty": 30.6,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -816,7 +822,7 @@
       "file": "level-050.json",
       "stage": 5,
       "topology": "stack",
-      "difficulty": 36.5,
+      "difficulty": 34.9,
       "tier": "쉬움",
       "devices": [
         "paper",
@@ -832,7 +838,7 @@
       "file": "level-051.json",
       "stage": 6,
       "topology": "pyramid",
-      "difficulty": 29.7,
+      "difficulty": 28.4,
       "tier": "쉬움",
       "devices": [
         "facedown"
@@ -847,7 +853,7 @@
       "file": "level-052.json",
       "stage": 6,
       "topology": "tripeaks",
-      "difficulty": 33.1,
+      "difficulty": 31.7,
       "tier": "쉬움",
       "devices": [
         "lock"
@@ -862,7 +868,7 @@
       "file": "level-053.json",
       "stage": 6,
       "topology": "wave",
-      "difficulty": 33.9,
+      "difficulty": 32.4,
       "tier": "쉬움",
       "devices": [
         "key"
@@ -877,7 +883,7 @@
       "file": "level-054.json",
       "stage": 6,
       "topology": "towers",
-      "difficulty": 31,
+      "difficulty": 29.7,
       "tier": "쉬움",
       "devices": [
         "draw"
@@ -892,14 +898,15 @@
       "file": "level-055.json",
       "stage": 6,
       "topology": "diamond",
-      "difficulty": 35.3,
+      "difficulty": 34.4,
       "tier": "쉬움",
       "devices": [
+        "hurdle",
         "zone"
       ],
       "cards": 21,
-      "pStuck": 0.12,
-      "branch": 1.16
+      "pStuck": 0.39,
+      "branch": 1.08
     },
     {
       "id": 56,
@@ -907,7 +914,7 @@
       "file": "level-056.json",
       "stage": 6,
       "topology": "composite",
-      "difficulty": 33.2,
+      "difficulty": 31.8,
       "tier": "쉬움",
       "devices": [
         "collect",
@@ -924,7 +931,7 @@
       "file": "level-057.json",
       "stage": 6,
       "topology": "grid",
-      "difficulty": 29.6,
+      "difficulty": 28.3,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -940,7 +947,7 @@
       "file": "level-058.json",
       "stage": 6,
       "topology": "stack",
-      "difficulty": 38.5,
+      "difficulty": 36.8,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -956,7 +963,7 @@
       "file": "level-059.json",
       "stage": 6,
       "topology": "pyramid",
-      "difficulty": 35.5,
+      "difficulty": 34,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -972,7 +979,7 @@
       "file": "level-060.json",
       "stage": 6,
       "topology": "tripeaks",
-      "difficulty": 35.7,
+      "difficulty": 34.2,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -988,7 +995,7 @@
       "file": "level-061.json",
       "stage": 7,
       "topology": "wave",
-      "difficulty": 35.1,
+      "difficulty": 33.6,
       "tier": "쉬움",
       "devices": [
         "zone"
@@ -1003,7 +1010,7 @@
       "file": "level-062.json",
       "stage": 7,
       "topology": "towers",
-      "difficulty": 34.7,
+      "difficulty": 33.2,
       "tier": "쉬움",
       "devices": [
         "paper"
@@ -1018,7 +1025,7 @@
       "file": "level-063.json",
       "stage": 7,
       "topology": "diamond",
-      "difficulty": 36.1,
+      "difficulty": 34.5,
       "tier": "쉬움",
       "devices": [
         "collect",
@@ -1034,7 +1041,7 @@
       "file": "level-064.json",
       "stage": 7,
       "topology": "composite",
-      "difficulty": 33.5,
+      "difficulty": 32.1,
       "tier": "쉬움",
       "devices": [
         "draw"
@@ -1049,14 +1056,16 @@
       "file": "level-065.json",
       "stage": 7,
       "topology": "grid",
-      "difficulty": 28.4,
+      "difficulty": 36.5,
       "tier": "쉬움",
       "devices": [
+        "hurdle",
+        "norepeat",
         "key"
       ],
       "cards": 24,
-      "pStuck": 0,
-      "branch": 4.57
+      "pStuck": 0.31,
+      "branch": 1.87
     },
     {
       "id": 66,
@@ -1064,7 +1073,7 @@
       "file": "level-066.json",
       "stage": 7,
       "topology": "stack",
-      "difficulty": 37.8,
+      "difficulty": 36.2,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1080,7 +1089,7 @@
       "file": "level-067.json",
       "stage": 7,
       "topology": "pyramid",
-      "difficulty": 37.4,
+      "difficulty": 35.8,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -1096,7 +1105,7 @@
       "file": "level-068.json",
       "stage": 7,
       "topology": "tripeaks",
-      "difficulty": 35.9,
+      "difficulty": 34.4,
       "tier": "쉬움",
       "devices": [
         "paper",
@@ -1112,7 +1121,7 @@
       "file": "level-069.json",
       "stage": 7,
       "topology": "wave",
-      "difficulty": 41.5,
+      "difficulty": 39.7,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1129,7 +1138,7 @@
       "file": "level-070.json",
       "stage": 7,
       "topology": "towers",
-      "difficulty": 42.5,
+      "difficulty": 40.7,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -1146,7 +1155,7 @@
       "file": "level-071.json",
       "stage": 8,
       "topology": "diamond",
-      "difficulty": 34.4,
+      "difficulty": 33,
       "tier": "쉬움",
       "devices": [
         "key"
@@ -1161,7 +1170,7 @@
       "file": "level-072.json",
       "stage": 8,
       "topology": "composite",
-      "difficulty": 37,
+      "difficulty": 35.4,
       "tier": "쉬움",
       "devices": [
         "bomb"
@@ -1176,7 +1185,7 @@
       "file": "level-073.json",
       "stage": 8,
       "topology": "grid",
-      "difficulty": 34.5,
+      "difficulty": 33,
       "tier": "쉬움",
       "devices": [
         "zone"
@@ -1191,7 +1200,7 @@
       "file": "level-074.json",
       "stage": 8,
       "topology": "stack",
-      "difficulty": 36.6,
+      "difficulty": 35,
       "tier": "쉬움",
       "devices": [
         "draw"
@@ -1206,14 +1215,15 @@
       "file": "level-075.json",
       "stage": 8,
       "topology": "pyramid",
-      "difficulty": 35.2,
+      "difficulty": 35,
       "tier": "쉬움",
       "devices": [
+        "hurdle",
         "facedown"
       ],
       "cards": 26,
-      "pStuck": 0,
-      "branch": 2.22
+      "pStuck": 0.41,
+      "branch": 1.68
     },
     {
       "id": 76,
@@ -1221,7 +1231,7 @@
       "file": "level-076.json",
       "stage": 8,
       "topology": "tripeaks",
-      "difficulty": 38.1,
+      "difficulty": 36.4,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -1237,7 +1247,7 @@
       "file": "level-077.json",
       "stage": 8,
       "topology": "wave",
-      "difficulty": 41.8,
+      "difficulty": 40,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -1254,7 +1264,7 @@
       "file": "level-078.json",
       "stage": 8,
       "topology": "towers",
-      "difficulty": 41.1,
+      "difficulty": 39.4,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1270,7 +1280,7 @@
       "file": "level-079.json",
       "stage": 8,
       "topology": "diamond",
-      "difficulty": 42.5,
+      "difficulty": 40.6,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -1287,7 +1297,7 @@
       "file": "level-080.json",
       "stage": 8,
       "topology": "composite",
-      "difficulty": 38.9,
+      "difficulty": 37.2,
       "tier": "쉬움",
       "devices": [
         "paper",
@@ -1303,7 +1313,7 @@
       "file": "level-081.json",
       "stage": 9,
       "topology": "grid",
-      "difficulty": 31.1,
+      "difficulty": 29.8,
       "tier": "쉬움",
       "devices": [
         "facedown"
@@ -1318,7 +1328,7 @@
       "file": "level-082.json",
       "stage": 9,
       "topology": "stack",
-      "difficulty": 39.4,
+      "difficulty": 37.7,
       "tier": "쉬움",
       "devices": [
         "lock"
@@ -1333,7 +1343,7 @@
       "file": "level-083.json",
       "stage": 9,
       "topology": "pyramid",
-      "difficulty": 36.5,
+      "difficulty": 35,
       "tier": "쉬움",
       "devices": [
         "key"
@@ -1348,7 +1358,7 @@
       "file": "level-084.json",
       "stage": 9,
       "topology": "tripeaks",
-      "difficulty": 33.2,
+      "difficulty": 31.7,
       "tier": "쉬움",
       "devices": [
         "draw"
@@ -1363,14 +1373,16 @@
       "file": "level-085.json",
       "stage": 9,
       "topology": "wave",
-      "difficulty": 40,
+      "difficulty": 42.6,
       "tier": "쉬움",
       "devices": [
+        "hurdle",
+        "norepeat",
         "zone"
       ],
       "cards": 28,
-      "pStuck": 0,
-      "branch": 1
+      "pStuck": 0.263,
+      "branch": 0.78
     },
     {
       "id": 86,
@@ -1378,7 +1390,7 @@
       "file": "level-086.json",
       "stage": 9,
       "topology": "towers",
-      "difficulty": 37.8,
+      "difficulty": 36.2,
       "tier": "쉬움",
       "devices": [
         "paper",
@@ -1394,7 +1406,7 @@
       "file": "level-087.json",
       "stage": 9,
       "topology": "diamond",
-      "difficulty": 40,
+      "difficulty": 38.3,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1410,7 +1422,7 @@
       "file": "level-088.json",
       "stage": 9,
       "topology": "composite",
-      "difficulty": 43.3,
+      "difficulty": 41.5,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -1426,7 +1438,7 @@
       "file": "level-089.json",
       "stage": 9,
       "topology": "grid",
-      "difficulty": 37.1,
+      "difficulty": 35.5,
       "tier": "쉬움",
       "devices": [
         "key",
@@ -1443,7 +1455,7 @@
       "file": "level-090.json",
       "stage": 9,
       "topology": "stack",
-      "difficulty": 43.9,
+      "difficulty": 42,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1459,7 +1471,7 @@
       "file": "level-091.json",
       "stage": 10,
       "topology": "pyramid",
-      "difficulty": 40.6,
+      "difficulty": 38.8,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -1475,7 +1487,7 @@
       "file": "level-092.json",
       "stage": 10,
       "topology": "tripeaks",
-      "difficulty": 36.4,
+      "difficulty": 34.8,
       "tier": "쉬움",
       "devices": [
         "paper"
@@ -1490,7 +1502,7 @@
       "file": "level-093.json",
       "stage": 10,
       "topology": "wave",
-      "difficulty": 39.6,
+      "difficulty": 37.9,
       "tier": "쉬움",
       "devices": [
         "facedown"
@@ -1505,7 +1517,7 @@
       "file": "level-094.json",
       "stage": 10,
       "topology": "towers",
-      "difficulty": 36.7,
+      "difficulty": 35.1,
       "tier": "쉬움",
       "devices": [
         "draw"
@@ -1520,14 +1532,15 @@
       "file": "level-095.json",
       "stage": 10,
       "topology": "diamond",
-      "difficulty": 38.4,
+      "difficulty": 37.5,
       "tier": "쉬움",
       "devices": [
+        "hurdle",
         "key"
       ],
       "cards": 31,
-      "pStuck": 0.327,
-      "branch": 1.63
+      "pStuck": 0.503,
+      "branch": 1.32
     },
     {
       "id": 96,
@@ -1535,7 +1548,7 @@
       "file": "level-096.json",
       "stage": 10,
       "topology": "composite",
-      "difficulty": 40.6,
+      "difficulty": 38.8,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1551,7 +1564,7 @@
       "file": "level-097.json",
       "stage": 10,
       "topology": "grid",
-      "difficulty": 39.6,
+      "difficulty": 37.9,
       "tier": "쉬움",
       "devices": [
         "zone",
@@ -1567,7 +1580,7 @@
       "file": "level-098.json",
       "stage": 10,
       "topology": "stack",
-      "difficulty": 43.6,
+      "difficulty": 41.8,
       "tier": "쉬움",
       "devices": [
         "collect",
@@ -1584,7 +1597,7 @@
       "file": "level-099.json",
       "stage": 10,
       "topology": "pyramid",
-      "difficulty": 37.9,
+      "difficulty": 36.3,
       "tier": "쉬움",
       "devices": [
         "bomb",
@@ -1601,7 +1614,7 @@
       "file": "level-100.json",
       "stage": 10,
       "topology": "tripeaks",
-      "difficulty": 41.9,
+      "difficulty": 40.1,
       "tier": "쉬움",
       "devices": [
         "zone",

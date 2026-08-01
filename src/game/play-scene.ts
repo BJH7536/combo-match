@@ -8,7 +8,7 @@ import { hasSeenHelp, showHelpOverlay } from './help-overlay';
 import type { LevelIndexEntry } from './level-select-scene';
 import { decodeLevelHash, demoLevel, loadPlaytestLevel } from './level-source';
 import { saveResult } from './progress';
-import { earn, type Economy, loadGold, normalizeEconomy, payout, spend } from './wallet';
+import { earn, type Economy, loadGold, normalizeEconomy, payout, spend, spendUpTo } from './wallet';
 import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTexture } from './skin';
 import { isMuted, sfx, toggleMute } from './audio';
 
@@ -28,6 +28,7 @@ const REJECT_MSG: Record<RejectReason, string> = {
   'key-locked': '열쇠 카드를 먼저 제거하세요',
   'paper-locked': '조각을 모아야 열려요',
   'combo-locked': '콤보가 더 필요해요',
+  'repeat-locked': '🚫 직전에 쓴 그림이에요 — 다른 그림으로',
   'no-shared-symbol': '같은 그림이 없어요',
   'deck-empty': '덱을 모두 썼습니다',
   'no-wild': '와일드카드가 없습니다',
@@ -70,6 +71,8 @@ export class PlayScene extends Phaser.Scene {
   private gold = 0;
   private eco: Economy = normalizeEconomy(null);
   private settled = false; // 정산은 판당 1회
+  private entryPaid = 0; // 💰 이번 시도에 낸 입장료
+  private banText: Phaser.GameObjects.Text | null = null; // 🚫 노-리피트 금지 심볼 칩
   private ended = false;
   private cardW = 0;
   private cardH = 0;
@@ -118,15 +121,22 @@ export class PlayScene extends Phaser.Scene {
     this.gaugeFill = null;
     this.gaugeText = null;
     this.rewardTrackText = null;
+    this.banText = null;
     this.objectiveText = null;
     this.tutorial = (this.initData.entry?.id ?? 99) <= 3;
     this.settled = false;
-    this.gold = loadGold();
-    this.eco = normalizeEconomy((this.initData.level as { economy?: unknown } | undefined)?.economy);
     this.ended = false;
 
-    const { level, sourceLabel } = this.resolveLevel();
+    const { level, sourceLabel, economy } = this.resolveLevel();
     this.level = level;
+    this.eco = normalizeEconomy(economy);
+    // 💰 입장료 — 시도(재시작 포함)마다 차감. 골드가 모자라면 있는 만큼만 (플레이를 막지 않는다)
+    this.entryPaid = 0;
+    if (this.eco.entryFee > 0) {
+      const r = spendUpTo(this.eco.entryFee);
+      this.entryPaid = r.paid;
+    }
+    this.gold = loadGold();
     // 목표 표시가 들어갈 자리만큼 보드를 내린다 (그러지 않으면 카드에 가린다)
     if (level.collectGoal || level.paperNeed > 0) {
       const pad = Math.round(32 * this.L.ui);
@@ -144,11 +154,16 @@ export class PlayScene extends Phaser.Scene {
     this.refreshAllCards();
     this.updateHud();
 
+    if (this.entryPaid > 0) {
+      this.toast(`💰 입장료 -${this.entryPaid}`);
+      this.floatText(this.goldText.x + 30, this.L.headerH / 2, `-${this.entryPaid}`, '#ffb3ab');
+    }
+
     // 첫 플레이 1회 — 매칭 규칙을 모르면 무슨 게임인지 알 수 없다
     if (!hasSeenHelp()) showHelpOverlay(this);
   }
 
-  private resolveLevel(): { level: RuntimeLevel; sourceLabel: string } {
+  private resolveLevel(): { level: RuntimeLevel; sourceLabel: string; economy: unknown } {
     // 레벨 선택에서 넘어온 경우가 최우선, 그 다음 디자이너 해시, 마지막이 내장 데모
     if (this.initData.level) {
       try {
@@ -156,6 +171,7 @@ export class PlayScene extends Phaser.Scene {
         return {
           level: loadLevel(this.initData.level),
           sourceLabel: entry ? `${entry.id}. ${entry.name}` : '레벨',
+          economy: (this.initData.level as { economy?: unknown }).economy,
         };
       } catch (e) {
         console.warn(`레벨 로드 실패 — 데모로 폴백: ${String(e)}`);
@@ -164,7 +180,7 @@ export class PlayScene extends Phaser.Scene {
     const fromHash = decodeLevelHash(window.location.hash);
     if (fromHash) {
       try {
-        return { level: loadLevel(fromHash), sourceLabel: '디자이너 레벨' };
+        return { level: loadLevel(fromHash), sourceLabel: '디자이너 레벨', economy: (fromHash as { economy?: unknown }).economy };
       } catch (e) {
         const msg = e instanceof LevelLoadError ? e.message : String(e);
         console.warn(`레벨 해시 로드 실패 — 데모로 폴백: ${msg}`);
@@ -174,12 +190,12 @@ export class PlayScene extends Phaser.Scene {
     const fromStorage = loadPlaytestLevel();
     if (fromStorage) {
       try {
-        return { level: loadLevel(fromStorage), sourceLabel: '디자이너(플레이테스트)' };
+        return { level: loadLevel(fromStorage), sourceLabel: '디자이너(플레이테스트)', economy: (fromStorage as { economy?: unknown }).economy };
       } catch (e) {
         console.warn(`플레이테스트 레벨 로드 실패 — 데모로 폴백: ${String(e)}`);
       }
     }
-    return { level: loadLevel(demoLevel()), sourceLabel: '데모 레벨' };
+    return { level: loadLevel(demoLevel()), sourceLabel: '데모 레벨', economy: null };
   }
 
   // ---- 배경 ----
@@ -889,6 +905,24 @@ export class PlayScene extends Phaser.Scene {
     this.refreshMatchable();
     this.refreshGates();
 
+    // 🚫 노-리피트 금지 칩 — 스포트라이트 옆에서 "지금 못 쓰는 그림"을 상시 표시
+    if (this.level.noRepeat) {
+      if (!this.banText) {
+        this.banText = this.add
+          .text(this.spotAt.x + this.L.spot.cardW * 0.95, this.spotAt.y, '', {
+            fontFamily: FONT,
+            fontSize: this.fs(26),
+            backgroundColor: '#6b1f1a',
+            color: '#ffffff',
+            padding: { x: 8, y: 6 },
+          })
+          .setOrigin(0.5)
+          .setDepth(420);
+      }
+      const banned = (s as { banned?: string | null }).banned ?? null;
+      this.banText.setText(banned ? `🚫${banned}` : '').setVisible(banned !== null);
+    }
+
     // 🎁 보상 트랙 상태 — 받은 것은 ✅, 남은 것은 도달 콤보와 아이템을 표시
     if (this.rewardTrackText) {
       const icon: Record<string, string> = { wild: '🌟', gold: '🪙', deck: '↺' };
@@ -982,6 +1016,17 @@ export class PlayScene extends Phaser.Scene {
 
   private onDraw(): void {
     if (this.ended) return;
+    // 💰 드로우 비용 — 덱이 남아 있어도 골드가 없으면 뽑을 수 없다 (경제 압박)
+    if (this.eco.drawCost > 0 && this.engine.getState().deck > 0) {
+      const pay = spend(this.eco.drawCost);
+      if (!pay.ok) {
+        this.toast(`🪙 골드 부족 — 드로우 ${this.eco.drawCost}`);
+        sfx.reject();
+        this.checkStuck();
+        return;
+      }
+      this.gold = pay.gold;
+    }
     const r = this.engine.draw();
     if (!r.ok) {
       this.toast(REJECT_MSG[r.reason]);
@@ -1021,7 +1066,14 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private checkStuck(): void {
-    if (this.ended || !this.engine.isStuck()) return;
+    if (this.ended) return;
+    // 💰 덱이 남아도 드로우 비용을 낼 수 없으면 실질적 막힘 — 엔진 isStuck은 골드를 모른다
+    const st = this.engine.getState();
+    const goldBlocked =
+      st.deck > 0 && this.eco.drawCost > 0 && this.gold < this.eco.drawCost &&
+      this.engine.getMatchableIds().length === 0 &&
+      (st.wild <= 0 || this.engine.getWildableIds().length === 0);
+    if (!goldBlocked && !this.engine.isStuck()) return;
     // 소프트 실패(D-5): 집게를 살 수 있으면 아직 패배가 아니다 — 탈출 수단을 안내한다
     if (this.gold >= this.eco.itemPrices.claw) {
       this.toast('막혔습니다 — 🧲 집게로 카드를 치울 수 있어요');
@@ -1249,9 +1301,17 @@ export class PlayScene extends Phaser.Scene {
       this.goldText.setText(this.gold.toLocaleString());
     }
 
+    // ⭐ 별점 — 행동 수(매칭·와일드 + 드로우) 기준. 컷은 레벨 JSON의 stars(시뮬 승자 분포 p25/p60)
+    const starCuts = (this.initData.level as { stars?: { three: number; two: number } } | undefined)?.stars;
+    let stars = 0;
+    if (this.engine.status === 'won') {
+      const actions = s.moves + (this.level.deck - s.deck);
+      stars = starCuts ? (actions <= starCuts.three ? 3 : actions <= starCuts.two ? 2 : 1) : 0;
+    }
+
     // 진행 저장 — 레벨 선택에서 들어온 경우에만 기록한다 (데모·디자이너 해시는 제외)
     const entry = this.initData.entry;
-    if (entry) saveResult(entry.id, this.engine.status === 'won', s.score);
+    if (entry) saveResult(entry.id, this.engine.status === 'won', s.score, stars);
 
     const buttons: { label: string; onClick: () => void }[] = [
       { label: '↻ 다시', onClick: () => this.scene.restart() },
@@ -1275,8 +1335,19 @@ export class PlayScene extends Phaser.Scene {
       { obj: line(title, 56, PALETTE.cream, true), gap: 12 },
       { obj: line(subtitle, 24, '#f0d9ad'), gap: 14 },
       { obj: line(`SCORE ${s.score.toLocaleString()}`, 30, '#ffd76a', true), gap: 10 },
-      { obj: line(`🪙 +${gained}   (보유 ${this.gold.toLocaleString()})`, 18, '#f0d9ad'), gap: 24 },
+      {
+        obj: line(
+          `🪙 +${gained}${this.entryPaid > 0 ? ` − 입장료 ${this.entryPaid}` : ''}   (보유 ${this.gold.toLocaleString()})`,
+          18,
+          '#f0d9ad',
+        ),
+        gap: 24,
+      },
     ];
+    // ⭐ 별점 줄 — 승리 + 별 컷이 있는 레벨만. 제목 바로 아래에 끼운다
+    if (stars > 0) {
+      rows.splice(1, 0, { obj: line('★★★'.slice(0, stars) + '☆☆☆'.slice(0, 3 - stars), 40, '#ffd54a', true), gap: 8 });
+    }
 
     const bw = Math.round(168 * u);
     const bh = Math.round(56 * u);

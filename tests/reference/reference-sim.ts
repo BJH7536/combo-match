@@ -40,6 +40,18 @@ export function runOneSimTraced(L, seed, policy) {
     pieces = 0;
   const goal = L.collectGoal || null,
     paperNeed = L.paperNeed || 0;
+  // 🚫 노-리피트 (원본 effShare/pickBanned 사본)
+  let banned = null;
+  function effShare(symbols) {
+    let n = 0;
+    const S = new Set(symbols);
+    for (const x of active) if (S.has(x) && !(L.noRepeat && x === banned)) n++;
+    return n;
+  }
+  function pickBanned(symbols) {
+    for (const s of symbols) if (active.includes(s) && s !== banned) return s;
+    return banned;
+  }
   // 🎁 콤보 보상 트랙 (원본 checkRewards 사본 — 엔진과 동치인 wild/deck만 반영.
   // 원본의 claw 충전은 트레이스로 재생 불가한 행동이라 제외 — 팩·픽스처에는 claw 보상 없음)
   const rewards = L.rewards || [],
@@ -143,7 +155,7 @@ export function runOneSimTraced(L, seed, policy) {
     const valid = [];
     for (const i of freeIdx) {
       const c = L.cards[i];
-      if (gateOk(i) && combo >= (c.lockReq || 0) && shareCount(c.symbols, active) >= L.r) valid.push(i);
+      if (gateOk(i) && combo >= (c.lockReq || 0) && effShare(c.symbols) >= L.r) valid.push(i);
     }
     branchSum += valid.length;
     branchN++;
@@ -153,6 +165,7 @@ export function runOneSimTraced(L, seed, policy) {
       removedCount++;
       zoneCount[L.cards[pick].zone || 0]--;
       if (L.cards[pick].piece) pieces++;
+      if (L.noRepeat) banned = pickBanned(L.cards[pick].symbols); // 액티브 교체 전 확정 (원본 동일)
       active = L.cards[pick].symbols.slice();
       combo++;
       if (combo > maxCombo) maxCombo = combo;
@@ -171,6 +184,7 @@ export function runOneSimTraced(L, seed, policy) {
       deck--;
       deckUsed++;
       combo = 0;
+      banned = null;
       active = drawActive();
       trace.push({ t: 'd', active: active.slice(), combo, score, removedCount }); // 계측
       if (tickBombs()) return fin(false, 'bomb');
@@ -238,5 +252,6 @@ export function liteFromLevelJson(level) {
       : null,
     // 🎁 엔진과 동치인 즉시 사용형만 (로더의 필터와 동일 — gold는 게임플레이 무영향이라 생략)
     rewards: (rules.comboRewards || []).filter((r) => ['wild', 'deck'].includes(r.item)),
+    noRepeat: rules.noRepeat === true,
   };
 }

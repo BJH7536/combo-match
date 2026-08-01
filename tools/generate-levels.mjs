@@ -35,6 +35,8 @@ const economyOf = (levelIndex, diffScore) => ({
   levelIndex,
   baseGold: Math.round(15 + 3 * levelIndex),
   scoreRate: +(0.01 * (1 + diffScore / 40)).toFixed(4),
+  entryFee: Math.round(8 + 2 * levelIndex),      // 💰 시도당 입장료 (< baseGold → 승리 시 흑자)
+  drawCost: 10 + Math.floor(levelIndex / 20) * 5, // 💰 드로우 1회 비용 (10→35)
   winMult: 1,
   loseMult: 0.25,
   itemPrices: { hint: 120, claw: 350, wild: 500 },
@@ -78,7 +80,20 @@ function planFor(id) {
     keylocks: 0, bombs: 0, zones: 1, paper: 0,
     rewards: [],
   };
+  cfg.norepeat = false;
   devicesFor(id, pos, cfg);
+  // ⚔️ 허들 슬롯: 매 스테이지 5번째(스테이지 2+) — 아이템을 써야 수월한 구간.
+  // 홀수 스테이지는 🚫 노-리피트를 결합(2번 시안), 짝수 스테이지는 순수 압박 허들.
+  const hurdle = pos === 5 && stage >= 2;
+  if (hurdle) {
+    cfg.norepeat = stage % 2 === 1;
+    // 후반(스테이지 7+)은 기본 난이도가 이미 높아 추가 조임 없이도 허들 밴드에 든다 —
+    // 노-리피트 자체가 강한 제약이라 과보정하면 그리디 40시드 게이트를 만족하는 시드가 사라진다
+    if (stage < 7) {
+      cfg.deck = Math.max(4, cfg.deck - 1);
+      cfg.N = clamp(cfg.N + 2, 6, 32);
+    }
+  }
   // 🎁 콤보 보상 트랙 (엔진 지급 지원됨): 중간 문턱 = 즉시 골드, 게이지 완성(cgoal) = 와일드 +1.
   // 디자이너 시뮬 봇이 와일드 지급을 실사용하므로 검증 밴드에 그대로 반영된다.
   cfg.rewards = [
@@ -86,9 +101,15 @@ function planFor(id) {
     { at: cfg.cgoal, item: 'wild' },
   ];
 
-  // 막힘률 밴드: 0.06 → 0.40 선형, 브리더는 30% 완화. 최종 레벨(100)은 보스 예외로 0.45 허용
-  const maxStuck = id === 100 ? 0.45 : Math.min(0.4, 0.06 + 0.0035 * (id - 1)) * (breather ? 0.7 : 1);
-  return { id, stage, pos, name: `${STAGE_THEMES[stage - 1]} ${pos}`, cfg, maxStuck };
+  // 막힘률 밴드: 0.06 → 0.40 선형, 브리더는 30% 완화. 최종 레벨(100)은 보스 예외로 0.45 허용.
+  // ⚔️ 허들은 "아이템 없인 어렵게": 밴드 [0.30, 0.55] + 아이템 보조 시 쉬워야 함(생성 게이트 ②)
+  const maxStuck = hurdle
+    ? Math.min(0.55, 0.35 + 0.002 * id)
+    : id === 100
+      ? 0.45
+      : Math.min(0.4, 0.06 + 0.0035 * (id - 1)) * (breather ? 0.7 : 1);
+  const minStuck = hurdle ? 0.3 : 0;
+  return { id, stage, pos, name: `${STAGE_THEMES[stage - 1]} ${pos}`, cfg, maxStuck, minStuck, hurdle };
 }
 
 // 장치 도입 계획 — 4~10번 단일 도입(학습), 11번부터 주 장치 로테이션 + 후반 보조.
@@ -129,8 +150,10 @@ function devicesFor(id, pos, cfg) {
   if (id % 7 === 0) cfg.objective = 'collect';
 }
 
-function deviceLabels(cfg) {
+function deviceLabels(cfg, plan) {
   const d = [];
+  if (plan && plan.hurdle) d.push('hurdle'); // ⚔️ 아이템 압박 허들
+  if (cfg.norepeat) d.push('norepeat'); // 🚫 노-리피트
   if (cfg.deck <= 4) d.push('draw'); // ↺ 드로우 제한 — 선택 화면 아이콘용
   if (cfg.keylocks > 0) d.push('key');
   if (cfg.bombs > 0) d.push('bomb');
@@ -143,6 +166,35 @@ function deviceLabels(cfg) {
   return d;
 }
 
+// ⚔️ 허들 게이트 ②: 아이템(와일드 +2 상당)을 쓰면 수월해지는가 — 막힘률이 크게 떨어져야 한다
+function pStuckWithItems(L, runs, extraWild) {
+  const lite = designer.liteOf(L);
+  lite.wildN += extraWild;
+  let fails = 0;
+  for (let i = 0; i < runs; i++) {
+    const pol = i % 2 ? 'greedy' : 'random';
+    if (!designer.runOneSim(lite, (L.config.seed >>> 0) + i * 2654435761, pol).cleared) fails++;
+  }
+  return fails / runs;
+}
+
+// ⭐ 별점 컷: 승자들의 행동 수(매칭+드로우) 분포에서 p25=★★★ · p60=★★ (수동 밸런싱 불요)
+function starCutsFor(L) {
+  const lite = designer.liteOf(L);
+  const acts = [];
+  for (let i = 0; i < 600; i++) {
+    const pol = i % 2 ? 'greedy' : 'random';
+    const r = designer.runOneSim(lite, (1e6 + (L.config.seed >>> 0) + i * 2654435761) >>> 0, pol);
+    if (r.cleared) acts.push(r.moves + r.deckUsed);
+  }
+  acts.sort((a, b) => a - b);
+  const n = L.cards.length;
+  if (acts.length < 20) return { three: n + 2, two: n + 6 }; // 표본 부족(고난도 허들) — 보수적 기본값
+  const q = (p) => acts[Math.min(acts.length - 1, Math.floor(acts.length * p))];
+  const three = Math.max(n, q(0.25));
+  return { three, two: Math.max(three + 2, q(0.6)) };
+}
+
 // 팩 품질 게이트 ③과 동일: 그리디 봇이 시드 1~40 안에 클리어하는가 (tests/level-pack.test.ts)
 function greedyClears40(L) {
   const lite = designer.liteOf(L);
@@ -152,9 +204,10 @@ function greedyClears40(L) {
   return false;
 }
 
-function exportLevel(L, plan, diff, val) {
+function exportLevel(L, plan, diff, val, stars) {
   return {
     schema: 'combo-match/level@2',
+    stars,
     seed: L.config.seed,
     difficulty: +diff.score.toFixed(1),
     difficultyTier: designer.tierOf(diff.score)[0],
@@ -205,18 +258,22 @@ for (let id = 1; id <= 100; id++) {
     if (!val.everClears) continue;
     const diff = designer.difficulty(cfg, val);
     const cand = { L, val, diff, seed };
-    if (val.pStuck <= plan.maxStuck && greedyClears40(L)) { best = cand; break; }
-    if (!best || val.pStuck < best.val.pStuck) if (greedyClears40(L)) best = cand;
+    const inBand = val.pStuck <= plan.maxStuck && val.pStuck >= (plan.minStuck || 0);
+    const hurdleOk = !plan.hurdle || pStuckWithItems(L, 200, 2) <= 0.35; // 아이템 보조 시 수월해야 허들 성립
+    if (inBand && hurdleOk && greedyClears40(L)) { best = cand; break; }
+    if (!best || Math.abs(val.pStuck - (plan.minStuck || 0)) < Math.abs(best.val.pStuck - (plan.minStuck || 0))) {
+      if (greedyClears40(L)) best = cand;
+    }
   }
   if (!best) throw new Error(`레벨 ${id}(${plan.name}) 생성 실패 — 조건을 만족하는 시드 없음`);
 
-  const json = exportLevel(best.L, plan, best.diff, best.val);
+  const json = exportLevel(best.L, plan, best.diff, best.val, starCutsFor(best.L));
   const file = `level-${String(id).padStart(3, '0')}.json`;
   writeFileSync(resolve(OUT_DIR, file), JSON.stringify(json), 'utf8');
   index.push({
     id, name: plan.name, file, stage: plan.stage, topology: plan.cfg.topology,
     difficulty: json.difficulty, tier: json.difficultyTier,
-    devices: deviceLabels(plan.cfg), cards: json.cards.length,
+    devices: deviceLabels(plan.cfg, plan), cards: json.cards.length,
     pStuck: json.metrics.pStuck, branch: json.metrics.branchFactor,
   });
   const ok = best.val.pStuck <= plan.maxStuck;

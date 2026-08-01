@@ -21,6 +21,7 @@ export type RejectReason =
   | 'key-locked'
   | 'paper-locked'
   | 'combo-locked'
+  | 'repeat-locked'
   | 'no-shared-symbol'
   | 'deck-empty'
   | 'no-wild';
@@ -85,6 +86,7 @@ export class ComboMatchEngine {
   private readonly rewardGot: boolean[];
   private readonly zoneRemaining: number[] = [0, 0, 0, 0];
   private maxZone = 0;
+  private bannedV: SymbolId | null = null; // 🚫 노-리피트: 직전 매칭에 사용한 심볼
   private statusV: EngineStatus = 'playing';
   private endReasonV: EndReason | null = null;
 
@@ -131,6 +133,7 @@ export class ComboMatchEngine {
       pieces: this.piecesV,
       removedCount: this.removedCount,
       total: this.L.cards.length,
+      banned: this.bannedV, // 🚫 노-리피트 금지 심볼 (없으면 null)
       // 🎁 보상 트랙 상태 — HUD가 "무엇을 언제 받는지/받았는지"를 그대로 그린다
       rewards: this.rewards.map((r, i) => ({ at: r.at, item: r.item, got: this.rewardGot[i] === true })),
     };
@@ -164,6 +167,24 @@ export class ComboMatchEngine {
     return card.unlockedBy.every((k) => this.removed[k]);
   }
 
+  /** 🚫 유효 공유 수 — 노-리피트면 금지 심볼을 제외하고 센다 (레퍼런스 effShare 동치) */
+  private effectiveShare(symbols: readonly SymbolId[]): number {
+    let n = 0;
+    const set = new Set(symbols);
+    for (const x of this.activeSymbols) {
+      if (set.has(x) && !(this.L.noRepeat && x === this.bannedV)) n++;
+    }
+    return n;
+  }
+
+  /** 🚫 금지 심볼 갱신 — 카드 심볼 배열 순서의 첫 비금지 공유 심볼 (레퍼런스 pickBanned 동치) */
+  private pickBanned(symbols: readonly SymbolId[]): SymbolId | null {
+    for (const s of symbols) {
+      if (this.activeSymbols.includes(s) && s !== this.bannedV) return s;
+    }
+    return this.bannedV;
+  }
+
   private rejectReasonFor(id: number, viaWild: boolean): RejectReason | null {
     if (this.statusV !== 'playing') return 'game-over';
     const card = this.L.cards[id];
@@ -175,7 +196,10 @@ export class ComboMatchEngine {
     if (!viaWild) {
       // ⚠️ 레퍼런스 준거: 와일드는 lockReq·r 판정을 우회한다 (ADR-001 O-5① — 문서 §4.2와 상이)
       if (this.comboV < card.lockReq) return 'combo-locked';
-      if (shareCount(card.symbols, this.activeSymbols) < this.L.r) return 'no-shared-symbol';
+      const raw = shareCount(card.symbols, this.activeSymbols);
+      if (raw < this.L.r) return 'no-shared-symbol';
+      // 🚫 노-리피트: 금지 심볼을 제외한 유효 공유가 r 미만이면 거부 (레퍼런스 effShare 동치)
+      if (this.L.noRepeat && this.effectiveShare(card.symbols) < this.L.r) return 'repeat-locked';
     }
     return null;
   }
@@ -222,6 +246,7 @@ export class ComboMatchEngine {
     if (this.statusV !== 'playing') return { ok: false, reason: 'game-over' };
     if (this.deckLeft <= 0) return { ok: false, reason: 'deck-empty' };
     this.deckLeft--;
+    this.bannedV = null; // 🚫 노-리피트 해제 (레퍼런스 동치)
     this.events.emit('deckChanged', { remaining: this.deckLeft });
     if (this.comboV !== 0) {
       this.comboV = 0;
@@ -307,6 +332,7 @@ export class ComboMatchEngine {
 
   private executeRemoval(card: RuntimeCard, via: 'match' | 'wildcard'): void {
     this.removeCardState(card, via);
+    if (via === 'match' && this.L.noRepeat) this.bannedV = this.pickBanned(card.symbols); // 액티브 교체 전 확정
     this.activeSymbols = card.symbols.slice();
     this.events.emit('activeChanged', { active: this.activeSymbols.slice(), source: via });
 

@@ -8,6 +8,8 @@ import levelOne from '../public/levels/level-001.json';
 const eco: Economy = {
   baseGold: 18,
   scoreRate: 0.02,
+  entryFee: 0,
+  drawCost: 0,
   winMult: 1,
   loseMult: 0.25,
   itemPrices: { hint: 120, claw: 350, wild: 500 },

@@ -185,6 +185,7 @@ export function loadLevel(data: LevelData): RuntimeLevel {
     paperNeed,
     scoreGoal: scoreGoalRule?.score ?? null,
     comboRewards,
+    noRepeat: rules?.noRepeat === true,
     seed: data.seed,
   };
 }

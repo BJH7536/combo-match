@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>챌린지 팩 프로토타입 8종 — 플레이어블 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Fredoka',system-ui,sans-serif;background:#171a20;color:#e7e2d6;
+       display:flex;flex-direction:column;align-items:center;padding:16px;gap:12px}
+  h1{font-size:19px;margin:0}
+  .sub{font-size:12px;color:#9aa1ae;text-align:center;max-width:820px;line-height:1.6}
+  /* 탭 */
+  #tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:900px}
+  #tabs button{font-family:inherit;font-weight:700;font-size:12px;padding:8px 13px;border:1px solid #3a404d;
+       border-radius:11px;cursor:pointer;background:#20242c;color:#9aa1ae}
+  #tabs button.on{background:linear-gradient(#ffb43a,#f27311);color:#fff;border-color:#f27311}
+  /* 레이아웃: 설명 + 스테이지 */
+  #wrap{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+  #info{width:250px;background:#20242c;border:1px solid #3a404d;border-radius:14px;padding:13px 15px;font-size:12px;line-height:1.65}
+  #info h2{font-size:15px;margin:0 0 6px}
+  #info .goal{color:#7ed957;font-weight:700;margin-top:8px}
+  #info .rule{color:#cfe8c0}
+  #info .note{color:#9aa1ae;font-size:11px;margin-top:8px;border-top:1px solid #2b303a;padding-top:8px}
+  #restart{margin-top:10px;width:100%;font-family:inherit;font-weight:700;border:1px solid #3a404d;
+       background:#2c323d;color:#e7e2d6;border-radius:10px;padding:9px;cursor:pointer}
+  /* 스테이지 */
+  #stage{position:relative;width:600px;max-width:94vw;height:520px;border-radius:20px;overflow:hidden;
+       background:radial-gradient(120% 100% at 50% 12%,#5aad3a,#3c7f2c 68%,#2f6b24);
+       box-shadow:inset 0 0 40px rgba(0,0,0,.45),0 14px 36px rgba(0,0,0,.45);user-select:none}
+  #stage.fever{box-shadow:inset 0 0 0 6px #ffd54a,inset 0 0 60px rgba(255,180,40,.35),0 14px 36px rgba(0,0,0,.45)}
+  #hdr{position:absolute;top:0;left:0;right:0;min-height:56px;z-index:6;display:flex;align-items:center;gap:8px;padding:8px 12px;flex-wrap:wrap;
+       background:repeating-linear-gradient(96deg,rgba(0,0,0,.08)0 3px,rgba(255,255,255,.03)3px 7px),linear-gradient(#8a5a2c,#6b431e);
+       box-shadow:0 4px 0 #4a2c11}
+  .pill{display:flex;flex-direction:column;align-items:center;justify-content:center;height:40px;padding:0 11px;border-radius:9px;
+       background:linear-gradient(#c98b47,#9c6229);box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 2px 0 #5c3411;color:#3a2408}
+  .pill .k{font-size:8px;letter-spacing:1.2px}.pill .v{font-size:15px;font-weight:700}
+  .pill.gold{background:linear-gradient(#f3d98f,#c79a3e)}
+  .pill.alert{background:linear-gradient(#ff8a80,#d84339);color:#fff}
+  #combo{display:flex;align-items:center;gap:4px;height:40px;padding:0 13px;border-radius:10px;color:#fff;font-weight:700;font-size:15px;
+       background:linear-gradient(#ffb43a,#f27311);border:2px solid rgba(255,255,255,.9);
+       box-shadow:0 2px 0 #c2540c,0 0 16px rgba(242,115,17,.5);transition:filter .2s;white-space:nowrap}
+  #combo.off{filter:grayscale(.9) brightness(.75);opacity:.75}
+  /* 보드 */
+  #board{position:absolute;top:76px;left:0;right:0;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 22px;z-index:3}
+  .card{position:relative;width:78px;height:96px;border-radius:12px;background:linear-gradient(#fff,#f3ead8);
+       border:3px solid #e7d9bb;box-shadow:0 5px 0 rgba(0,0,0,.16),0 8px 13px rgba(0,0,0,.22);
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;
+       transition:transform .12s,box-shadow .12s,opacity .25s}
+  .card:hover{transform:translateY(-4px)}
+  .card.pressed{transform:scale(.94) translateY(1px)}
+  .card.gone{opacity:0;transform:scale(.3);pointer-events:none}
+  .card .sym{font-size:29px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18))}
+  .card .tag{position:absolute;top:-9px;right:-9px;font-size:15px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+  @keyframes cardshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .card.badshake{animation:cardshake .18s 2}
+  /* 하단 */
+  #foot{position:absolute;bottom:14px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:26px;z-index:4}
+  #deck{width:74px;height:94px;border-radius:11px;cursor:pointer;
+       background:repeating-linear-gradient(96deg,rgba(0,0,0,.08)0 3px,rgba(255,255,255,.04)3px 7px),linear-gradient(#5a3fb0,#3d2a86);
+       box-shadow:inset 0 2px 0 rgba(255,255,255,.2),0 4px 0 #251a52;color:#fff;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .1s}
+  #deck:hover{transform:translateY(-3px)}
+  #deck .n{font-size:26px}#deck .c{font-size:11px;font-weight:700}
+  #activewrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+  #activelbl{padding:3px 11px;border-radius:8px;background:linear-gradient(#f3d98f,#c79a3e);color:#5c3d08;font-weight:700;font-size:11px}
+  #active{width:90px;height:110px;border-radius:14px;background:linear-gradient(#fff,#f3ead8);border:4px solid #ff9a3c;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+       box-shadow:0 0 22px rgba(242,115,17,.5),0 6px 12px rgba(0,0,0,.3)}
+  #active .sym{font-size:30px;line-height:1}
+  #ban{display:none;flex-direction:column;align-items:center;gap:4px}
+  #ban .chip{width:56px;height:56px;border-radius:12px;background:rgba(0,0,0,.35);border:2px dashed #ff6b6b;
+       display:flex;align-items:center;justify-content:center;font-size:26px;position:relative}
+  #ban .chip::after{content:"🚫";position:absolute;font-size:38px;opacity:.75}
+  #ban .lbl{font-size:10px;color:#ffb3ab;font-weight:700}
+  /* FX·오버레이 */
+  .fxp{position:absolute;pointer-events:none;z-index:9000;will-change:transform,opacity;line-height:1}
+  #banner{position:absolute;left:50%;top:42%;z-index:9500;transform:translate(-50%,-50%);font-size:29px;font-weight:700;
+       color:#fff;text-shadow:0 3px 10px rgba(0,0,0,.55);opacity:0;pointer-events:none;white-space:nowrap}
+  #toastB{position:absolute;left:50%;bottom:126px;transform:translateX(-50%);z-index:8000;opacity:0;
+       font-size:12px;font-weight:700;color:#ffe6bf;background:rgba(0,0,0,.42);padding:5px 13px;border-radius:14px;
+       pointer-events:none;transition:opacity .2s;white-space:nowrap}
+  #toastB.show{opacity:1}
+  #overlay{position:absolute;inset:0;z-index:20;background:rgba(15,25,12,.85);display:none;flex-direction:column;
+       align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(2px);text-align:center}
+  #overlay.show{display:flex}
+  #overlay h3{font-size:34px;margin:0}
+  #overlay .st{font-size:15px;color:#e7e2d6;line-height:1.7}
+  #overlay .stars{font-size:40px;letter-spacing:6px}
+  #overlay button{font-family:inherit;font-weight:700;font-size:15px;border:none;border-radius:11px;padding:10px 22px;cursor:pointer;
+       background:linear-gradient(#ffb43a,#f27311);color:#fff;box-shadow:0 3px 0 #c2540c}
+  @keyframes fxburst{0%{transform:translate(0,0) scale(1) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.3) rotate(300deg);opacity:0}}
+  @keyframes fxconf{0%{transform:translateY(-16px) rotate(0);opacity:1}100%{transform:translateY(560px) rotate(540deg);opacity:.15}}
+  @keyframes fxbanner{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.22)}62%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  @keyframes floatup{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-50px)}}
+  @keyframes drainshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}60%{transform:translateX(4px)}}
+</style>
+</head>
+<body>
+<h1>🎯 챌린지 팩 프로토타입 <span style="color:#9aa1ae;font-size:12px">— 브레인스토밍 2차 시안 8종, 각각 플레이어블 (실게임 미반영)</span></h1>
+<div class="sub">탭을 골라 규칙이 다른 8개의 미니 판을 직접 플레이하세요. 공통 규칙: 액티브와 <b>같은 그림이 하나라도 있는 카드</b>를 탭 → 그 카드가 새 액티브. 드로우(↺)는 액티브 교체 + 콤보 리셋.</div>
+<div id="tabs"></div>
+<div id="wrap">
+  <div id="info">
+    <h2 id="i-title"></h2>
+    <div class="rule" id="i-rule"></div>
+    <div class="goal" id="i-goal"></div>
+    <div class="note" id="i-note"></div>
+    <button id="restart">↻ 이 시안 다시 하기</button>
+  </div>
+  <div id="stage">
+    <div id="hdr">
+      <div class="pill"><span class="k">SCORE</span><span class="v" id="score">0</span></div>
+      <div class="pill" id="movesPill" style="display:none"><span class="k">MOVES</span><span class="v" id="moves">0</span></div>
+      <div class="pill gold" id="goldPill" style="display:none"><span class="k">🪙 GOLD</span><span class="v" id="gold">0</span></div>
+      <div class="pill" id="bestPill" style="display:none"><span class="k">🏆 오늘 최고</span><span class="v" id="best">0</span></div>
+      <div class="pill alert" id="ddaPill" style="display:none"><span class="k">연패</span><span class="v" id="fails">0</span></div>
+      <div class="pill" id="feverPill" style="display:none;background:linear-gradient(#ffd54a,#f2a52b)"><span class="k">🔥 FEVER</span><span class="v" id="feverN">-</span></div>
+      <div style="flex:1"></div>
+      <div id="combo" class="off">🔥 ×<span id="comboN">0</span></div>
+    </div>
+    <div id="board"></div>
+    <div id="foot">
+      <div id="deck"><span class="n">↺</span><span class="c" id="deckN">6</span></div>
+      <div id="activewrap">
+        <div id="activelbl">▼ 같은 그림 찾기 ▼</div>
+        <div id="active"></div>
+      </div>
+      <div id="ban"><div class="chip" id="banSym"></div><div class="lbl">직전 그림 금지</div></div>
+    </div>
+    <div id="toastB"></div><div id="banner"></div>
+    <div id="overlay"><h3 id="ov-t"></h3><div class="stars" id="ov-stars"></div><div class="st" id="ov-s"></div><button id="ov-r">↻ 다시</button></div>
+  </div>
+</div>
+
+<script>
+/* ================= 공통 미니 엔진 ================= */
+const POOL=["🍓","🍊","🍋","🍇","🥝","🍒","🍉","🍑","🐶","🐱"];
+const $=id=>document.getElementById(id);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let rng=Math.random;
+const pick=()=>POOL[Math.floor(rng()*POOL.length)];
+function pair(withSym,notSym){let a=withSym||pick();let b=pick();
+  while(b===a||(notSym&&b===notSym))b=pick();return rng()<.5?[a,b]:[b,a];}
+
+/* ===== 사운드 (본편과 동일 방식) ===== */
+let actx=null,master=null;
+function audio(){if(!actx){try{actx=new AudioContext();master=actx.createGain();master.gain.value=.45;master.connect(actx.destination);}catch(e){return null}}
+  if(actx.state==='suspended')actx.resume();return actx;}
+function tone(hz,dur,{type='triangle',gain=.3,at=0,to=null}={}){const c=audio();if(!c)return;const t=c.currentTime+at;
+  const o=c.createOscillator();o.type=type;o.frequency.setValueAtTime(hz,t);
+  if(to)o.frequency.exponentialRampToValueAtTime(to,t+dur);
+  const g=c.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(gain,t+.006);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(master);o.start(t);o.stop(t+dur+.03);}
+const STEPS=[0,2,4,7,9,12,14,16,19,21,24],BASE=523.25;
+const sfxMatch=c=>{const hz=BASE*2**(STEPS[Math.min(Math.max(c-1,0),STEPS.length-1)]/12);tone(hz,.26,{gain:.32});tone(hz*1.5,.2,{gain:.13,at:.02});};
+const sfxReject=()=>tone(180,.18,{type:'sawtooth',gain:.16,to:110});
+const sfxLoss=()=>tone(440,.3,{type:'sine',gain:.2,to:180});
+const sfxFanfare=()=>[0,4,7,12].forEach((s,i)=>tone(BASE*2**(s/12),.22,{gain:.2,at:i*.06}));
+const sfxJackpot=()=>[0,7,12,16,19].forEach((s,i)=>tone(659*2**(s/12),.18,{gain:.18,at:i*.05}));
+
+/* ===== FX ===== */
+function spawn(html,style,life){const s=document.createElement('div');s.className='fxp';s.innerHTML=html;s.style.cssText=style;
+  $('stage').appendChild(s);setTimeout(()=>s.remove(),life);}
+function burst(x,y,n){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=50+Math.random()*65;
+  spawn(['⭐','✨','🌟','💫'][i%4],`left:${x}px;top:${y}px;font-size:15px;--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;animation:fxburst ${.55+Math.random()*.4}s ease-out forwards`,1050);}}
+function confetti(n){for(let i=0;i<n;i++)spawn(['🎊','🎉','⭐','💛','💚','💙'][i%6],
+  `left:${Math.random()*100}%;top:-14px;font-size:${11+Math.random()*12}px;animation:fxconf ${1+Math.random()*.9}s linear forwards`,2100);}
+function banner(t){const b=$('banner');b.textContent=t;b.style.animation='none';void b.offsetWidth;b.style.animation='fxbanner 1.25s ease forwards';}
+function toastB(t){const el=$('toastB');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1100);}
+function floatAt(x,y,txt,color){spawn(`<b style="font-size:16px;color:${color||'#ffd76a'};text-shadow:0 2px 4px #2b1f12">${txt}</b>`,
+  `left:${x}px;top:${y}px;transform:translate(-50%,0);animation:floatup .85s ease-out forwards`,900);}
+
+/* ================= 시안 정의 ================= */
+const MODES={
+ budget:{icon:'🎯',name:'이동 예산',
+   rule:'모든 행동(매칭·드로우)이 <b>MOVES를 1씩 소모</b>합니다. 예산 안에 보드를 비우세요.',
+   goal:'목표: 16수 안에 12장 전부 제거',
+   note:'A1 · 구현 0줄(엔진의 moves 노브가 이미 존재) — "정확도 레벨" 유형. 드로우 남발이 곧 손해가 됩니다.'},
+ norepeat:{icon:'🚫',name:'노-리피트',
+   rule:'<b>직전 매칭에 사용한 그림은 다음 매칭에 쓸 수 없습니다</b> (하단 🚫 칩). 드로우하면 금지가 풀립니다.',
+   goal:'목표: 12장 전부 제거 (덱 6)',
+   note:'A2 · 같은 그림 연타를 막아 r=1에서도 탐색이 2배가 되는 지각 제약.'},
+ poison:{icon:'☠️',name:'덱 오염',
+   rule:'드로우가 <b>도박</b>이 됩니다 — 두 번에 한 번은 보드와 이어지지 않는 <b>꽝 카드</b>가 나옵니다.',
+   goal:'목표: 12장 전부 제거 (덱 8, 홀수번째 드로우는 안전·짝수번째는 꽝)',
+   note:'A3 · 드로우 제한(↺)의 심화 — "뽑을까 말까"의 리스크 판단. 손실 피드백(P2)과 결합.'},
+ fever:{icon:'🔥',name:'피버 모드',
+   rule:'콤보 <b>×8</b>에 도달하면 <b>피버 5수</b>: 아무 카드나 매칭되고 점수 2배! 보드는 계속 리필됩니다.',
+   goal:'목표: 40수 안에 최고 점수 (점수 어택)',
+   note:'B1 · "정점이 평평하다"는 플레이테스트 비판의 규칙적 해답 — 카니발 연출과 같은 순간에 발동.'},
+ stars:{icon:'⭐',name:'별점 1~3성',
+   rule:'클리어는 쉽게, <b>별은 이동 효율</b>로: ≤15수 ★★★ · ≤18수 ★★ · 그 외 ★.',
+   goal:'목표: 12장 클리어 + ★★★',
+   note:'B2 · 실제 게임에선 별 컷을 만 번 시뮬의 p50/p90 실측으로 자동 산정 — 수동 밸런싱 불요.'},
+ daily:{icon:'📅',name:'데일리 시드',
+   rule:'<b>오늘 날짜가 시드</b> — 누가 언제 열어도 오늘은 같은 판. 남은 덱은 보너스 점수.',
+   goal:'목표: 오늘의 판에서 최고 기록 경신 (로컬 저장)',
+   note:'B3 · Balatro Daily Run 관행. 자동 설계 파이프라인 재사용, 서버 불요.'},
+ dda:{icon:'🛟',name:'동적 난이도',
+   rule:'어려운 판(덱 1)입니다. <b>2연패하면 다음 판부터 덱 +2</b>가 자동 지급됩니다.',
+   goal:'목표: 12장 클리어 — 지면 연패 카운터를, 2연패 후 완화를 확인하세요',
+   note:'C1 · 레벨 데이터는 불변, 세션 오버레이만 — 소프트 실패(D-5) 필러의 연장.'},
+ lucky:{icon:'🍀',name:'럭키 카드',
+   rule:'보드의 <b>🍀 카드</b>를 제거하면 잭팟 — 🪙 +100. 경로 선택에 복권이 생깁니다.',
+   goal:'목표: 12장 클리어 + 🍀 잭팟 챙기기',
+   note:'B4 · 보상 트랙 인프라 재사용. 어느 길로 체인을 끌고 갈지의 이유를 추가.'},
+};
+
+/* ================= 상태 ================= */
+let mode='budget';
+let S=null; // {cards[{syms,gone,lucky}], active, deck, moves, combo, score, gold, drawCount, banned, fever, fails, status}
+let DDA_FAILS=0;
+
+function todaySeed(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
+
+function setup(){
+  rng = mode==='daily' ? mulberry32(todaySeed()) : Math.random;
+  const boardN = mode==='fever' ? 10 : 12;
+  // 해답 체인 생성: active → c0 → c1 … (항상 클리어 가능), 노-리피트는 연속 공유 심볼이 달라지게
+  let prevShared=null;
+  const active=pair();
+  const cards=[]; let carry=active[Math.floor(rng()*2)];
+  for(let i=0;i<boardN;i++){
+    const c=pair(carry, mode==='norepeat'?prevShared:null);
+    prevShared=carry;
+    carry=c[0]===carry?c[1]:c[0]===prevShared?c[1]:c[Math.floor(rng()*2)];
+    cards.push({syms:c,gone:false,lucky:false});
+  }
+  if(mode==='dda'){ // 함정 카드 2장 추가 — 체인 밖 (막힘 가능성)
+    for(let i=0;i<2;i++)cards.push({syms:pair(),gone:false,lucky:false});
+  }
+  if(mode==='lucky')cards[3+Math.floor(rng()*6)].lucky=true;
+  S={cards,active,deck:{budget:6,norepeat:6,poison:8,fever:99,stars:6,daily:5,dda:1+(DDA_FAILS>=2?2:0),lucky:6}[mode],
+     moves:0,movesMax:{budget:16,fever:40}[mode]||0,combo:0,score:0,gold:0,drawCount:0,banned:null,
+     fever:0,status:'play'};
+  if(mode==='dda'&&DDA_FAILS>=2)toastB('🛟 동적 난이도 발동 — 덱 +2');
+  $('overlay').classList.remove('show');
+  $('stage').classList.remove('fever');
+  render();
+}
+
+function render(){
+  $('score').textContent=S.score.toLocaleString();
+  $('comboN').textContent=S.combo;$('combo').classList.toggle('off',S.combo===0);
+  $('deckN').textContent=S.deck>90?'∞':S.deck;
+  $('movesPill').style.display=S.movesMax?'':'none';
+  if(S.movesMax)$('moves').textContent=S.movesMax-S.moves;
+  $('goldPill').style.display=mode==='lucky'?'':'none';$('gold').textContent=S.gold;
+  $('bestPill').style.display=mode==='daily'?'':'none';
+  if(mode==='daily')$('best').textContent=(+localStorage.getItem('cm-daily-best-'+todaySeed())||0).toLocaleString();
+  $('ddaPill').style.display=mode==='dda'?'':'none';$('fails').textContent=DDA_FAILS;
+  $('feverPill').style.display=mode==='fever'?'':'none';$('feverN').textContent=S.fever>0?S.fever+'수':'×8에 발동';
+  $('stage').classList.toggle('fever',S.fever>0);
+  $('ban').style.display=mode==='norepeat'?'flex':'none';
+  $('banSym').textContent=S.banned||'';
+  $('active').innerHTML=S.active.map(s=>`<span class="sym">${s}</span>`).join('');
+  const b=$('board');b.innerHTML='';
+  S.cards.forEach((c,i)=>{
+    const el=document.createElement('div');el.className='card'+(c.gone?' gone':'');el.dataset.i=i;
+    el.innerHTML=c.syms.map(s=>`<span class="sym">${s}</span>`).join('')+(c.lucky?'<span class="tag">🍀</span>':'');
+    el.addEventListener('pointerdown',()=>{el.classList.add('pressed');tap(i,el);});
+    el.addEventListener('pointerup',()=>el.classList.remove('pressed'));
+    el.addEventListener('pointerleave',()=>el.classList.remove('pressed'));
+    b.appendChild(el);
+  });
+}
+
+function matchOk(c){
+  if(S.fever>0)return true;                                  // 피버: 전부 매칭
+  const shared=c.syms.filter(s=>S.active.includes(s));
+  if(!shared.length)return false;
+  if(mode==='norepeat'&&S.banned&&shared.every(s=>s===S.banned))return false; // 금지 그림만 공유 → 불가
+  return true;
+}
+function remaining(){return S.cards.filter(c=>!c.gone).length}
+function anyMatch(){return S.cards.some(c=>!c.gone&&matchOk(c))}
+
+function useMove(){ if(!S.movesMax)return true;
+  S.moves++; if(S.movesMax-S.moves<0)return false; return true; }
+
+function tap(i,el){
+  if(S.status!=='play')return;
+  const c=S.cards[i]; if(c.gone)return;
+  if(!matchOk(c)){el.classList.remove('badshake');void el.offsetWidth;el.classList.add('badshake');
+    sfxReject();toastB(S.banned&&c.syms.includes(S.banned)?'🚫 직전 그림은 금지':'같은 그림이 없어요');return;}
+  // 매치
+  if(!useMove())return end(false,'이동 예산 소진');
+  const shared=c.syms.find(s=>S.active.includes(s));
+  S.combo++;const mult=S.fever>0?2:1;const gain=10*S.combo*mult;S.score+=gain;
+  sfxMatch(S.combo);
+  const r=el.getBoundingClientRect(),st=$('stage').getBoundingClientRect();
+  const cx=r.left-st.left+r.width/2, cy=r.top-st.top+r.height/2;
+  floatAt(cx,cy-12,`+${gain}${mult>1?' ×2':''}`);burst(cx,cy,3+Math.min(10,S.combo*2));
+  if(mode==='norepeat')S.banned=shared;
+  if(c.lucky){S.gold+=100;sfxJackpot();banner('🍀 잭팟! 🪙 +100');confetti(20);}
+  S.active=c.syms.slice();
+  if(mode==='fever'){c.syms=pair(S.active[Math.floor(rng()*2)]);}  // 리필
+  else c.gone=true;
+  if(S.fever>0){S.fever--;if(S.fever===0){toastB('피버 종료');}}
+  // 피버 발동
+  if(mode==='fever'&&S.fever===0&&S.combo>0&&S.combo%8===0){
+    S.fever=5;sfxFanfare();banner('🔥 FEVER! 5수간 전부 매칭 · ×2');confetti(24);}
+  // cgoal(×5) 정점 — 카니발
+  if(S.combo%5===0&&mode!=='fever'){const bonus=100*S.combo;S.score+=bonus;
+    sfxFanfare();banner(`×${S.combo} SPECTACULAR! +${bonus}`);confetti(18);}
+  render();checkEnd();
+}
+
+$('deck').addEventListener('pointerdown',()=>{
+  if(S.status!=='play')return;
+  if(S.deck<=0)return toastB('덱이 없습니다');
+  if(!useMove())return end(false,'이동 예산 소진');
+  S.deck--;S.drawCount++;
+  // P2 손실 연출: 콤보 드레인
+  if(S.combo>0){const badge=$('combo');badge.style.animation='drainshake .3s';setTimeout(()=>badge.style.animation='',320);sfxLoss();}
+  S.combo=0;S.banned=null;
+  if(mode==='poison'&&S.drawCount%2===0){ // 짝수번째 드로우 = 꽝
+    let a=pick(),b=pick();while(b===a)b=pick();
+    // 보드 심볼과 겹치지 않게
+    const boardSyms=new Set(S.cards.filter(c=>!c.gone).flatMap(c=>c.syms));
+    const others=POOL.filter(s=>!boardSyms.has(s));
+    S.active=others.length>=2?[others[0],others[1]]:[a,b];
+    banner('☠️ 꽝!');tone(300,.35,{type:'square',gain:.15,to:120});
+  } else {
+    const alive=S.cards.filter(c=>!c.gone);
+    const biasC=alive[Math.floor(rng()*alive.length)];
+    S.active=pair(biasC?biasC.syms[Math.floor(rng()*2)]:null);
+    tone(0,0);/*noop*/;
+  }
+  toastB('드로우 — 콤보가 끊겼습니다');
+  render();checkEnd();
+});
+
+function starsFor(moves){return moves<=15?3:moves<=18?2:1}
+function checkEnd(){
+  if(S.status!=='play')return;
+  if(mode==='fever'){ if(S.movesMax-S.moves<=0)return end(true,'점수 어택 종료'); return; }
+  if(remaining()===0)return end(true,'클리어!');
+  if(S.movesMax&&S.movesMax-S.moves<=0)return end(false,'이동 예산 소진');
+  if(!anyMatch()&&S.deck<=0)return end(false,'막힘 — 매칭·덱 없음');
+}
+function end(win,reason){
+  S.status=win?'win':'lose';
+  const ov=$('overlay');ov.classList.add('show');
+  $('ov-t').textContent=win?'🎉 '+reason:'💥 '+reason;
+  $('ov-t').style.color=win?'#7ed957':'#ff6b6b';
+  let stars='';let extra='';
+  if(mode==='stars'&&win){const n=starsFor(S.moves);stars='★★★'.slice(0,n)+'☆☆☆'.slice(0,3-n);
+    extra=`이동 ${S.moves}수 (★★★ ≤15 · ★★ ≤18)`;}
+  if(mode==='daily'){const total=S.score+(win?S.deck*50:0);
+    const key='cm-daily-best-'+todaySeed();const best=+localStorage.getItem(key)||0;
+    if(total>best){localStorage.setItem(key,String(total));extra=`🏆 신기록! ${total.toLocaleString()} (덱 보너스 +${win?S.deck*50:0})`;confetti(20);}
+    else extra=`기록 ${total.toLocaleString()} · 오늘 최고 ${best.toLocaleString()}`;}
+  if(mode==='dda'){ if(!win){DDA_FAILS++; extra=DDA_FAILS>=2?'🛟 다음 판부터 동적 난이도: 덱 +2':'연패 '+DDA_FAILS+' — 2연패 시 완화됩니다';}
+    else {extra=DDA_FAILS>=2?'완화된 판으로 클리어! (연패 초기화)':'';DDA_FAILS=0;} }
+  if(mode==='lucky')extra=S.gold>0?`🍀 잭팟 획득 — 🪙 ${S.gold}`:'🍀를 못 챙겼습니다';
+  if(mode==='fever')extra=`최종 점수 ${S.score.toLocaleString()}`;
+  $('ov-stars').textContent=stars;
+  $('ov-s').innerHTML=`점수 ${S.score.toLocaleString()} · 이동 ${S.moves}${extra?'<br>'+extra:''}`;
+  if(win){sfxFanfare();confetti(16);}else sfxLoss();
+  render();
+}
+$('ov-r').onclick=setup;
+$('restart').onclick=()=>{if(mode==='dda')DDA_FAILS=0;setup();};
+
+/* ===== 탭 ===== */
+const tabbar=$('tabs');
+Object.entries(MODES).forEach(([k,m])=>{
+  const b=document.createElement('button');b.textContent=`${m.icon} ${m.name}`;b.dataset.k=k;
+  b.onclick=()=>{mode=k;[...tabbar.children].forEach(x=>x.classList.toggle('on',x.dataset.k===k));applyInfo();setup();};
+  tabbar.appendChild(b);
+});
+function applyInfo(){const m=MODES[mode];
+  $('i-title').innerHTML=`${m.icon} ${m.name}`;
+  $('i-rule').innerHTML=m.rule;$('i-goal').innerHTML=m.goal;$('i-note').innerHTML=m.note;}
+tabbar.children[0].classList.add('on');
+applyInfo();setup();
+</script>
+</body>
+</html>

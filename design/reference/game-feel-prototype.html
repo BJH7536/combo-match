@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>게임 필 개선 프로토타입 — 현재 vs 개선 A/B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Fredoka',system-ui,sans-serif;background:#171a20;color:#e7e2d6;
+       display:flex;flex-direction:column;align-items:center;padding:18px;gap:14px}
+  h1{font-size:20px;margin:0}
+  .sub{font-size:12px;color:#9aa1ae;text-align:center;max-width:760px;line-height:1.6}
+  /* A/B 토글 */
+  #modebar{display:flex;align-items:center;gap:10px}
+  .seg{display:flex;border:1px solid #3a404d;border-radius:12px;overflow:hidden}
+  .seg button{font-family:inherit;font-weight:700;font-size:14px;padding:10px 22px;border:0;cursor:pointer;
+       background:#20242c;color:#9aa1ae}
+  .seg button.on{background:linear-gradient(#ffb43a,#f27311);color:#fff}
+  #restart{font-family:inherit;font-weight:700;border:1px solid #3a404d;background:#20242c;color:#e7e2d6;
+       border-radius:10px;padding:9px 14px;cursor:pointer}
+  /* 스테이지 */
+  #stage{position:relative;width:880px;max-width:96vw;height:470px;border-radius:22px;overflow:hidden;
+       background:radial-gradient(120% 100% at 50% 12%,#5aad3a,#3c7f2c 68%,#2f6b24);
+       box-shadow:inset 0 0 44px rgba(0,0,0,.45),0 16px 40px rgba(0,0,0,.45);user-select:none}
+  #hdr{position:absolute;top:0;left:0;right:0;height:62px;z-index:6;display:flex;align-items:center;gap:12px;padding:0 16px;
+       background:repeating-linear-gradient(96deg,rgba(0,0,0,.08)0 3px,rgba(255,255,255,.03)3px 7px),linear-gradient(#8a5a2c,#6b431e);
+       box-shadow:0 4px 0 #4a2c11}
+  .pill{display:flex;flex-direction:column;align-items:center;justify-content:center;height:44px;padding:0 13px;border-radius:9px;
+       background:linear-gradient(#c98b47,#9c6229);box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 3px 0 #5c3411;color:#3a2408}
+  .pill .k{font-size:9px;letter-spacing:1.5px}.pill .v{font-size:17px;font-weight:700}
+  #combo{display:flex;align-items:center;gap:5px;height:46px;padding:0 16px;border-radius:11px;color:#fff;font-weight:700;font-size:17px;
+       background:linear-gradient(#ffb43a,#f27311);border:2px solid rgba(255,255,255,.9);
+       box-shadow:0 3px 0 #c2540c,0 0 22px rgba(242,115,17,.55);text-shadow:0 1px 2px rgba(0,0,0,.35);
+       transition:transform .1s,filter .2s;white-space:nowrap}
+  #combo.off{filter:grayscale(.9) brightness(.75);opacity:.75}
+  #gauge{display:flex;flex-direction:column;gap:3px}
+  #gauge .lbl{font-size:10px;color:#ffe6bf;font-weight:700}
+  #gaugebar{width:120px;height:8px;border-radius:5px;background:rgba(0,0,0,.32);overflow:hidden}
+  #gaugefill{height:100%;width:0%;background:linear-gradient(90deg,#ffd76a,#f2a52b);transition:width .18s}
+  #goldpill{background:linear-gradient(#f3d98f,#c79a3e);box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 3px 0 #8a5f16}
+  /* 보드 */
+  #board{position:absolute;top:96px;left:0;right:0;display:flex;justify-content:center;gap:12px;z-index:3}
+  .card{position:relative;width:74px;height:92px;border-radius:12px;background:linear-gradient(#fff,#f3ead8);
+       border:3px solid #e7d9bb;box-shadow:0 5px 0 rgba(0,0,0,.16),0 8px 13px rgba(0,0,0,.22);
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;
+       transition:transform .12s,box-shadow .12s}
+  .card:hover{transform:translateY(-4px)}
+  .card.pressed{transform:scale(.94) translateY(1px);box-shadow:0 2px 0 rgba(0,0,0,.16),0 3px 6px rgba(0,0,0,.2)}
+  .card .sym{font-size:28px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18))}
+  @keyframes cardshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .card.badshake{animation:cardshake .18s 2}
+  /* 덱 & 액티브 */
+  #foot{position:absolute;bottom:16px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:34px;z-index:4}
+  #deck{width:82px;height:104px;border-radius:12px;cursor:pointer;
+       background:repeating-linear-gradient(96deg,rgba(0,0,0,.08)0 3px,rgba(255,255,255,.04)3px 7px),linear-gradient(#5a3fb0,#3d2a86);
+       box-shadow:inset 0 2px 0 rgba(255,255,255,.2),0 5px 0 #251a52;color:#fff;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .1s}
+  #deck:hover{transform:translateY(-3px)}
+  #deck .n{font-size:30px}#deck .c{font-size:12px;font-weight:700}
+  #activewrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+  #activelbl{padding:4px 13px;border-radius:9px;background:linear-gradient(#f3d98f,#c79a3e);color:#5c3d08;font-weight:700;font-size:12px;box-shadow:0 3px 0 #8a5f16}
+  #active{position:relative;width:100px;height:120px;border-radius:15px;background:linear-gradient(#fff,#f3ead8);border:4px solid #ff9a3c;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+       box-shadow:0 0 26px rgba(242,115,17,.5),0 7px 14px rgba(0,0,0,.3)}
+  #active .sym{font-size:32px;line-height:1}
+  /* FX */
+  .fxp{position:absolute;pointer-events:none;z-index:9000;will-change:transform,opacity;line-height:1}
+  #banner{position:absolute;left:50%;top:44%;z-index:9500;transform:translate(-50%,-50%);font-size:32px;font-weight:700;
+       color:#fff;text-shadow:0 3px 10px rgba(0,0,0,.55);opacity:0;pointer-events:none;white-space:nowrap}
+  #toastC{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.85);z-index:8000;opacity:0;
+       font-size:22px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);pointer-events:none;transition:all .22s}
+  #toastC.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #toastB{position:absolute;left:50%;bottom:132px;transform:translateX(-50%);z-index:8000;opacity:0;
+       font-size:13px;font-weight:700;color:#ffe6bf;background:rgba(0,0,0,.42);padding:6px 14px;border-radius:16px;
+       pointer-events:none;transition:opacity .2s}
+  #toastB.show{opacity:1}
+  #flycard{position:absolute;width:74px;height:92px;border-radius:12px;z-index:7000;pointer-events:none;
+       background:repeating-linear-gradient(96deg,rgba(0,0,0,.08)0 3px,rgba(255,255,255,.04)3px 7px),linear-gradient(#5a3fb0,#3d2a86);
+       border:3px solid #7a5fd0;display:none}
+  @keyframes fxburst{0%{transform:translate(0,0) scale(1) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.3) rotate(300deg);opacity:0}}
+  @keyframes fxconf{0%{transform:translateY(-16px) rotate(0);opacity:1}100%{transform:translateY(500px) rotate(540deg);opacity:.15}}
+  @keyframes fxbanner{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.24)}62%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  @keyframes floatup{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-52px)}}
+  @keyframes drainshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}60%{transform:translateX(4px)}}
+  /* 설명 */
+  #legend{width:880px;max-width:96vw;background:#20242c;border:1px solid #3a404d;border-radius:14px;padding:13px 16px;font-size:12px;line-height:1.7}
+  #legend b{color:#ff9a3c}
+  #legend .row{display:grid;grid-template-columns:52px 1fr 1fr;gap:8px;padding:5px 0;border-bottom:1px solid #2b303a}
+  #legend .row:last-child{border-bottom:0}
+  #legend .hd{color:#9aa1ae;font-weight:700}
+  #legend .cur{color:#9aa1ae}
+  #legend .imp{color:#cfe8c0}
+</style>
+</head>
+<body>
+<h1>🎛 게임 필 개선 프로토타입 <span style="color:#9aa1ae;font-size:13px">— 플레이테스트 P1·P2·P3·P4·P6 시연 (실게임 미반영)</span></h1>
+<div class="sub">카드를 이어 매칭해 <b>콤보 ×5(게이지 완성)</b>를 만들면 정점 연출 차이가, <b>드로우</b>를 누르면 손실 연출 차이가 느껴집니다.
+모드를 전환해 같은 행동을 반복해 보세요. 소리 포함(첫 클릭 후 활성화).</div>
+<div id="modebar">
+  <div class="seg">
+    <button id="mCur" class="on">현재 필 (라이브 빌드)</button>
+    <button id="mImp">개선 필 (제안)</button>
+  </div>
+  <button id="restart">↻ 재시작</button>
+</div>
+
+<div id="stage">
+  <div id="hdr">
+    <div class="pill"><span class="k">SCORE</span><span class="v" id="score">0</span></div>
+    <div id="gauge"><span class="lbl">×5 콤보 보너스</span>
+      <div id="gaugebar"><div id="gaugefill"></div></div></div>
+    <div style="flex:1"></div>
+    <div class="pill" id="goldpill"><span class="k">🪙 GOLD</span><span class="v" id="gold">200</span></div>
+    <div id="combo" class="off">🔥 ×<span id="comboN">0</span></div>
+  </div>
+  <div id="board"></div>
+  <div id="foot">
+    <div id="deck"><span class="n">↺</span><span class="c">드로우</span></div>
+    <div id="activewrap">
+      <div id="activelbl">▼ 같은 그림 찾기 ▼</div>
+      <div id="active"></div>
+    </div>
+  </div>
+  <div id="flycard"></div>
+  <div id="toastC"></div>
+  <div id="toastB"></div>
+  <div id="banner"></div>
+</div>
+
+<div id="legend">
+  <div class="row hd"><span>항목</span><span>현재 필</span><span>개선 필</span></div>
+  <div class="row"><b>P1</b><span class="cur">×5 도달: 토스트 "콤보 보너스 +N!" 한 줄</span><span class="imp">별 버스트 + "×5 SPECTACULAR!" 배너 줌 + 콘페티 + 팡파르 (스타 카니발 §4.4)</span></div>
+  <div class="row"><b>P2</b><span class="cur">드로우: 즉시 교체 — 콤보가 소리 없이 0</span><span class="imp">배지 흔들림→회색 드레인 + 하강음 + 덱→액티브 카드 비행 궤적</span></div>
+  <div class="row"><b>P3</b><span class="cur">눌림 반응 없음 (hover 리프트만)</span><span class="imp">pointerdown 눌림 스케일 0.94 — 접촉감</span></div>
+  <div class="row"><b>P4</b><span class="cur">모든 메시지가 중앙 토스트 1채널 (서로 덮임)</span><span class="imp">정보=하단 채널 · 보상=중앙 배너 분리</span></div>
+  <div class="row"><b>P6</b><span class="cur">점수는 헤더에만 적산</span><span class="imp">+N 플로팅이 매칭한 카드 위치에서 떠오름</span></div>
+</div>
+
+<script>
+/* ===== 데모 상태 ===== */
+const POOL=["🍓","🍊","🍋","🍇","🥝","🍒","🍉","🍑"];
+const CGOAL=5, SLOTS=7;
+let improved=false, score=0, gold=200, combo=0, active=[], cards=[];
+const $=id=>document.getElementById(id);
+
+/* ===== 사운드 (라이브 빌드와 동일 방식: WebAudio 합성, 어택 6ms·지수 감쇠) ===== */
+let ctx=null, master=null;
+function audio(){ if(!ctx){ try{ctx=new AudioContext();master=ctx.createGain();master.gain.value=.45;master.connect(ctx.destination);}catch(e){return null} }
+  if(ctx.state==='suspended')ctx.resume(); return ctx; }
+function tone(hz,dur,{type='triangle',gain=.3,at=0,to=null}={}){
+  const c=audio(); if(!c)return; const t=c.currentTime+at;
+  const o=c.createOscillator(); o.type=type; o.frequency.setValueAtTime(hz,t);
+  if(to)o.frequency.exponentialRampToValueAtTime(to,t+dur);
+  const g=c.createGain(); g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(gain,t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(master); o.start(t); o.stop(t+dur+.03);
+}
+function noiseSfx(dur,gain,hz){ const c=audio(); if(!c)return;
+  const n=Math.floor(c.sampleRate*dur),buf=c.createBuffer(1,n,c.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
+  const s=c.createBufferSource();s.buffer=buf;const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=hz;
+  const g=c.createGain();g.gain.value=gain;s.connect(bp).connect(g).connect(master);s.start();}
+const STEPS=[0,2,4,7,9,12,14,16,19,21,24], BASE=523.25;
+const pitch=c=>BASE*2**(STEPS[Math.min(Math.max(c-1,0),STEPS.length-1)]/12);
+const sfxMatch=c=>{const hz=pitch(c);tone(hz,.26,{gain:.32});tone(hz*1.5,.2,{gain:.13,at:.02});};
+const sfxReject=()=>tone(180,.18,{type:'sawtooth',gain:.16,to:110});
+const sfxDraw=()=>noiseSfx(.16,.32,1800);
+const sfxLoss=()=>{tone(440,.3,{type:'sine',gain:.2,to:180});};                       // P2: 손실 하강음
+const sfxFanfare=()=>{[0,4,7,12].forEach((s,i)=>tone(BASE*2**(s/12),.22,{gain:.2,at:i*.06}));}; // P1: 팡파르
+
+/* ===== FX 헬퍼 ===== */
+function spawn(html,style,life){const s=document.createElement('div');s.className='fxp';s.innerHTML=html;s.style.cssText=style;
+  $('stage').appendChild(s);setTimeout(()=>s.remove(),life);}
+function burst(x,y,n,big){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=55+Math.random()*70;
+  spawn(['⭐','✨','🌟','💫'][i%4],
+    `left:${x}px;top:${y}px;font-size:${big?18:13}px;--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;animation:fxburst ${.55+Math.random()*.4}s ease-out forwards`,1050);}}
+function confetti(n){for(let i=0;i<n;i++)spawn(['🎊','🎉','⭐','💛','💚','💙'][i%6],
+  `left:${Math.random()*100}%;top:-14px;font-size:${11+Math.random()*13}px;animation:fxconf ${1+Math.random()*.9}s linear forwards`,2100);}
+function banner(t){const b=$('banner');b.textContent=t;b.style.animation='none';void b.offsetWidth;b.style.animation='fxbanner 1.25s ease forwards';}
+function toastCenter(t){const el=$('toastC');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),700);}
+function toastBottom(t){const el=$('toastB');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),900);}
+function info(t){ improved?toastBottom(t):toastCenter(t); }                            // P4: 채널 분리
+function floatScore(x,y,txt){spawn(`<b style="font-size:17px;color:#ffd76a;text-shadow:0 2px 4px #2b1f12">${txt}</b>`,
+  `left:${x}px;top:${y}px;transform:translate(-50%,0);animation:floatup .85s ease-out forwards`,900);}
+
+/* ===== 게임 로직 (데모용 미니 규칙: k=2, r=1, 무한 리필) ===== */
+const pick=()=>POOL[Math.floor(Math.random()*POOL.length)];
+function makeCard(biasSym){ // 70% 확률로 액티브와 이어지게 — 데모에서 체인이 끊기지 않도록
+  let a=Math.random()<.7&&biasSym?biasSym:pick(), b=pick(); while(b===a)b=pick();
+  return Math.random()<.5?[a,b]:[b,a];
+}
+function newActive(){active=[pick(),pick()];while(active[1]===active[0])active[1]=pick();}
+function reset(){score=0;gold=200;combo=0;newActive();cards=[];
+  for(let i=0;i<SLOTS;i++)cards.push(makeCard(active[Math.floor(Math.random()*2)]));
+  render();}
+function shares(c){return c.some(s=>active.includes(s));}
+
+function render(){
+  $('score').textContent=score.toLocaleString();
+  $('gold').textContent=gold.toLocaleString();
+  $('comboN').textContent=combo;
+  $('combo').classList.toggle('off',combo===0);
+  $('gaugefill').style.width=Math.min(100,(combo%CGOAL===0&&combo>0?CGOAL:combo%CGOAL)/CGOAL*100)+'%';
+  $('active').innerHTML=active.map(s=>`<span class="sym">${s}</span>`).join('');
+  const b=$('board');b.innerHTML='';
+  cards.forEach((c,i)=>{
+    const el=document.createElement('div');el.className='card';el.dataset.i=i;
+    el.innerHTML=c.map(s=>`<span class="sym">${s}</span>`).join('');
+    if(improved){ // P3: 눌림
+      el.addEventListener('pointerdown',()=>el.classList.add('pressed'));
+      el.addEventListener('pointerup',()=>el.classList.remove('pressed'));
+      el.addEventListener('pointerleave',()=>el.classList.remove('pressed'));
+    }
+    el.addEventListener('pointerdown',()=>tap(i,el));
+    b.appendChild(el);
+  });
+}
+
+function tap(i,el){
+  const c=cards[i];
+  if(!shares(c)){ el.classList.remove('badshake');void el.offsetWidth;el.classList.add('badshake');
+    sfxReject(); info('같은 그림이 없어요'); return; }
+  // 매치!
+  combo++; const gain=10*combo; score+=gain; sfxMatch(combo);
+  const r=el.getBoundingClientRect(), st=$('stage').getBoundingClientRect();
+  const cx=r.left-st.left+r.width/2, cy=r.top-st.top+r.height/2;
+  if(improved){ floatScore(cx,cy-14,`+${gain}`); burst(cx,cy,3+Math.min(10,combo*2),false); } // P6 + 상시 소버스트
+  active=c.slice(); cards[i]=makeCard(active[Math.floor(Math.random()*2)]);
+  // 정점: cgoal 배수
+  if(combo%CGOAL===0){
+    const bonus=100*combo; score+=bonus;
+    if(improved){ // P1: 스타 카니발
+      sfxFanfare(); banner(`×${combo} SPECTACULAR!  +${bonus}`); confetti(26); burst(cx,cy,18,true);
+      gold+=50; floatScore($('goldpill').getBoundingClientRect().left-st.left+50,52,'+🪙50');
+    } else {
+      toastCenter(`콤보 보너스 +${bonus}!`);
+    }
+  }
+  render();
+}
+
+$('deck').addEventListener('pointerdown',()=>{
+  const prev=combo;
+  if(improved&&prev>0){ // P2: 손실 연출 — 드레인 후 교체
+    const badge=$('combo');
+    badge.style.animation='drainshake .3s';
+    setTimeout(()=>badge.style.animation='',320);
+    sfxLoss();
+    let n=prev; const iv=setInterval(()=>{ n--; combo=Math.max(0,n); render(); if(n<=0)clearInterval(iv); },70); // 카운트 드레인
+    // 덱 → 액티브 비행 궤적
+    const fly=$('flycard'), st=$('stage').getBoundingClientRect();
+    const d=$('deck').getBoundingClientRect(), a=$('active').getBoundingClientRect();
+    fly.style.display='block';
+    fly.style.left=(d.left-st.left)+'px'; fly.style.top=(d.top-st.top)+'px';
+    fly.style.transition='none'; void fly.offsetWidth;
+    fly.style.transition='all .38s cubic-bezier(.4,0,.6,1)';
+    fly.style.left=(a.left-st.left+13)+'px'; fly.style.top=(a.top-st.top+14)+'px';
+    setTimeout(()=>{ fly.style.display='none'; newActive(); sfxDraw(); render(); },390);
+    info('드로우 — 콤보가 끊겼습니다');
+  } else { // 현재: 즉시 교체
+    combo=0; newActive(); sfxDraw(); render();
+    if(prev>0)info('드로우');
+  }
+});
+
+function setMode(imp){ improved=imp;
+  $('mImp').classList.toggle('on',imp); $('mCur').classList.toggle('on',!imp); render(); }
+$('mCur').onclick=()=>setMode(false);
+$('mImp').onclick=()=>setMode(true);
+$('restart').onclick=reset;
+reset();
+</script>
+</body>
+</html>

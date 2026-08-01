@@ -749,7 +749,11 @@ export class PlayScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     const deckLabel = this.add
-      .text(0, dk.h * 0.38, '드로우', { fontFamily: FONT, fontSize: `${Math.round(dk.h * 0.1)}px`, color: '#d8ccff' })
+      .text(0, dk.h * 0.38, this.eco.drawCost > 0 ? `드로우 🪙${this.eco.drawCost}` : '드로우', {
+          fontFamily: FONT,
+          fontSize: `${Math.round(dk.h * 0.1)}px`,
+          color: '#d8ccff',
+        })
       .setOrigin(0.5);
     deck.add([deckBg, deckIcon, this.deckCount, deckLabel]);
     deck.setInteractive(new Phaser.Geom.Rectangle(-dk.w / 2, -dk.h / 2, dk.w, dk.h), Phaser.Geom.Rectangle.Contains);

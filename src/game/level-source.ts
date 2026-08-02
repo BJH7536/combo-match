@@ -6,6 +6,11 @@ import type { LevelData } from '../core/types';
 
 export const PLAYTEST_KEY = 'combo-match:playtest';
 
+/** 레벨 JSON URL — 빌드 식별자를 붙여 CDN·브라우저의 옛 캐시를 우회한다 (JSON은 해시 파일명이 없다) */
+export function levelUrl(file: string): string {
+  return `levels/${file}?v=${__BUILD_ID__}`;
+}
+
 function b64ToUtf8(b64: string): string {
   // 디자이너 strToB64 = btoa(unescape(encodeURIComponent(s))) 의 역변환 (UTF-8 안전)
   const bin = atob(b64);

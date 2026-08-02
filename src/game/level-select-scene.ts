@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { LevelData } from '../core/types';
 import { showHelpOverlay } from './help-overlay';
 import { computeLayout, type Layout } from './layout';
+import { levelUrl } from './level-source';
 import { loadProgress, type Progress } from './progress';
 import { feltTexture, PALETTE, panelTexture } from './skin';
 import { loadGold } from './wallet';
@@ -188,7 +189,7 @@ export class LevelSelectScene extends Phaser.Scene {
   }
 
   private async loadIndex(): Promise<void> {
-    const res = await fetch('levels/index.json');
+    const res = await fetch(levelUrl('index.json'));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as { stages?: StageEntry[]; levels: LevelIndexEntry[] };
     this.levels = data.levels;
@@ -451,7 +452,7 @@ export class LevelSelectScene extends Phaser.Scene {
 
   private async startLevel(entry: LevelIndexEntry): Promise<void> {
     try {
-      const res = await fetch(`levels/${entry.file}`);
+      const res = await fetch(levelUrl(entry.file));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const level = (await res.json()) as LevelData;
       this.scene.start('Play', { level, entry });

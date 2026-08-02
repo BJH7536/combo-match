@@ -6,7 +6,7 @@ import { computeBoardTransform } from './board-layout';
 import { computeLayout, type Layout } from './layout';
 import { hasSeenHelp, showHelpOverlay } from './help-overlay';
 import type { LevelIndexEntry } from './level-select-scene';
-import { decodeLevelHash, demoLevel, loadPlaytestLevel } from './level-source';
+import { decodeLevelHash, demoLevel, levelUrl, loadPlaytestLevel } from './level-source';
 import { saveResult } from './progress';
 import { earn, type Economy, loadGold, normalizeEconomy, payout, spend, spendUpTo } from './wallet';
 import { cardTexture, feltTexture, haloTexture, PALETTE, panelTexture, raysTexture } from './skin';
@@ -1391,11 +1391,11 @@ export class PlayScene extends Phaser.Scene {
 
   private async goToLevel(id: number): Promise<void> {
     try {
-      const res = await fetch(`levels/index.json`);
+      const res = await fetch(levelUrl('index.json'));
       const idx = (await res.json()) as { levels: LevelIndexEntry[] };
       const entry = idx.levels.find((l) => l.id === id);
       if (!entry) return;
-      const lv = await (await fetch(`levels/${entry.file}`)).json();
+      const lv = await (await fetch(levelUrl(entry.file))).json();
       this.scene.start('Play', { level: lv as LevelData, entry });
     } catch (e) {
       console.warn(`다음 레벨 로드 실패: ${String(e)}`);

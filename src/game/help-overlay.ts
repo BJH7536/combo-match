@@ -40,10 +40,12 @@ export function showHelpOverlay(scene: Phaser.Scene, onClose?: () => void): void
   const L = computeLayout(scene.scale.width, scene.scale.height);
   const STAGE_W = L.W;
   const STAGE_H = L.H;
-  // 좁은 화면에서도 패널이 넘치지 않게 크기와 글자를 함께 줄인다
-  const pw = Math.round(Math.min(860 * L.ui, STAGE_W * 0.94));
-  const ph = Math.round(Math.min(470 * L.ui, STAGE_H * 0.66));
-  const sc = pw / 860;
+  // 좁은 화면에서도 패널이 넘치지 않게 크기와 글자를 함께 줄인다.
+  // 폭·높이 예산 중 빡빡한 쪽 하나로 배율을 정해 860:470 비율을 유지한다 — 따로 clamp하면
+  // 넓고 낮은 창(최대화 브라우저)에서 높이만 줄어 바닥 기준 버튼이 본문 위로 올라온다.
+  const sc = Math.min(Math.min(860 * L.ui, STAGE_W * 0.94) / 860, Math.min(470 * L.ui, STAGE_H * 0.66) / 470);
+  const pw = Math.round(860 * sc);
+  const ph = Math.round(470 * sc);
   const fs = (base: number): string => `${Math.max(11, Math.round(base * sc))}px`;
   const D = 20000; // 다른 UI보다 항상 위
   const parts: Phaser.GameObjects.GameObject[] = [];

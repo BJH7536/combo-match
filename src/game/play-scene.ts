@@ -52,6 +52,7 @@ interface CardNode {
   zoneStripe: Phaser.GameObjects.Rectangle; // 상단 구역 색띠 (구역 레벨에서만 표시)
   w: number;
   h: number;
+  shake?: { tween: Phaser.Tweens.Tween; x: number }; // 진행 중 흔들림 — 연타 시 원점 복원용
 }
 
 // 구역 색 — 디자이너 툴·기획 시안과 동일 (1구역 파랑 · 2구역 노랑 · 3구역 빨강)
@@ -654,22 +655,9 @@ export class PlayScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(402);
 
-    // "▼ 같은 그림 찾기 ▼" 배너 (bob)
+    // "▼ 같은 그림 찾기 ▼" 배너 (bob) — 글자는 ui 배율로 커지므로 박스를 고정 크기로 두면
+    // 큰 화면에서 글자가 삐져나온다. 글자를 먼저 만들어 실측 크기로 박스를 뽑는다.
     const bannerY = spotY - this.L.spot.cardH / 2 - 30;
-    this.add
-      .image(
-        spotX,
-        bannerY,
-        panelTexture(this, 'banner', 172, 32, {
-          top: PALETTE.goldTop,
-          bottom: PALETTE.goldBottom,
-          shadow: PALETTE.goldShadow,
-          shadowDepth: 3,
-          radius: 10,
-          gloss: 0.55,
-        }),
-      )
-      .setDepth(403);
     const bannerText = this.add
       .text(spotX, bannerY, '▼ 같은 그림 찾기 ▼', {
         fontFamily: FONT,
@@ -679,11 +667,30 @@ export class PlayScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(404);
+    const bannerW = Math.ceil(bannerText.width + 40);
+    const bannerH = Math.ceil(bannerText.height + 22); // 위아래 여유 — 떠다니는 폭(±7)까지 담는다
+    this.add
+      .image(
+        spotX,
+        bannerY,
+        panelTexture(this, `banner-${bannerW}x${bannerH}`, bannerW, bannerH, {
+          top: PALETTE.goldTop,
+          bottom: PALETTE.goldBottom,
+          shadow: PALETTE.goldShadow,
+          shadowDepth: 3,
+          radius: 10,
+          gloss: 0.55,
+        }),
+      )
+      .setDepth(403);
     this.tweens.add({ targets: bannerText, y: bannerY - 7, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     // COMBO 뱃지 (콤보 1 이상일 때만 노출)
-    const badgeX = Math.min(this.L.W - 62, spotX + this.L.spot.cardW / 2 + 56);
-    this.comboBadge = this.add.container(badgeX, spotY - this.L.spot.cardH * 0.33).setDepth(410);
+    // 가로: 스포트라이트 옆에 두면 카드를 덮으므로 보드 오른쪽 여백 띠(W*0.91 바깥)에 세로 중앙으로.
+    // 세로: 여백 띠가 없어(보드 폭 97%) 스포트라이트 옆 유지 — 그 높이엔 겹칠 카드가 없다.
+    const badgeX = this.L.portrait ? Math.min(this.L.W - 62, spotX + this.L.spot.cardW / 2 + 56) : this.L.W - 62;
+    const badgeY = this.L.portrait ? spotY - this.L.spot.cardH * 0.33 : this.L.board.y + this.L.board.height / 2;
+    this.comboBadge = this.add.container(badgeX, badgeY).setDepth(410);
     const badgeBg = this.add.image(
       0,
       0,
@@ -1179,17 +1186,7 @@ export class PlayScene extends Phaser.Scene {
       if (!node) return;
       node.bombText.setScale(1.5);
       this.tweens.add({ targets: node.bombText, scale: 1, duration: 260, ease: 'Back.easeOut' });
-      if (counter <= 3) {
-        const x = node.root.x;
-        this.tweens.add({
-          targets: node.root,
-          x: x + 5,
-          yoyo: true,
-          repeat: 1,
-          duration: 55,
-          onComplete: () => node.root.setX(x),
-        });
-      }
+      if (counter <= 3) this.shake(id, 5, 1, 55); // 연속 드로우 때도 원점이 밀리지 않게 공용 헬퍼로
     });
     const popObjective = (): void => {
       if (!this.objectiveText) return;
@@ -1254,11 +1251,28 @@ export class PlayScene extends Phaser.Scene {
     this.tweens.add({ targets: this.toastText, alpha: 0, delay: 900, duration: 400 });
   }
 
-  private shake(id: number): void {
+  /** 카드 좌우 흔들림 (거부·폭탄 경고). 연타로 겹치면 이전 흔들림의 중간 x를
+   *  원점으로 오인해 카드가 조금씩 밀려나므로, 진행 중이면 끊고 원위치로 되돌린 뒤 흔든다 */
+  private shake(id: number, dx = 6, repeat = 2, duration = 40): void {
     const node = this.nodes.get(id);
     if (!node) return;
+    if (node.shake) {
+      node.shake.tween.remove();
+      node.root.setX(node.shake.x);
+    }
     const x = node.root.x;
-    this.tweens.add({ targets: node.root, x: x + 6, yoyo: true, repeat: 2, duration: 40, onComplete: () => node.root.setX(x) });
+    const tween = this.tweens.add({
+      targets: node.root,
+      x: x + dx,
+      yoyo: true,
+      repeat,
+      duration,
+      onComplete: () => {
+        node.root.setX(x);
+        delete node.shake;
+      },
+    });
+    node.shake = { tween, x };
   }
 
   private woodButton(

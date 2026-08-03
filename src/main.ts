@@ -25,6 +25,7 @@ const game = new Phaser.Game({
 
 // 회전·창 크기 변경: 스테이지 비율을 다시 잡고 활성 씬을 재구성한다.
 // 씬은 init 데이터를 보존하므로 재시작해도 같은 레벨이 유지된다.
+// resize 플래그: 재구성은 새 시도가 아니므로 PlayScene이 입장료를 다시 걷지 않게 한다.
 let resizeTimer: number | undefined;
 const onViewportChange = (): void => {
   window.clearTimeout(resizeTimer);
@@ -32,7 +33,7 @@ const onViewportChange = (): void => {
     const next = stageSize(window.innerWidth, window.innerHeight, window.devicePixelRatio);
     if (Math.abs(next.W - game.scale.width) < 4 && Math.abs(next.H - game.scale.height) < 4) return;
     game.scale.resize(next.W, next.H);
-    for (const sc of game.scene.getScenes(true)) sc.scene.restart();
+    for (const sc of game.scene.getScenes(true)) sc.scene.restart({ resize: true });
   }, 220);
 };
 window.addEventListener('resize', onViewportChange);

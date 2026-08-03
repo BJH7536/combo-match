@@ -72,6 +72,7 @@ export class PlayScene extends Phaser.Scene {
   private eco: Economy = normalizeEconomy(null);
   private settled = false; // 정산은 판당 1회
   private entryPaid = 0; // 💰 이번 시도에 낸 입장료
+  private resizeRebuild = false; // 이번 create가 리사이즈 재구성인지 (입장료 면제)
   private banText: Phaser.GameObjects.Text | null = null; // 🚫 노-리피트 금지 심볼 칩
   private ended = false;
   private cardW = 0;
@@ -105,9 +106,11 @@ export class PlayScene extends Phaser.Scene {
     super('Play');
   }
 
-  init(data?: { level?: LevelData; entry?: LevelIndexEntry }): void {
-    // 리사이즈로 인한 restart()는 데이터 없이 오므로 기존 레벨을 유지한다
+  init(data?: { level?: LevelData; entry?: LevelIndexEntry; resize?: boolean }): void {
+    // 리사이즈로 인한 restart()는 레벨 데이터 없이 오므로 기존 레벨을 유지한다
     if (data?.level || data?.entry) this.initData = data;
+    // 회전·창 크기 변경의 재구성은 새 시도가 아니다 — 입장료를 다시 걷지 않는다
+    this.resizeRebuild = data?.resize === true;
   }
 
   create(): void {
@@ -132,7 +135,7 @@ export class PlayScene extends Phaser.Scene {
     this.eco = normalizeEconomy(economy);
     // 💰 입장료 — 시도(재시작 포함)마다 차감. 골드가 모자라면 있는 만큼만 (플레이를 막지 않는다)
     this.entryPaid = 0;
-    if (this.eco.entryFee > 0) {
+    if (this.eco.entryFee > 0 && !this.resizeRebuild) {
       const r = spendUpTo(this.eco.entryFee);
       this.entryPaid = r.paid;
     }
